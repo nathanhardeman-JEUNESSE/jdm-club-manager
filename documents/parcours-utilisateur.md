@@ -164,3 +164,54 @@ L'application peut préremplir les informations déjà connues :
 Le parent vérifie les informations, les met à jour si nécessaire, puis valide la demande de réinscription.
 
 Le groupe définitif reste validé par l'équipe encadrante du club.
+
+---
+
+# Parcours 2 - Coach
+
+## Étapes du parcours
+
+1. Connexion
+2. Accueil
+3. Fiche d'un groupe
+4. Feuille de présence
+5. Planning
+6. Compétitions
+7. Messagerie
+8. Documents
+
+## Connexion
+
+Le coach se connecte à l'application avec son adresse e-mail et son mot de passe.
+
+Après authentification, il accède directement à son espace coach.
+
+Les fonctionnalités disponibles dépendent des droits qui lui sont attribués par le club.
+
+## Accueil
+
+Après sa connexion, le coach accède à son tableau de bord personnel.
+
+Il visualise immédiatement :
+
+- les groupes dont il est responsable
+- les entraînements du jour
+- les informations importantes du club
+- les compétitions à venir
+- les notifications qui le concernent
+
+Chaque groupe est accessible directement depuis cette page.
+
+Le coach peut également accéder à la liste complète des groupes du club selon les droits qui lui sont attribués.
+
+## Fiche d'un groupe
+
+En sélectionnant un groupe, le coach accède à toutes les informations nécessaires pour encadrer sa séance.
+
+Il peut consulter :
+
+- la liste des gymnastes du groupe
+- les horaires d'entraînement
+- le ou les entraîneurs du groupe
+- les informations importantes
+- le lien vers le groupe WhatsApp
