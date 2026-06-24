@@ -215,3 +215,30 @@ Il peut consulter :
 - le ou les entraîneurs du groupe
 - les informations importantes
 - le lien vers le groupe WhatsApp
+
+## Feuille de présence
+
+Depuis la fiche du groupe, le coach peut faire l'appel.
+
+Pour chaque gymnaste, il peut indiquer :
+
+- Présent
+- Absent
+- Absent excusé
+
+La feuille de présence est enregistrée automatiquement pour chaque séance.
+
+Depuis cette page, le coach accède en un seul clic à toutes les actions liées au groupe.
+
+## Fiche d'un gymnaste
+
+Depuis la fiche du groupe, le coach peut ouvrir la fiche d'un gymnaste.
+
+Il peut consulter :
+
+- les informations de l'adhérent
+- les coordonnées des responsables légaux (si mineur)
+- les présences
+- les compétitions
+- les licences
+- les documents utiles selon les droits qui lui sont attribués
