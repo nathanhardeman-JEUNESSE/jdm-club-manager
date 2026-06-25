@@ -82,3 +82,90 @@ button:hover {
   text-decoration: none;
   margin-top: 10px;
 }
+.app-screen {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 30px 15px;
+}
+
+.app-card {
+  width: 390px;
+  max-width: 100%;
+  background: #111;
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 0 30px rgba(0,0,0,0.6);
+}
+
+.logo-small {
+  display: block;
+  width: 120px;
+  margin: 0 auto 20px;
+}
+
+.info-card,
+.child-card {
+  background: #1c1c1c;
+  border-radius: 14px;
+  padding: 14px;
+  margin-top: 14px;
+}
+
+.child-card {
+  border-left: 4px solid #0057ff;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 20px;
+}
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+
+    background: #111;
+
+    display: flex;
+    justify-content: space-around;
+
+    padding: 12px 0;
+
+    border-top: 2px solid #0057ff;
+
+    box-shadow: 0 -5px 15px rgba(0,0,0,.4);
+}
+
+.bottom-nav button {
+    background: transparent;
+    border: none;
+    color: white;
+    width: auto;
+    margin: 0;
+    padding: 5px;
+    font-size: 13px;
+}
+
+.bottom-nav button:hover {
+    color: #ff2020;
+    background: transparent;
+}
+.child-button {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 10px 18px;
+    background: #0057ff;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.child-button:hover {
+    background: #ff2020;
+}

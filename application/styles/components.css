@@ -1,0 +1,393 @@
+.app-header {
+    text-align: center;
+    padding: 20px;
+}
+
+.app-header img {
+    width: 90px;
+}
+
+.card {
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    color: var(--white);
+}
+
+.primary-button {
+    background: var(--jdm-blue);
+    color: var(--white);
+    border: none;
+    border-radius: var(--radius);
+    padding: 12px 18px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.primary-button:hover {
+    background: var(--jdm-red);
+}
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: var(--card);
+    border-top: 2px solid var(--jdm-blue);
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+}
+.hero {
+    height: 250px;
+    background-image: url("../images/salle-jdm.jpg");
+    background-size: cover;
+    background-position: center 62%;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+}
+
+.hero-overlay {
+    height: 100%;
+    background: rgba(0, 0, 0, 0.55);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: var(--white);
+    text-align: center;
+    padding: 20px;
+}
+
+.hero-logo {
+    width: 170px;
+    margin-bottom: 12px;
+}
+
+.hero h1 {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.hero p {
+    margin: 0;
+    color: var(--light-grey);
+    font-size: 16px;
+}
+/* ===========================
+   CARTE ACTUALITÉ
+=========================== */
+
+.news-card{
+
+    display:flex;
+
+    gap:20px;
+
+    background:#161616;
+
+    color:white;
+
+    padding:25px;
+
+    border-radius:18px;
+
+    margin-top:25px;
+
+    box-shadow:0 8px 25px rgba(0,0,0,.30);
+
+    border-left:6px solid #0057FF;
+
+}
+
+.news-icon{
+
+    font-size:34px;
+
+}
+
+.news-content{
+
+    flex:1;
+
+}
+
+.news-content h2{
+
+    margin:0;
+
+    margin-bottom:12px;
+
+}
+
+.news-content p{
+
+    color:#C8C8C8;
+
+    line-height:1.6;
+
+    margin-bottom:20px;
+
+}
+.page {
+    max-width: 430px;
+    margin: auto;
+    padding: 18px;
+}
+/* ===========================
+   CARTE DE NAVIGATION
+=========================== */
+
+.navigation-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    background: var(--card);
+    color: var(--white);
+    padding: 22px;
+    margin-top: 20px;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: .25s;
+}
+
+.navigation-card:hover {
+    transform: translateY(-3px);
+}
+
+.navigation-icon {
+    font-size: 32px;
+}
+
+.navigation-content {
+    flex: 1;
+}
+
+.navigation-content h2 {
+    margin: 0 0 8px 0;
+}
+
+.navigation-content p {
+    margin: 0;
+    color: var(--light-grey);
+    line-height: 1.5;
+}
+
+.navigation-arrow {
+    font-size: 24px;
+    color: var(--jdm-blue);
+}
+/* ===========================
+   HEADER DE PAGE
+=========================== */
+
+.page-header{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:18px;
+
+    margin-bottom:25px;
+
+}
+
+.back-button{
+
+    width:42px;
+
+    height:42px;
+
+    border-radius:50%;
+
+    background:var(--card);
+
+    color:var(--white);
+
+    text-decoration:none;
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:22px;
+
+    box-shadow:var(--shadow);
+
+    transition:.25s;
+
+}
+
+.back-button:hover{
+
+    background:var(--jdm-blue);
+
+}
+
+.page-header h1{
+
+    margin:0;
+
+    color:var(--white);
+
+    font-size:30px;
+
+}
+/* ===========================
+   LIENS DE NAVIGATION
+=========================== */
+
+.navigation-link{
+
+    text-decoration:none;
+
+    color:inherit;
+
+    display:block;
+
+}
+.legend {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.legend span {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--light-grey);
+}
+
+.dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    display: inline-block;
+}
+
+.dot.ok {
+    background: #2f8f46;
+}
+
+.dot.off {
+    background: #4b4b4b;
+}
+
+.dot.cancel {
+    background: #e63946;
+}
+
+.schedule-card {
+    background: var(--card);
+    color: var(--white);
+    padding: 18px;
+    margin-top: 20px;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+}
+
+.schedule-info h2 {
+    margin: 0 0 8px 0;
+}
+
+.schedule-info p {
+    margin: 4px 0;
+    color: var(--light-grey);
+}
+
+.schedule-info .note {
+    color: var(--jdm-blue);
+    font-weight: bold;
+}
+
+.week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-top: 16px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.slot {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 54px;
+    margin-top: 6px;
+    border-radius: 10px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.slot.ok {
+    background: #2f8f46;
+    color: white;
+}
+
+.slot.off {
+    background: #4b4b4b;
+    color: #cccccc;
+}
+
+.slot.cancel {
+    background: #e63946;
+    color: white;
+}
+.week-selector {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.week-title {
+    flex: 1;
+    background: var(--card);
+    color: var(--white);
+    text-align: center;
+    padding: 14px;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    font-weight: bold;
+}
+
+.week-button {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: none;
+    background: var(--card);
+    color: var(--white);
+    font-size: 20px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+}
+/* ===========================
+   DERNIÈRE MISE À JOUR
+=========================== */
+
+.update-info{
+
+    text-align:center;
+
+    color:var(--light-grey);
+
+    font-size:13px;
+
+    margin-bottom:20px;
+
+    opacity:.85;
+
+}
