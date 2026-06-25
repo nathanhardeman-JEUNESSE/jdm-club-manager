@@ -391,3 +391,179 @@
     opacity:.85;
 
 }
+/* ===========================
+   HERO BOUTIQUE
+=========================== */
+
+.boutique-hero{
+
+    background-image:url("../images/boutique-sweat.png");
+
+    background-position:center;
+
+}
+/* ===========================
+   PRODUCT CARD
+=========================== */
+
+.product-card{
+
+    background:var(--card);
+
+    border-radius:var(--radius);
+
+    overflow:hidden;
+
+    box-shadow:var(--shadow);
+
+    margin-bottom:25px;
+
+}
+
+.product-card img{
+
+    width:100%;
+
+    display:block;
+
+}
+
+.product-content{
+
+    padding:20px;
+
+}
+
+.product-content h2{
+
+    margin:0;
+
+    margin-bottom:10px;
+
+    color:var(--white);
+
+}
+
+.product-price{
+
+    color:var(--jdm-blue);
+
+    font-size:22px;
+
+    font-weight:bold;
+
+    margin-bottom:15px;
+
+}
+
+.product-content p{
+
+    color:var(--light-grey);
+
+    line-height:1.6;
+
+}
+
+.product-button{
+
+    display:inline-block;
+
+    margin-top:20px;
+
+    text-decoration:none;
+
+}
+/* ===========================
+   PRODUCT DETAIL
+=========================== */
+
+.product-detail {
+    background: var(--card);
+    color: var(--white);
+    padding: 20px;
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+}
+
+.product-detail-image {
+    width: 100%;
+    border-radius: 14px;
+    margin-bottom: 20px;
+}
+
+.product-detail h2 {
+    margin: 0 0 10px 0;
+}
+
+.product-detail h3 {
+    margin-top: 24px;
+    margin-bottom: 12px;
+}
+
+.option-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.option-button {
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--white);
+    cursor: pointer;
+}
+
+.option-button.active {
+    background: var(--jdm-blue);
+    border-color: var(--jdm-blue);
+}
+
+.quantity-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.quantity-button {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: var(--jdm-blue);
+    color: var(--white);
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.order-button {
+    width: 100%;
+    margin-top: 10px;
+}
+/* ===========================
+   ADMIN TOOLBAR
+=========================== */
+
+.admin-toolbar {
+    display: flex;
+    gap: 12px;
+    margin: 20px 0;
+}
+
+.admin-action-button {
+    flex: 1;
+    background: var(--card);
+    color: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+}
+
+.admin-action-button:hover {
+    background: var(--jdm-blue);
+}

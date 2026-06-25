@@ -1,0 +1,42 @@
+[
+  {
+    "id": "teeshirt-officiel",
+    "nom": "Tee-shirt officiel JDM",
+    "prix": 15,
+    "description": "Tee-shirt officiel de La Jeunesse du Marais, disponible en blanc ou noir.",
+    "boutique": "permanente",
+    "couleurs": ["Blanc", "Noir"],
+    "tailles": [
+      "5-6 ans",
+      "7-8 ans",
+      "8-9 ans",
+      "10-11 ans",
+      "12-13 ans",
+      "14-15 ans",
+      "XS",
+      "S",
+      "M",
+      "L",
+      "XL",
+      "XXL"
+    ],
+    "images": {
+      "Blanc": "../images/produits/teeshirt jeunesse blanc 2.jpg",
+      "Noir": "../images/produits/teeshirt jeunesse noir 2.jpg"
+    },
+    "visible": true
+  },
+  {
+    "id": "sac-competition",
+    "nom": "Sac compétition",
+    "prix": 25,
+    "description": "Sac officiel de compétition du club.",
+    "boutique": "permanente",
+    "couleurs": [],
+    "tailles": [],
+    "images": {
+      "principal": "../images/produits/sac competition 2.png"
+    },
+    "visible": true
+  }
+]

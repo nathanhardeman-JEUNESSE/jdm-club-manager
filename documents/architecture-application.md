@@ -205,3 +205,28 @@ Contenu :
 - Inscriptions
 - Utilisateurs
 - Paramètres
+
+Fonctionnalités boutique administrateur :
+
+- Ajouter un produit
+- Modifier un produit
+- Supprimer ou masquer un produit
+- Ajouter une ou plusieurs photos
+- Définir le prix
+- Définir les tailles disponibles
+- Définir les coloris disponibles
+- Choisir le type de boutique : permanente ou éphémère
+- Ouvrir ou fermer une campagne éphémère
+- Suivre les commandes
+
+Fonctionnalités d'export :
+
+- Exporter les adhérents au format Excel
+- Exporter les gymnastes au format Excel
+- Exporter les groupes au format Excel
+- Exporter les documents manquants au format Excel
+- Exporter les cotisations au format Excel
+- Exporter les commandes boutique au format Excel
+- Exporter les inscriptions au format Excel
+- Exporter les présences au format Excel
+- Filtrer les exports par saison, groupe, statut, âge, document, paiement ou produit
