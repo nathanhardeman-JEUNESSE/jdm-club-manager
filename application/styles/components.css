@@ -395,12 +395,14 @@
    HERO BOUTIQUE
 =========================== */
 
-.boutique-hero{
 
-    background-image:url("../images/boutique-sweat.png");
-
-    background-position:center;
-
+.boutique-hero {
+    height: 190px;
+    background-image: url("../images/boutique accessoire.png");
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-color: var(--card);
 }
 /* ===========================
    PRODUCT CARD
@@ -566,4 +568,7 @@
 
 .admin-action-button:hover {
     background: var(--jdm-blue);
+}
+.order-button:active {
+    transform: scale(0.97);
 }

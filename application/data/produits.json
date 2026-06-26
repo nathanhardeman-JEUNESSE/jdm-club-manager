@@ -26,17 +26,17 @@
     },
     "visible": true
   },
-  {
-    "id": "sac-competition",
-    "nom": "Sac compétition",
-    "prix": 25,
-    "description": "Sac officiel de compétition du club.",
-    "boutique": "permanente",
-    "couleurs": [],
-    "tailles": [],
-    "images": {
-      "principal": "../images/produits/sac competition 2.png"
-    },
-    "visible": true
-  }
+  {{
+  "id": "sac-competition",
+  "nom": "Sac compétition",
+  "prix": 25,
+  "description": "Sac officiel de compétition du club.",
+  "boutique": "permanente",
+  "couleurs": [],
+  "tailles": ["20L", "35L"],
+  "images": {
+    "principal": "../images/produits/sac competition 2.png"
+  },
+  "visible": true
+}
 ]

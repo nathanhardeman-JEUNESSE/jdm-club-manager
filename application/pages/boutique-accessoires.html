@@ -17,72 +17,89 @@
     </header>
 
     <section class="card">
+        <h2>🛍 Articles disponibles</h2>
+        <p>Choisissez vos articles, puis ajoutez-les à votre panier.</p>
+    </section>
 
-        <h2>🛍 Boutique Accessoires</h2>
+    <section class="product-detail" data-nom="Tee-shirt officiel JDM" data-prix="15">
 
-        <p>
-            Retrouvez tous les articles disponibles toute l'année.
-        </p>
+        <img src="../images/produits/teeshirt jeunesse blanc 2.jpg" alt="Tee-shirt officiel" class="product-detail-image">
+
+        <h2>Tee-shirt officiel JDM</h2>
+
+        <p class="product-price">À partir de 15 €</p>
+
+        <p>Tee-shirt officiel du club, disponible en blanc ou noir.</p>
+
+        <h3>Couleur</h3>
+
+        <div class="option-row">
+            <button class="option-button active">Blanc</button>
+            <button class="option-button">Noir</button>
+        </div>
+
+        <h3>Taille</h3>
+
+        <div class="option-row">
+            <button class="option-button">5-6 ans</button>
+            <button class="option-button">7-8 ans</button>
+            <button class="option-button">8-9 ans</button>
+            <button class="option-button">10-11 ans</button>
+            <button class="option-button">12-13 ans</button>
+            <button class="option-button">14-15 ans</button>
+            <button class="option-button">XS</button>
+            <button class="option-button">S</button>
+            <button class="option-button active">M</button>
+            <button class="option-button">L</button>
+            <button class="option-button">XL</button>
+            <button class="option-button">XXL</button>
+        </div>
+
+        <button class="primary-button order-button add-cart-button">
+            Ajouter au panier
+        </button>
 
     </section>
 
-    <a href="produit.html?id=teeshirt-blanc" class="navigation-link">
+    <section class="product-detail" data-nom="Sac compétition" data-prix="25">
 
-        <section class="product-card">
+        <img src="../images/produits/sac competition 2.png" alt="Sac compétition" class="product-detail-image">
 
-            <img src="../images/produits/teeshirt jeunesse blanc 2.jpg" alt="Tee-shirt blanc">
+        <h2>Sac compétition</h2>
 
-            <div class="product-content">
+        <p class="product-price">À partir de 25 €</p>
 
-                <h2>Tee-shirt officiel</h2>
+        <p>Sac officiel de compétition du club.</p>
 
-                <p class="product-price">
-                    À partir de 15 €
-                </p>
+        <h3>Contenance</h3>
 
-                <p>
-                    Disponible en blanc et noir.
-                </p>
+        <div class="option-row">
+            <button class="option-button active">20L</button>
+            <button class="option-button">35L</button>
+        </div>
 
-                <span class="primary-button product-button">
-                    Voir le produit
-                </span>
+        <button class="primary-button order-button add-cart-button">
+            Ajouter au panier
+        </button>
 
+    </section>
+
+    <a href="panier.html" class="navigation-link">
+        <section class="navigation-card">
+            <div class="navigation-icon">🛒</div>
+
+            <div class="navigation-content">
+                <h2>Voir mon panier</h2>
+                <p>Consultez le récapitulatif de votre commande.</p>
             </div>
 
+            <div class="navigation-arrow">➜</div>
         </section>
-
-    </a>
-
-    <a href="produit.html?id=sac-competition" class="navigation-link">
-
-        <section class="product-card">
-
-            <img src="../images/produits/sac competiton 2.png" alt="Sac compétition">
-
-            <div class="product-content">
-
-                <h2>Sac compétition</h2>
-
-                <p class="product-price">
-                    25 €
-                </p>
-
-                <p>
-                    Sac officiel de compétition du club.
-                </p>
-
-                <span class="primary-button product-button">
-                    Voir le produit
-                </span>
-
-            </div>
-
-        </section>
-
     </a>
 
 </main>
+
+<script src="../scripts/boutique.js"></script>
 
 </body>
 </html>

@@ -1,3 +1,36 @@
+async function chargerProduit() {
+
+    const produits = await chargerProduits();
+
+   const params = new URLSearchParams(window.location.search);
+
+const idProduit = params.get("id");
+
+const produit = produits.find(p => p.id === idProduit);
+
+if (!produit) {
+
+    alert("Produit introuvable.");
+
+    return;
+
+}
+const premiereImage = produit.images.Blanc || produit.images.principal;
+
+imageProduit.src = premiereImage;
+
+    document.getElementById("product-name").textContent = produit.nom;
+
+    document.getElementById("product-price").textContent =
+        "À partir de " + produit.prix + " €";
+
+    document.getElementById("product-description").textContent =
+        produit.description;
+
+}
+
+
+chargerProduit();
 const imageProduit = document.querySelector(".product-detail-image");
 
 const boutonBlanc = document.querySelector(".option-button:nth-child(1)");
@@ -8,14 +41,18 @@ const boutonPlus = document.querySelector(".quantity-button:last-child");
 const quantite = document.querySelector(".quantity-row span");
 
 boutonBlanc.addEventListener("click", () => {
-    imageProduit.src = "../images/produits/teeshirt jeunesse blanc 2.jpg";
+    if (!produitActuel.images.Blanc) return;
+
+    imageProduit.src = produitActuel.images.Blanc;
 
     boutonBlanc.classList.add("active");
     boutonNoir.classList.remove("active");
 });
 
 boutonNoir.addEventListener("click", () => {
-    imageProduit.src = "../images/produits/teeshirt jeunesse noir 2.jpg";
+    if (!produitActuel.images.Noir) return;
+
+    imageProduit.src = produitActuel.images.Noir;
 
     boutonNoir.classList.add("active");
     boutonBlanc.classList.remove("active");
