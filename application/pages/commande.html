@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Commande - JDM Club Manager</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="panier.html" class="back-button">←</a>
+        <h1>Commande</h1>
+    </header>
+
+    <section class="card">
+        <h2>👤 Vos informations</h2>
+
+        <p>Vous êtes déjà adhérent du club ?</p>
+
+        <a href="espace-membre.html" class="primary-button order-button">
+            👤 Je suis déjà membre
+        </a>
+
+        <p style="text-align:center; margin:20px 0; color:var(--light-grey);">
+            ou
+        </p>
+
+        <p>Je commande sans compte :</p>
+
+<input class="form-input" id="client-nom" type="text" placeholder="Nom">
+<input class="form-input" id="client-prenom" type="text" placeholder="Prénom">
+<input class="form-input" id="client-email" type="email" placeholder="Email">
+<input class="form-input" id="client-telephone" type="tel" placeholder="Téléphone">
+    </section>
+
+    <section class="card">
+        <h2>🛒 Récapitulatif</h2>
+
+        <div id="commande-recap"></div>
+    </section>
+
+    <section class="card">
+        <h2>💳 Paiement</h2>
+
+        <h3>Mode de règlement</h3>
+
+        <label class="payment-option">
+            <input type="radio" name="paiement" value="cb" checked>
+            <strong>Carte bancaire</strong><br>
+            <span>
+                Votre commande sera préparée immédiatement après validation du paiement.
+            </span>
+        </label>
+
+        <label class="payment-option">
+            <input type="radio" name="paiement" value="club">
+            <strong>Paiement au club</strong><br>
+            <span>
+                Votre commande sera préparée uniquement après réception de votre règlement.
+            </span>
+        </label>
+
+        <label class="checkbox-row">
+            <input type="checkbox" id="accept-reglement">
+
+            J'ai pris connaissance que les commandes réglées au club ne seront préparées qu'après réception du paiement.
+        </label>
+
+        <button class="primary-button order-button" id="payment-button">
+            Payer / Valider ma commande
+        </button>
+    </section>
+
+</main>
+
+<script src="../scripts/commande.js"></script>
+
+</body>
+</html>

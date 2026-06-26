@@ -49,7 +49,19 @@ boutonsAjout.forEach((bouton) => {
         });
 
         localStorage.setItem("panierJDM", JSON.stringify(panier));
+        mettreAJourCompteurPanier();
 
         alert("Article ajouté au panier ✅");
     });
 });
+function mettreAJourCompteurPanier() {
+    const compteur = document.getElementById("cart-count");
+
+    if (!compteur) return;
+
+    const panierActuel = JSON.parse(localStorage.getItem("panierJDM")) || [];
+
+    compteur.textContent = "(" + panierActuel.length + ")";
+}
+
+mettreAJourCompteurPanier();

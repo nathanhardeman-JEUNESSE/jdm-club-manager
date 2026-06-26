@@ -16,13 +16,27 @@
 }
 
 .primary-button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 100%;
+    box-sizing: border-box;
+
     background: var(--jdm-blue);
     color: var(--white);
+
     border: none;
     border-radius: var(--radius);
+
     padding: 12px 18px;
+
     font-weight: bold;
+    text-decoration: none;
+
     cursor: pointer;
+
+    transition: .25s;
 }
 
 .primary-button:hover {
@@ -571,4 +585,82 @@
 }
 .order-button:active {
     transform: scale(0.97);
+}
+.secondary-button {
+    width: 100%;
+    margin-top: 12px;
+    background: transparent;
+    color: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 18px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.form-input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 12px;
+    padding: 14px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: #222;
+    color: var(--white);
+}
+
+.order-line {
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+}
+.payment-option{
+
+    display:block;
+
+    background:#222;
+
+    padding:18px;
+
+    margin-top:18px;
+
+    border-radius:14px;
+
+    border:1px solid #333;
+
+    cursor:pointer;
+
+}
+
+.payment-option input{
+
+    margin-right:10px;
+
+}
+
+.payment-option span{
+
+    color:var(--light-grey);
+
+    display:block;
+
+    margin-top:8px;
+
+    line-height:1.5;
+
+}
+
+.checkbox-row{
+
+    display:flex;
+
+    align-items:flex-start;
+
+    gap:12px;
+
+    margin-top:25px;
+
+    color:var(--light-grey);
+
+    line-height:1.5;
+
 }
