@@ -1,4 +1,3 @@
-
 const panier = JSON.parse(localStorage.getItem("panierJDM")) || [];
 const recap = document.getElementById("commande-recap");
 
@@ -28,25 +27,27 @@ if (panier.length === 0) {
         <p class="product-price">Total : ${total} €</p>
     `;
 }
+
 const boutonsPaiement = document.querySelectorAll('input[name="paiement"]');
 const boutonPaiement = document.getElementById("payment-button");
 
 function mettreAJourBoutonPaiement() {
-
     if (!boutonPaiement) return;
 
-    const modePaiement = document.querySelector('input[name="paiement"]:checked').value;
+    const paiementSelectionne = document.querySelector('input[name="paiement"]:checked');
+
+    if (!paiementSelectionne) {
+        boutonPaiement.textContent = "Choisir un mode de paiement";
+        return;
+    }
+
+    const modePaiement = paiementSelectionne.value;
 
     if (modePaiement === "cb") {
         boutonPaiement.textContent = "💳 Payer ma commande";
     } else {
         boutonPaiement.textContent = "📦 Valider ma commande";
     }
-    if (modePaiement === "cb") {
-    alert("Mode CB détecté, redirection vers paiement.html");
-    window.location.href = "paiement.html";
-    return;
-}
 }
 
 boutonsPaiement.forEach((bouton) => {
@@ -66,7 +67,14 @@ boutonPaiement.addEventListener("click", () => {
         return;
     }
 
-    const modePaiement = document.querySelector('input[name="paiement"]:checked').value;
+    const paiementSelectionne = document.querySelector('input[name="paiement"]:checked');
+
+    if (!paiementSelectionne) {
+        alert("Veuillez choisir un mode de paiement.");
+        return;
+    }
+
+    const modePaiement = paiementSelectionne.value;
     const acceptReglement = document.getElementById("accept-reglement").checked;
 
     if (modePaiement === "club" && !acceptReglement) {
@@ -81,20 +89,21 @@ boutonPaiement.addEventListener("click", () => {
 
     const commandes = JSON.parse(localStorage.getItem("commandesJDM")) || [];
 
-    const nouvelleCommande = {
-        numero: commandes.length + 1,
-        date: new Date().toLocaleString("fr-FR"),
-        client: {
-            nom: nom,
-            prenom: prenom,
-            email: email,
-            telephone: telephone
-        },
-        articles: panier,
-        total: total,
-        paiement: modePaiement,
-        statut: "En attente de règlement"
-    };
+const nouvelleCommande = {
+    numero: commandes.length + 1,
+    date: new Date().toLocaleString("fr-FR"),
+    client: {
+        nom: nom,
+        prenom: prenom,
+        email: email,
+        telephone: telephone
+    },
+    articles: panier,
+    total: total,
+    paiement: modePaiement,
+    reglement: modePaiement === "club" ? "Non réglé" : "Réglé",
+    statut: "En attente de règlement"
+};
 
     commandes.push(nouvelleCommande);
 

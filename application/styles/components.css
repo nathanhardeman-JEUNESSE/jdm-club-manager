@@ -664,3 +664,28 @@
     line-height:1.5;
 
 }
+.admin-label {
+    display: block;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.admin-select {
+    width: 100%;
+    padding: 12px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: #222;
+    color: var(--white);
+    font-weight: bold;
+}
+.status-badge {
+    display: inline-block;
+    margin: 8px 0 14px 0;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: #222;
+    color: var(--white);
+    font-weight: bold;
+}

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Commandes Boutique</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Commandes</h1>
+    </header>
+
+    <section class="card">
+        <h2>📦 Commandes boutique</h2>
+        <p>Suivi des commandes passées depuis la boutique du club.</p>
+    </section>
+
+    <div class="admin-toolbar">
+
+<button class="admin-action-button" onclick="exporterCommandesExcel()">
+    📤 Exporter Excel
+</button>
+
+<button class="admin-action-button" onclick="location.reload()">
+    🔄 Actualiser
+</button>
+
+    </div>
+
+    <section id="admin-commandes-list"></section>
+
+</main>
+
+<script src="../scripts/admin-commandes.js"></script>
+
+</body>
+</html>
