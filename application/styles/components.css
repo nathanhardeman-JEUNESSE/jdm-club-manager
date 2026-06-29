@@ -1150,10 +1150,11 @@
 
 @media screen and (max-width: 600px) {
     .page {
-        width: 100%;
-        max-width: 430px;
+        width: calc(100% - 24px);
+        max-width: none;
         margin: 0 auto;
-        padding: 16px;
+        padding: 12px;
+        box-sizing: border-box;
     }
 
     .hero,
@@ -1189,8 +1190,4 @@
     .news-content p {
         font-size: 15px;
     }
-}
-html,
-body {
-    overflow-x: hidden;
 }
