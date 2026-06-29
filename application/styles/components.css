@@ -1144,3 +1144,49 @@
         opacity: 0.2;
     }
 }
+/* ============================= */
+/* AFFICHAGE MOBILE GLOBAL */
+/* ============================= */
+
+@media screen and (max-width: 600px) {
+    .page {
+        width: 100%;
+        max-width: 430px;
+        margin: 0 auto;
+        padding: 16px;
+    }
+
+    .hero,
+    .card,
+    .news-card,
+    .navigation-card {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .hero {
+        height: 190px;
+    }
+
+    .hero-logo {
+        width: 95px;
+    }
+
+    .navigation-card,
+    .news-card,
+    .card {
+        padding: 20px;
+        border-radius: 14px;
+    }
+
+    .navigation-content h2,
+    .news-content h2 {
+        font-size: 22px;
+    }
+
+    .navigation-content p,
+    .news-content p {
+        font-size: 15px;
+    }
+}
