@@ -1191,3 +1191,16 @@
         font-size: 15px;
     }
 }
+/* ============================= */
+/* PLANNING - MOBILE */
+/* ============================= */
+
+@media screen and (max-width: 600px) {
+    .schedule-card {
+        overflow-x: auto;
+    }
+
+    .week-grid {
+        min-width: 520px;
+    }
+}
