@@ -1098,6 +1098,7 @@
     /* ---------- VERSO IMPRESSION ---------- */
 
     .back-info {
+        font-weight: bold;
         padding: 6mm;
         max-width: 45mm;
         font-size: 6pt;
