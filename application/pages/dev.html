@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Développement - JDM</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Dev</h1>
+    </header>
+
+    <section class="card">
+        <h2>🧹 Réinitialisation</h2>
+
+        <button class="secondary-button" onclick="viderAdherents()">
+            Vider adhérents + inscriptions
+        </button>
+
+        <button class="secondary-button" onclick="viderBoutique()">
+            Vider commandes boutique
+        </button>
+    </section>
+
+</main>
+
+<script>
+const CODE_SECURITE_DEV = "JDM-admin-0";
+
+function demanderCodeSecurite() {
+    const code = prompt("Code de sécurité administrateur principal :");
+
+    if (code !== CODE_SECURITE_DEV) {
+        alert("Code incorrect. Action annulée.");
+        return false;
+    }
+
+    return true;
+}
+
+function viderAdherents() {
+    if (!demanderCodeSecurite()) return;
+
+    localStorage.removeItem("adherentsJDM");
+    localStorage.removeItem("inscriptionsJDM");
+
+    alert("Adhérents et inscriptions vidés ✅");
+}
+
+function viderBoutique() {
+    if (!demanderCodeSecurite()) return;
+
+    localStorage.removeItem("commandesJDM");
+    localStorage.removeItem("notificationsTresorierJDM");
+    localStorage.removeItem("panierJDM");
+
+    alert("Données boutique vidées ✅");
+}
+</script>
+
+</body>
+</html>

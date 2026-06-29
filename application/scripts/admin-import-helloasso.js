@@ -11,7 +11,16 @@ function normaliserTexte(texte) {
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "");
 }
+function convertirDateExcel(valeur) {
+    if (!valeur) return "";
 
+    if (typeof valeur === "number") {
+        const date = new Date((valeur - 25569) * 86400 * 1000);
+        return date.toLocaleDateString("fr-FR");
+    }
+
+    return valeur;
+}
 function creerCleAdherent(nom, prenom, dateNaissance) {
     return [
         normaliserTexte(nom),
@@ -50,9 +59,9 @@ importButton.addEventListener("click", () => {
         let dejaConnus = 0;
 
         lignesHelloAsso.forEach((ligne) => {
-            const nom = ligne["Nom"] || ligne["Nom du participant"] || "";
-            const prenom = ligne["Prénom"] || ligne["Prénom du participant"] || "";
-            const dateNaissance = ligne["Date de naissance"] || "";
+            const nom = ligne["Nom adhérent"] || ligne["Nom"] || ligne["Nom du participant"] || "";
+            const prenom = ligne["Prénom adhérent"] || ligne["Prénom"] || ligne["Prénom du participant"] || "";
+            const dateNaissance = convertirDateExcel(ligne["Date de naissance"]);
 
             const cle = creerCleAdherent(nom, prenom, dateNaissance);
 
@@ -94,9 +103,9 @@ function importerHelloAsso() {
     let misAJour = 0;
 
     lignesHelloAsso.forEach((ligne) => {
-        const nom = ligne["Nom"] || ligne["Nom du participant"] || "";
-        const prenom = ligne["Prénom"] || ligne["Prénom du participant"] || "";
-        const dateNaissance = ligne["Date de naissance"] || "";
+        const nom = ligne["Nom adhérent"] || ligne["Nom"] || ligne["Nom du participant"] || "";
+        const prenom = ligne["Prénom adhérent"] || ligne["Prénom"] || ligne["Prénom du participant"] || "";
+        const dateNaissance = convertirDateExcel(ligne["Date de naissance"]);
 
         const cle = creerCleAdherent(nom, prenom, dateNaissance);
 

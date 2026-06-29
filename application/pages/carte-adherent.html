@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Carte adhérent</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body>
+
+<main class="card-print-page">
+
+    <section class="fold-card">
+
+        <div class="member-card face" id="card-front"></div>
+
+        <div class="fold-line"></div>
+
+        <div class="member-card face" id="card-back"></div>
+
+    </section>
+
+    <button class="primary-button order-button print-button" onclick="window.print()">
+        Imprimer la carte
+    </button>
+
+</main>
+
+<script src="../scripts/carte-adherent.js"></script>
+
+</body>
+</html>
