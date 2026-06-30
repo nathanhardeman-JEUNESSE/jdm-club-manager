@@ -21,13 +21,76 @@
         <h2>➕ Ajouter un groupe</h2>
 
         <input class="form-input" id="nom-groupe" placeholder="Nom du groupe">
-        <input class="form-input" id="annee-min" placeholder="Année naissance min ex : 2016">
-        <input class="form-input" id="annee-max" placeholder="Année naissance max ex : 2019">
-        <input class="form-input" id="effectif-max" placeholder="Effectif max">
+
+    <select class="form-input" id="sexe-groupe">
+        <option value="Mixte">♂️♀️ Mixte</option>
+        <option value="Filles">♀️ Filles</option>
+        <option value="Garçons">♂️ Garçons</option>
+    </select>
+
+    <select class="form-input" id="type-groupe">
+        <option value="Loisir">Loisir</option>
+        <option value="Compétition">Compétition</option>
+    </select>
+
+    <select class="form-input" id="federation-groupe">
+        <option value="FFG">FFG</option>
+        <option value="UFOLEP">UFOLEP</option>
+        <option value="Libre">-</option>
+    </select>
+
+    <input class="form-input" id="annee-min" placeholder="Année naissance min ex : 2016">
+    <input class="form-input" id="annee-max" placeholder="Année naissance max ex : 2019">
+    <input class="form-input" id="effectif-max" placeholder="Effectif max">
+
+    <h3>Jours d'entraînement</h3>
+
+<div id="jours-groupe">
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="joursGroupe" value="Lundi"> Lundi
+    </label>
+    <input class="form-input" name="horaireLundi" placeholder="Horaire lundi ex : 18h - 19h30">
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="joursGroupe" value="Mardi"> Mardi
+    </label>
+    <input class="form-input" name="horaireMardi" placeholder="Horaire mardi ex : 18h - 19h30">
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="joursGroupe" value="Mercredi"> Mercredi
+    </label>
+    <input class="form-input" name="horaireMercredi" placeholder="Horaire mercredi ex : 18h - 19h30">
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="joursGroupe" value="Jeudi"> Jeudi
+    </label>
+    <input class="form-input" name="horaireJeudi" placeholder="Horaire jeudi ex : 18h - 19h30">
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="joursGroupe" value="Vendredi"> Vendredi
+    </label>
+    <input class="form-input" name="horaireVendredi" placeholder="Horaire vendredi ex : 18h - 19h30">
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="joursGroupe" value="Samedi"> Samedi
+    </label>
+    <input class="form-input" name="horaireSamedi" placeholder="Horaire samedi ex : 18h - 19h30">
+
+</div>
+
+
+        <h3>👨‍🏫 Coach(s) du groupe</h3>
+    <div id="liste-coachs-groupe"></div>
+
+        <h3>👨‍🏫 Coach(s) du groupe</h3>
+
+        <div id="liste-coachs-groupe"></div>
 
         <button class="primary-button order-button" id="ajouter-groupe">
             Ajouter le groupe
         </button>
+
     </section>
 
     <section id="liste-groupes"></section>
