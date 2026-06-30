@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Groupes - JDM Club Manager</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Groupes</h1>
+    </header>
+
+    <section class="card">
+        <h2>➕ Ajouter un groupe</h2>
+
+        <input class="form-input" id="nom-groupe" placeholder="Nom du groupe">
+        <input class="form-input" id="annee-min" placeholder="Année naissance min ex : 2016">
+        <input class="form-input" id="annee-max" placeholder="Année naissance max ex : 2019">
+        <input class="form-input" id="effectif-max" placeholder="Effectif max">
+
+        <button class="primary-button order-button" id="ajouter-groupe">
+            Ajouter le groupe
+        </button>
+    </section>
+
+    <section id="liste-groupes"></section>
+
+</main>
+
+<script src="../scripts/admin-groupes.js"></script>
+
+</body>
+</html>

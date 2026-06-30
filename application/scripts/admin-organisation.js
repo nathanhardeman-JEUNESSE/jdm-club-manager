@@ -5,6 +5,24 @@ const liste = document.getElementById("liste-organisation");
 const boutonAjouter = document.getElementById("ajouter-personne");
 const selectAdherent = document.getElementById("adherent-select");
 
+const groupesJDM = JSON.parse(localStorage.getItem("groupesJDM")) || [];
+const zoneGroupesCoach = document.getElementById("groupes-coach");
+
+if (groupesJDM.length === 0) {
+    zoneGroupesCoach.innerHTML = `
+        <p>Aucun groupe créé pour le moment.</p>
+    `;
+} else {
+    groupesJDM.forEach((groupe) => {
+        zoneGroupesCoach.innerHTML += `
+            <label class="checkbox-row">
+                <input type="checkbox" name="groupesCoach" value="${groupe.nom}">
+                ${groupe.nom}
+            </label>
+        `;
+    });
+}
+
 adherents.forEach((adherent) => {
     selectAdherent.innerHTML += `
         <option value="${adherent.numeroAdherent}">
@@ -62,10 +80,8 @@ boutonAjouter.addEventListener("click", () => {
     const roles = Array.from(document.querySelectorAll('input[name="roles"]:checked'))
         .map(role => role.value);
 
-    const groupes = document.getElementById("groupes").value
-        .split(",")
-        .map(groupe => groupe.trim())
-        .filter(groupe => groupe !== "");
+    const groupes = Array.from(document.querySelectorAll('input[name="groupesCoach"]:checked'))
+    .map(groupe => groupe.value);
 
     if (!prenom || !nom || roles.length === 0) {
         alert("Merci de compléter prénom, nom et au moins un rôle.");
