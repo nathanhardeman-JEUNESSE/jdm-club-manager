@@ -1,0 +1,25 @@
+{
+    "name": "JDM Club Manager",
+    "short_name": "JDM Club",
+    "description": "Application officielle de La Jeunesse du Marais",
+    "start_url": "application/pages/accueil.html",
+    "scope": "./",
+    "display": "standalone",
+    "background_color": "#0f0f0f",
+    "theme_color": "#0057FF",
+    "orientation": "portrait",
+    "icons": [
+        {
+            "src": "images/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "images/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ]
+}

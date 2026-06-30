@@ -2,11 +2,47 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JDM Club Manager</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0057FF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="JDM Club">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+
+    <link rel="stylesheet" href="styles/install.css">
 </head>
 <body>
-    <script>
-        window.location.href = "application/pages/accueil.html";
-    </script>
+    <main class="install-page">
+        <section class="install-card">
+            <img src="images/icon-512.png" alt="Logo La Jeunesse du Marais" class="install-logo">
+
+            <h1>JDM Club Manager</h1>
+            <p class="install-subtitle">Application officielle de La Jeunesse du Marais</p>
+
+            <button id="installAndroidButton" class="install-button primary" hidden>
+                Installer sur Android
+            </button>
+
+            <button id="installIphoneButton" class="install-button primary iphone-button">
+                Installer sur iPhone
+            </button>
+
+            <a href="application/pages/accueil.html" class="install-button secondary">
+                Ouvrir l’application
+            </a>
+
+            <div id="iosInstructions" class="ios-instructions" hidden>
+                <h2>Installation sur iPhone</h2>
+                <p>Dans Safari, appuie sur le bouton <strong>Partager</strong>, puis choisis <strong>Sur l’écran d’accueil</strong>.</p>
+            </div>
+
+            <p class="install-note">Une fois installée, l’application s’ouvrira depuis l’icône sur ton téléphone.</p>
+        </section>
+    </main>
+
+    <script src="scripts/pwa.js"></script>
 </body>
 </html>

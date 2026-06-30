@@ -1,0 +1,123 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, Helvetica, sans-serif;
+    background:
+        radial-gradient(circle at top, rgba(0, 87, 255, 0.25), transparent 35%),
+        linear-gradient(160deg, #101010, #050505);
+    color: white;
+}
+
+.install-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 22px;
+}
+
+.install-card {
+    width: 100%;
+    max-width: 430px;
+    background: rgba(22, 22, 22, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    padding: 28px 22px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.install-logo {
+    width: 150px;
+    height: 150px;
+    border-radius: 32px;
+    object-fit: contain;
+    background: #0f0f0f;
+    padding: 10px;
+    margin-bottom: 16px;
+}
+
+.install-card h1 {
+    margin: 0;
+    font-size: 32px;
+    line-height: 1.1;
+}
+
+.install-subtitle {
+    margin: 12px 0 24px;
+    color: #c8c8c8;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.install-button {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 52px;
+    margin-top: 12px;
+    border-radius: 16px;
+    font-weight: bold;
+    font-size: 16px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+}
+
+.install-button.primary {
+    background: #0057ff;
+    color: white;
+}
+
+.install-button.secondary {
+    background: transparent;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.ios-instructions {
+    margin-top: 18px;
+    padding: 16px;
+    border-radius: 16px;
+    background: #222;
+    text-align: left;
+}
+
+.ios-instructions h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+}
+
+.ios-instructions p {
+    margin: 0;
+    color: #d8d8d8;
+    line-height: 1.5;
+}
+
+.install-note {
+    margin: 20px 0 0;
+    color: #9f9f9f;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+@media screen and (max-width: 600px) {
+    .install-page {
+        align-items: flex-start;
+        padding-top: 34px;
+    }
+
+    .install-logo {
+        width: 132px;
+        height: 132px;
+    }
+
+    .install-card h1 {
+        font-size: 28px;
+    }
+}
