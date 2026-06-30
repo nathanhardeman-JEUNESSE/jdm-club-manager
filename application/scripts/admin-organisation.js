@@ -39,25 +39,26 @@ boutonAjouter.addEventListener("click", () => {
     const prenom = document.getElementById("prenom").value.trim();
     const nom = document.getElementById("nom").value.trim();
     const email = document.getElementById("email").value.trim();
-    const role = document.getElementById("role").value;
+    const roles = Array.from(document.querySelectorAll('input[name="roles"]:checked'))
+    .map(role => role.value);
     const groupes = document.getElementById("groupes").value
         .split(",")
         .map(groupe => groupe.trim())
         .filter(groupe => groupe !== "");
 
-    if (!prenom || !nom || !email) {
-        alert("Merci de compléter prénom, nom et email.");
-        return;
-    }
+    if (!prenom || !nom || !email || roles.length === 0) {
+    alert("Merci de compléter prénom, nom, email et au moins un rôle.");
+    return;
+}
 
     organisation.push({
-        prenom,
-        nom,
-        email,
-        roles: [role],
-        groupes,
-        photo: "../images/logo-jdm.png"
-    });
+    prenom,
+    nom,
+    email,
+    roles: roles,
+    groupes,
+    photo: "../images/logo-jdm.png"
+});
 
     localStorage.setItem("organisationJDM", JSON.stringify(organisation));
 

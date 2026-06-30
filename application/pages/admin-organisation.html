@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organisation - JDM Club Manager</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Organisation</h1>
+    </header>
+
+    <section class="card">
+        <h2>➕ Ajouter une personne</h2>
+
+        <input class="form-input" id="prenom" placeholder="Prénom">
+        <input class="form-input" id="nom" placeholder="Nom">
+        <input class="form-input" id="email" placeholder="Email">
+
+        <h3>Rôles</h3>
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="roles" value="Admin principal">
+        Admin principal
+    </label>
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="roles" value="Président">
+        Président
+    </label>
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="roles" value="Vice-président">
+        Vice-président
+    </label>
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="roles" value="Trésorier">
+        Trésorier
+    </label>
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="roles" value="Trésorier adjoint">
+        Trésorier adjoint
+    </label>
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="roles" value="Secrétaire">
+        Secrétaire
+    </label>
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="roles" value="Secrétaire adjoint">
+        Secrétaire adjoint
+    </label>
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="roles" value="Coach">
+        Coach
+    </label>
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="roles" value="Juge">
+        Juge
+    </label>
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="roles" value="Bénévole">
+        Bénévole
+    </label>
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="roles" value="Gymnaste">
+        Gymnaste
+    </label>
+
+    <label class="checkbox-row">
+        <input type="checkbox" name="roles" value="Membre d'honneur">
+        Membre d'honneur
+    </label>
+
+        <input class="form-input" id="groupes" placeholder="Groupes encadrés, séparés par une virgule">
+
+        <button class="primary-button order-button" id="ajouter-personne">
+            Ajouter
+        </button>
+    </section>
+
+    <section id="liste-organisation"></section>
+
+</main>
+
+<script src="../scripts/admin-organisation.js"></script>
+
+</body>
+</html>
