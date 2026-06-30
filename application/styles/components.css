@@ -1027,9 +1027,9 @@
 
 
 /* ================================================= */
-/* TEST - FORMAT UNIFORME POUR TOUTES LES PAGES       */
-/* Objectif : toutes les pages gardent le format       */
-/* téléphone, même sur tablette ou PC.                 */
+/* TEST - FORMAT UNIFORME PLUS LARGE                 */
+/* Objectif : garder le style téléphone prioritaire,  */
+/* mais réduire le vide sur les côtés des pages.      */
 /* ================================================= */
 
 @media screen {
@@ -1044,10 +1044,10 @@
     }
 
     .page {
-        width: min(100% - 24px, 430px) !important;
-        max-width: 430px !important;
+        width: min(100% - 8px, 520px) !important;
+        max-width: 520px !important;
         margin: 0 auto !important;
-        padding: 12px !important;
+        padding: 8px !important;
         box-sizing: border-box !important;
     }
 
@@ -1067,21 +1067,26 @@
     }
 
     .hero {
-        height: 190px !important;
+        height: 200px !important;
     }
 
     .hero-logo {
-        width: 95px !important;
+        width: 105px !important;
+    }
+
+    .page-header {
+        gap: 14px !important;
+        margin-bottom: 20px !important;
     }
 
     .page-header h1 {
-        font-size: 30px;
+        font-size: 32px;
     }
 
     .navigation-card,
     .news-card,
     .card {
-        padding: 20px;
+        padding: 22px;
         border-radius: 14px;
     }
 
