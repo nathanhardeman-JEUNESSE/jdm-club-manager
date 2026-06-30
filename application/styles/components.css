@@ -1192,3 +1192,22 @@
         opacity: 0.2;
     }
 }
+/* ========================================================= */
+/* MON CLUB */
+/* ========================================================= */
+.club-member {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+
+.club-member-photo {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #222;
+}

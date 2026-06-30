@@ -1,32 +1,10 @@
-const membresClub = [
-    {
-        nom: "Hardeman",
-        prenom: "Nathan",
-        roles: ["Admin principal", "Vice-président", "Coach", "Gymnaste"],
-        groupes: ["Compétiteurs 16+", "Gym Adultes"],
-        photo: "../images/logo-jdm.png"
-    },
-    {
-        nom: "Durand",
-        prenom: "Xavier",
-        roles: ["Trésorier", "Vice-président", "Coach"],
-        groupes: ["Compétiteurs 11/15"],
-        photo: "../images/logo-jdm.png"
-    },
-    {
-        nom: "À compléter",
-        prenom: "Président",
-        roles: ["Président"],
-        groupes: [],
-        photo: "../images/logo-jdm.png"
-    }
-];
+const membresClub = JSON.parse(localStorage.getItem("organisationJDM")) || [];
 
 const zoneClub = document.getElementById("club-organisation");
 
 function afficherMembres(titre, filtreRole) {
     const membres = membresClub.filter(membre =>
-        membre.roles.includes(filtreRole)
+        membre.roles && membre.roles.includes(filtreRole)
     );
 
     if (membres.length === 0) return "";
@@ -37,7 +15,9 @@ function afficherMembres(titre, filtreRole) {
 
             ${membres.map(membre => `
                 <div class="club-member">
-                    <img src="${membre.photo}" alt="${membre.prenom} ${membre.nom}" class="club-member-photo">
+                    <img src="${membre.photo || "../images/logo-jdm.png"}" 
+                         alt="${membre.prenom} ${membre.nom}" 
+                         class="club-member-photo">
 
                     <div>
                         <h3>${membre.prenom} ${membre.nom}</h3>
@@ -47,7 +27,7 @@ function afficherMembres(titre, filtreRole) {
                             ${membre.roles.join(" / ")}
                         </p>
 
-                        ${membre.groupes.length > 0 ? `
+                        ${membre.groupes && membre.groupes.length > 0 ? `
                             <p>
                                 <strong>Groupes :</strong>
                                 ${membre.groupes.join(" / ")}
@@ -60,9 +40,25 @@ function afficherMembres(titre, filtreRole) {
     `;
 }
 
-zoneClub.innerHTML = `
-    ${afficherMembres("🏛 Bureau", "Président")}
-    ${afficherMembres("🤝 Vice-présidence", "Vice-président")}
-    ${afficherMembres("💰 Trésorerie", "Trésorier")}
-    ${afficherMembres("🤸 Coachs", "Coach")}
-`;
+if (membresClub.length === 0) {
+    zoneClub.innerHTML = `
+        <section class="card">
+            <h2>Organisation à compléter</h2>
+            <p>
+                Aucun membre du bureau ou coach n'a encore été ajouté.
+            </p>
+        </section>
+    `;
+} else {
+    zoneClub.innerHTML = `
+        ${afficherMembres("👑 Administration principale", "Admin principal")}
+        ${afficherMembres("🏛 Présidence", "Président")}
+        ${afficherMembres("🤝 Vice-présidence", "Vice-président")}
+        ${afficherMembres("💰 Trésorerie", "Trésorier")}
+        ${afficherMembres("📝 Secrétariat", "Secrétaire")}
+        ${afficherMembres("🤸 Coachs", "Coach")}
+        ${afficherMembres("⚖️ Juges", "Juge")}
+        ${afficherMembres("❤️ Bénévoles", "Bénévole")}
+        ${afficherMembres("🏅 Membres d'honneur", "Membre d'honneur")}
+    `;
+}
