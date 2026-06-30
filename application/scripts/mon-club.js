@@ -23,17 +23,9 @@ function afficherMembres(titre, filtreRole) {
                         <h3>${membre.prenom} ${membre.nom}</h3>
 
                         <p>
-                            <strong>Rôles :</strong>
-                            ${membre.roles.join(" / ")}
+                        ${membre.roles.join(" / ")}
                         </p>
-
-                        ${membre.groupes && membre.groupes.length > 0 ? `
-                            <p>
-                                <strong>Groupes :</strong>
-                                ${membre.groupes.join(" / ")}
-                            </p>
-                        ` : ""}
-                    </div>
+                </div>
                 </div>
             `).join("")}
         </section>
