@@ -1211,3 +1211,10 @@
     object-fit: cover;
     background: #222;
 }
+/* ========================================================= */
+/* RESEAUX Sociaux page d'acceuil */
+/* ========================================================= */
+.big-button {
+    font-size: 18px;
+    font-weight: 600;
+}
