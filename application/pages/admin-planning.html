@@ -16,26 +16,58 @@
 
     <header class="page-header">
         <a href="administration.html" class="back-button">←</a>
-        <h1>Planning</h1>
+        <h1>Planning admin</h1>
     </header>
 
     <section class="card">
         <h2>📅 Gestion du planning</h2>
-
         <p>
-            Le planning public sera généré automatiquement à partir des groupes créés dans l'administration.
+            Modifiez manuellement une séance, une annulation, des vacances ou ajoutez un événement.
         </p>
+    </section>
 
-        <p>
-            Les ajustements manuels, annulations, vacances scolaires et jours fériés seront ajoutés dans une prochaine étape.
-        </p>
+    <section class="week-selector">
+        <button class="week-button" id="semaine-precedente">←</button>
 
-        <a href="admin-groupes.html" class="primary-button order-button">
-            🤸 Gérer les groupes
-        </a>
+        <div class="week-title" id="titre-semaine">
+            Semaine
+        </div>
+
+        <button class="week-button" id="semaine-suivante">→</button>
+    </section>
+
+    <section id="planning-admin"></section>
+
+    <section class="card" id="edition-planning" style="display:none;">
+        <h2>Modifier la case</h2>
+
+        <p id="case-selectionnee"></p>
+
+        <select class="form-input" id="statut-case">
+            <option value="cours">Cours maintenu</option>
+            <option value="pas-cours">Pas de cours</option>
+            <option value="annule">Cours annulé</option>
+            <option value="evenement">Événement</option>
+        </select>
+
+        <input class="form-input" id="horaire-case" placeholder="Horaire ex : 10h00 - 12h00">
+
+        <input class="form-input" id="titre-case" placeholder="Titre ex : Fête de la gym">
+
+        <textarea class="form-input" id="message-case" placeholder="Message visible par les parents"></textarea>
+
+        <button class="primary-button order-button" id="enregistrer-case">
+            Enregistrer
+        </button>
+
+        <button class="secondary-button" id="annuler-edition">
+            Annuler
+        </button>
     </section>
 
 </main>
+
+<script src="../scripts/admin-planning.js"></script>
 
 </body>
 

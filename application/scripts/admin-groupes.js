@@ -9,6 +9,15 @@ const zoneCoachs = document.getElementById("liste-coachs-groupe");
 
 let groupeEnModification = null;
 
+const joursConfig = [
+    { jour: "Lundi", champ: "horaireLundi" },
+    { jour: "Mardi", champ: "horaireMardi" },
+    { jour: "Mercredi", champ: "horaireMercredi" },
+    { jour: "Jeudi", champ: "horaireJeudi" },
+    { jour: "Vendredi", champ: "horaireVendredi" },
+    { jour: "Samedi", champ: "horaireSamedi" }
+];
+
 const coachs = organisation.filter(personne =>
     personne.roles && personne.roles.includes("Coach")
 );
@@ -44,6 +53,31 @@ function afficherCoachs() {
     });
 }
 
+function lireHoraires() {
+    const horaires = {};
+
+    joursConfig.forEach(config => {
+        const jourCoche = document.querySelector(`input[name="joursGroupe"][value="${config.jour}"]`);
+        const champHoraire = document.querySelector(`input[name="${config.champ}"]`);
+
+        if (jourCoche && jourCoche.checked && champHoraire && champHoraire.value.trim()) {
+            horaires[config.jour.toLowerCase()] = champHoraire.value.trim();
+        }
+    });
+
+    return horaires;
+}
+
+function afficherHoraires(horaires) {
+    if (!horaires) return "Non renseignés";
+
+    const lignes = Object.entries(horaires).map(([jour, horaire]) => {
+        return `${jour.charAt(0).toUpperCase() + jour.slice(1)} : ${horaire}`;
+    });
+
+    return lignes.length > 0 ? lignes.join("<br>") : "Non renseignés";
+}
+
 function afficherGroupes() {
     if (groupes.length === 0) {
         listeGroupes.innerHTML = `
@@ -65,10 +99,9 @@ function afficherGroupes() {
                 <p><strong>Années :</strong> ${groupe.anneeMin || "Non renseigné"} à ${groupe.anneeMax || "Non renseigné"}</p>
                 <p><strong>Public :</strong> ${groupe.sexe || "Mixte"}</p>
                 <p><strong>Type :</strong> ${groupe.type || "Non renseigné"}</p>
-                <p><strong>Fédération :</strong> ${groupe.federation || "Non renseignée"}</p>
-                <p><strong>Jours :</strong> ${groupe.jours && groupe.jours.length > 0 ? groupe.jours.join(" / ") : "Non renseignés"}</p>
-                <p><strong>Horaire :</strong> ${groupe.horaire || "Non renseigné"}</p>
+                <p><strong>Fédération :</strong> ${groupe.federation || "-"}</p>
                 <p><strong>Effectif max :</strong> ${groupe.effectifMax || "Non limité"}</p>
+                <p><strong>Horaires :</strong><br>${afficherHoraires(groupe.horaires)}</p>
                 <p><strong>Coachs :</strong> ${groupe.coachs && groupe.coachs.length > 0 ? groupe.coachs.join(" / ") : "Aucun coach"}</p>
 
                 <button class="primary-button order-button" onclick="modifierGroupe(${index})">
@@ -91,10 +124,12 @@ boutonAjouter.addEventListener("click", () => {
     const sexe = document.getElementById("sexe-groupe").value;
     const type = document.getElementById("type-groupe").value;
     const federation = document.getElementById("federation-groupe").value;
-    const horaire = document.getElementById("horaire-groupe").value.trim();
 
-    const jours = Array.from(document.querySelectorAll('input[name="joursGroupe"]:checked'))
-        .map(jour => jour.value);
+    const horaires = lireHoraires();
+
+    const jours = Object.keys(horaires).map(jour =>
+        jour.charAt(0).toUpperCase() + jour.slice(1)
+    );
 
     const coachsSelectionnes = Array.from(document.querySelectorAll('input[name="coachsGroupe"]:checked'))
         .map(coach => coach.value);
@@ -115,8 +150,7 @@ boutonAjouter.addEventListener("click", () => {
         type,
         federation,
         jours,
-        horaire,
-        horaires: groupeEnModification !== null ? groupes[groupeEnModification].horaires || [] : []
+        horaires
     };
 
     if (groupeEnModification !== null) {
@@ -142,19 +176,25 @@ function modifierGroupe(index) {
     document.getElementById("annee-min").value = groupe.anneeMin || "";
     document.getElementById("annee-max").value = groupe.anneeMax || "";
     document.getElementById("effectif-max").value = groupe.effectifMax || "";
-    
+    document.getElementById("sexe-groupe").value = groupe.sexe || "Mixte";
+    document.getElementById("type-groupe").value = groupe.type || "Loisir";
+    document.getElementById("federation-groupe").value = groupe.federation || "Libre";
 
     document.querySelectorAll('input[name="coachsGroupe"]').forEach((checkbox) => {
         checkbox.checked = groupe.coachs && groupe.coachs.includes(checkbox.value);
     });
 
-    document.getElementById("sexe-groupe").value = groupe.sexe || "Mixte";
-    document.getElementById("type-groupe").value = groupe.type || "Loisir";
-    document.getElementById("federation-groupe").value = groupe.federation || "Libre";
-    document.getElementById("horaire-groupe").value = groupe.horaire || "";
-
     document.querySelectorAll('input[name="joursGroupe"]').forEach((checkbox) => {
         checkbox.checked = groupe.jours && groupe.jours.includes(checkbox.value);
+    });
+
+    joursConfig.forEach(config => {
+        const champHoraire = document.querySelector(`input[name="${config.champ}"]`);
+        const cle = config.jour.toLowerCase();
+
+        if (champHoraire) {
+            champHoraire.value = groupe.horaires && groupe.horaires[cle] ? groupe.horaires[cle] : "";
+        }
     });
 
     boutonAjouter.textContent = "Enregistrer les modifications";
@@ -183,17 +223,22 @@ function viderFormulaire() {
     document.getElementById("sexe-groupe").value = "Mixte";
     document.getElementById("type-groupe").value = "Loisir";
     document.getElementById("federation-groupe").value = "FFG";
-    document.getElementById("horaire-groupe").value = "";
 
     document.querySelectorAll('input[name="joursGroupe"]').forEach((checkbox) => {
         checkbox.checked = false;
+    });
+
+    joursConfig.forEach(config => {
+        const champHoraire = document.querySelector(`input[name="${config.champ}"]`);
+        if (champHoraire) {
+            champHoraire.value = "";
+        }
     });
 
     document.querySelectorAll('input[name="coachsGroupe"]').forEach((checkbox) => {
         checkbox.checked = false;
     });
 }
-
 
 afficherCoachs();
 afficherGroupes();
