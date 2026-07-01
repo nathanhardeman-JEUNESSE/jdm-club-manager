@@ -103,17 +103,15 @@ function afficherPlanning() {
                         const statut = exception ? exception.statut : "cours";
                         const horaire = exception ? exception.horaire : horaireHabituel;
                         const titre = exception && exception.titre ? exception.titre : "";
-                        const pointInfo = exception && exception.message
-                        ?`<span class="planning-info-dot"></span>`
-                          : "";
+                        const infoClass = exception && exception.message ? " has-info" : "";
                         const messageInfo = exception && exception.message ? exception.message : "";
 
                         return `
                             <div>
                                 ${jour.label}
-                                <span class="slot ${classeStatut(statut, horaire)}"
+                                <span class="slot ${classeStatut(statut, horaire)}${infoClass}"
                                 onclick="afficherMessage('${messageInfo.replace(/'/g, "\\'")}')">
-                                ${horaire || "-"}${pointInfo}
+                                ${horaire || "-"}
                                 </span>
                             </div>
                         `;
