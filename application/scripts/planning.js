@@ -91,6 +91,11 @@ function afficherPlanning() {
                     <p>${groupe.sexe || "Mixte"} · ${groupe.type || "Loisir"} · ${groupe.federation || "-"}</p>
                     <p><strong>Années :</strong> ${groupe.anneeMin || "?"} à ${groupe.anneeMax || "?"}</p>
                     <p><strong>Coach(s) :</strong> ${groupe.coachs && groupe.coachs.length > 0 ? groupe.coachs.join(" / ") : "Non renseigné"}</p>
+                    ${groupe.whatsapp ? `
+    <a href="${groupe.whatsapp}" class="primary-button order-button" target="_blank" rel="noopener noreferrer">
+        💬 Groupe WhatsApp
+    </a>
+` : ""}
                 </div>
 
                 <div class="week-grid">

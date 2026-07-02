@@ -103,6 +103,7 @@ function afficherGroupes() {
                 <p><strong>Effectif max :</strong> ${groupe.effectifMax || "Non limité"}</p>
                 <p><strong>Horaires :</strong><br>${afficherHoraires(groupe.horaires)}</p>
                 <p><strong>Coachs :</strong> ${groupe.coachs && groupe.coachs.length > 0 ? groupe.coachs.join(" / ") : "Aucun coach"}</p>
+                <p><strong>WhatsApp :</strong> ${groupe.whatsapp ? "Lien renseigné" : "Non renseigné"}</p>
 
                 <button class="primary-button order-button" onclick="modifierGroupe(${index})">
                     Modifier
@@ -124,6 +125,7 @@ boutonAjouter.addEventListener("click", () => {
     const sexe = document.getElementById("sexe-groupe").value;
     const type = document.getElementById("type-groupe").value;
     const federation = document.getElementById("federation-groupe").value;
+    const whatsapp = document.getElementById("whatsapp-groupe").value.trim();
 
     const horaires = lireHoraires();
 
@@ -150,7 +152,8 @@ boutonAjouter.addEventListener("click", () => {
         type,
         federation,
         jours,
-        horaires
+        horaires,
+        whatsapp
     };
 
     if (groupeEnModification !== null) {
@@ -179,6 +182,7 @@ function modifierGroupe(index) {
     document.getElementById("sexe-groupe").value = groupe.sexe || "Mixte";
     document.getElementById("type-groupe").value = groupe.type || "Loisir";
     document.getElementById("federation-groupe").value = groupe.federation || "Libre";
+    document.getElementById("whatsapp-groupe").value = groupe.whatsapp || "";
 
     document.querySelectorAll('input[name="coachsGroupe"]').forEach((checkbox) => {
         checkbox.checked = groupe.coachs && groupe.coachs.includes(checkbox.value);
@@ -219,6 +223,7 @@ function viderFormulaire() {
     document.getElementById("annee-min").value = "";
     document.getElementById("annee-max").value = "";
     document.getElementById("effectif-max").value = "";
+    document.getElementById("whatsapp-groupe").value = "";
 
     document.getElementById("sexe-groupe").value = "Mixte";
     document.getElementById("type-groupe").value = "Loisir";
@@ -230,6 +235,7 @@ function viderFormulaire() {
 
     joursConfig.forEach(config => {
         const champHoraire = document.querySelector(`input[name="${config.champ}"]`);
+
         if (champHoraire) {
             champHoraire.value = "";
         }
