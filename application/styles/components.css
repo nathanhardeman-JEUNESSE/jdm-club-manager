@@ -1251,3 +1251,111 @@
     animation: planningCaseInfoPulse 1.8s ease-in-out infinite;
     box-shadow: 0 0 12px rgba(255, 152, 0, 0.8);
 }
+
+/* ================================================= */
+/* FICHE ADHÉRENT PDF */
+/* ================================================= */
+
+.fiche-a4 {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 20px auto;
+    padding: 10mm;
+    background: white;
+    color: black;
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+.fiche-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8mm;
+}
+
+.photo-identite {
+    width: 38mm;
+    height: 48mm;
+    border: 2px solid black;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 10px;
+    padding-bottom: 4px;
+}
+
+.fiche-title {
+    text-align: center;
+}
+
+.fiche-title h1 {
+    font-size: 34px;
+    margin: 0;
+    font-weight: 900;
+}
+
+.fiche-title h2 {
+    margin: 6px 0 0 0;
+    font-size: 18px;
+}
+
+.fiche-title p {
+    margin: 4px 0 0 0;
+}
+
+.fiche-logo {
+    width: 42mm;
+}
+
+.fiche-section {
+    border: 1px solid #111;
+    margin-bottom: 5mm;
+    padding: 0 4mm 3mm 4mm;
+}
+
+.fiche-section h3 {
+    background: #111;
+    color: white;
+    margin: 0 -4mm 3mm -4mm;
+    padding: 2mm 4mm;
+    font-size: 13px;
+}
+
+.fiche-section p {
+    margin: 2mm 0;
+    font-size: 12px;
+}
+
+.decoupe {
+    margin: 6mm 0 4mm 0;
+    text-align: center;
+    font-weight: bold;
+    font-size: 11px;
+}
+
+.fiche-carte-frame {
+    width: 100%;
+    height: 65mm;
+    border: none;
+    overflow: hidden;
+}
+
+@media print {
+    body {
+        background: white !important;
+    }
+
+    .print-button {
+        display: none !important;
+    }
+
+    .fiche-a4 {
+    width: 210mm;
+    height: 297mm;
+    margin: 0 auto;
+    padding: 6mm;
+    overflow: hidden;
+    }
+}

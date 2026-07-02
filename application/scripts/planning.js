@@ -18,6 +18,12 @@ const jours = [
     { cle: "dimanche", label: "Dim" }
 ];
 
+const fermeturesAutoJDM = {
+    joursFeries: {},
+    vacances: [],
+    anneesChargees: []
+};
+
 function debutSemaine(date) {
     const copie = new Date(date);
     const jour = copie.getDay();
@@ -35,7 +41,10 @@ function dateJour(index) {
 }
 
 function formatDateISO(date) {
-    return date.toISOString().split("T")[0];
+    const annee = date.getFullYear();
+    const mois = String(date.getMonth() + 1).padStart(2, "0");
+    const jour = String(date.getDate()).padStart(2, "0");
+    return `${annee}-${mois}-${jour}`;
 }
 
 function formatDateFR(date) {
@@ -68,8 +77,124 @@ function classeStatut(statut, horaire) {
     return "off";
 }
 
-function afficherPlanning() {
+function chargerCacheFermetures() {
+    const cache = JSON.parse(localStorage.getItem("fermeturesAutoJDM")) || null;
+
+    if (!cache) return;
+
+    fermeturesAutoJDM.joursFeries = cache.joursFeries || {};
+    fermeturesAutoJDM.vacances = cache.vacances || [];
+    fermeturesAutoJDM.anneesChargees = cache.anneesChargees || [];
+}
+
+function sauverCacheFermetures() {
+    localStorage.setItem("fermeturesAutoJDM", JSON.stringify({
+        joursFeries: fermeturesAutoJDM.joursFeries,
+        vacances: fermeturesAutoJDM.vacances,
+        anneesChargees: fermeturesAutoJDM.anneesChargees
+    }));
+}
+
+async function chargerFermeturesAnnee(annee) {
+    if (fermeturesAutoJDM.anneesChargees.includes(annee)) return;
+
+    try {
+        const joursFeriesUrl = `https://calendrier.api.gouv.fr/jours-feries/metropole/${annee}.json`;
+
+        const vacancesUrl =
+            "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-calendrier-scolaire/records" +
+            `?limit=100` +
+            `&where=start_date%20%3E%3D%20%22${annee}-01-01%22%20AND%20start_date%20%3C%3D%20%22${annee + 1}-12-31%22` +
+            `&refine=zones%3A%22Zone%20B%22`;
+
+        const [joursFeriesReponse, vacancesReponse] = await Promise.all([
+            fetch(joursFeriesUrl),
+            fetch(vacancesUrl)
+        ]);
+
+        if (joursFeriesReponse.ok) {
+            const joursFeries = await joursFeriesReponse.json();
+            Object.assign(fermeturesAutoJDM.joursFeries, joursFeries);
+        }
+
+        if (vacancesReponse.ok) {
+            const vacancesData = await vacancesReponse.json();
+
+            const vacances = (vacancesData.results || [])
+                .filter(v => v.start_date && v.end_date)
+                .map(v => ({
+                    debut: v.start_date.split("T")[0],
+                    fin: v.end_date.split("T")[0],
+                    nom: v.description || "Vacances scolaires"
+                }));
+
+            vacances.forEach(vacance => {
+                const existeDeja = fermeturesAutoJDM.vacances.some(v =>
+                    v.debut === vacance.debut &&
+                    v.fin === vacance.fin &&
+                    v.nom === vacance.nom
+                );
+
+                if (!existeDeja) {
+                    fermeturesAutoJDM.vacances.push(vacance);
+                }
+            });
+        }
+
+        fermeturesAutoJDM.anneesChargees.push(annee);
+        sauverCacheFermetures();
+
+    } catch (erreur) {
+        console.warn("Impossible de charger les fermetures automatiques :", erreur);
+    }
+}
+
+async function chargerFermeturesSemaine() {
+    chargerCacheFermetures();
+
+    const debut = debutSemaine(dateReference);
+    const fin = new Date(debut);
+    fin.setDate(debut.getDate() + 6);
+
+    const annees = [...new Set([
+        debut.getFullYear() - 1,
+        debut.getFullYear(),
+        fin.getFullYear(),
+        fin.getFullYear() + 1
+    ])];
+
+    await Promise.all(annees.map(annee => chargerFermeturesAnnee(annee)));
+}
+
+function trouverFermetureAutomatique(dateISO) {
+    if (fermeturesAutoJDM.joursFeries[dateISO]) {
+        return {
+            statut: "pas-cours",
+            horaire: "",
+            titre: fermeturesAutoJDM.joursFeries[dateISO],
+            message: `Pas de cours : ${fermeturesAutoJDM.joursFeries[dateISO]}`
+        };
+    }
+
+    const vacances = fermeturesAutoJDM.vacances.find(v =>
+        dateISO >= v.debut && dateISO < v.fin
+    );
+
+    if (vacances) {
+        return {
+            statut: "pas-cours",
+            horaire: "",
+            titre: vacances.nom,
+            message: `Pas de cours : ${vacances.nom}`
+        };
+    }
+
+    return null;
+}
+
+async function afficherPlanning() {
     mettreAJourTitreSemaine();
+    await chargerFermeturesSemaine();
 
     if (groupes.length === 0) {
         zonePlanning.innerHTML = `
@@ -92,17 +217,20 @@ function afficherPlanning() {
                     <p><strong>Années :</strong> ${groupe.anneeMin || "?"} à ${groupe.anneeMax || "?"}</p>
                     <p><strong>Coach(s) :</strong> ${groupe.coachs && groupe.coachs.length > 0 ? groupe.coachs.join(" / ") : "Non renseigné"}</p>
                     ${groupe.whatsapp ? `
-    <a href="${groupe.whatsapp}" class="primary-button order-button" target="_blank" rel="noopener noreferrer">
-        💬 Groupe WhatsApp
-    </a>
-` : ""}
+                        <a href="${groupe.whatsapp}" class="primary-button order-button" target="_blank" rel="noopener noreferrer">
+                            💬 Groupe WhatsApp
+                        </a>
+                    ` : ""}
                 </div>
 
                 <div class="week-grid">
                     ${jours.map((jour, index) => {
                         const date = dateJour(index);
                         const dateISO = formatDateISO(date);
-                        const exception = trouverException(groupe.id, dateISO);
+
+                        const exceptionManuelle = trouverException(groupe.id, dateISO);
+                        const exceptionAuto = trouverFermetureAutomatique(dateISO);
+                        const exception = exceptionManuelle || exceptionAuto;
 
                         const horaireHabituel = groupe.horaires ? groupe.horaires[jour.cle] : "";
                         const statut = exception ? exception.statut : "cours";
@@ -115,8 +243,9 @@ function afficherPlanning() {
                             <div>
                                 ${jour.label}
                                 <span class="slot ${classeStatut(statut, horaire)}${infoClass}"
-                                onclick="afficherMessage('${messageInfo.replace(/'/g, "\\'")}')">
-                                ${horaire || "-"}
+                                      title="${titre}"
+                                      onclick="afficherMessage('${messageInfo.replace(/'/g, "\\'")}')">
+                                    ${horaire || "-"}
                                 </span>
                             </div>
                         `;

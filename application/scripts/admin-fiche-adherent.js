@@ -100,8 +100,9 @@ if (!adherent) {
         <strong>${adherent.numeroAdherent}</strong>
     </p>
 
-        <button class="primary-button order-button" onclick="window.open('carte-adherent.html?id=${adherent.numeroAdherent}', '_blank')">
-        🪪 Générer la carte
+    <button class="primary-button order-button" onclick="window.open('fiche-adherent-complete.html?id=${adherent.numeroAdherent}', '_blank')">
+        📄 Générer la fiche adhérent
     </button>
-    `;
+</section>
+`;
 }
