@@ -1061,7 +1061,7 @@
     }
 }
 
-
+/* ================================================= */
 /* CARTE ADHÉRENT - IMPRESSION A4 PAYSAGE */
 /* ================================================= */
 
@@ -1240,4 +1240,14 @@
     100% {
         filter: none;
     }
+}
+
+
+
+/* ============================= */
+/* légende bouton orange brillant planning */
+/* ============================= */
+.dot.has-info {
+    animation: planningCaseInfoPulse 1.8s ease-in-out infinite;
+    box-shadow: 0 0 12px rgba(255, 152, 0, 0.8);
 }
