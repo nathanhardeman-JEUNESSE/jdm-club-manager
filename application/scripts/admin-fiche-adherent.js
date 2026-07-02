@@ -86,23 +86,33 @@ if (!adherent) {
             `).join("")}
         </section>
 
-        <section class="card">
+                <section class="card">
             <h2>📄 Documents</h2>
             <p><strong>Certificat médical :</strong> ${champ(donnees, ["certificat", "medical"])}</p>
             <p><strong>Photo licence :</strong> ${champ(donnees, ["photo", "licence"])}</p>
             <p><strong>Justificatif domicile :</strong> ${champ(donnees, ["justificatif", "domicile"])}</p>
         </section>
-        <section class="card">
-    <h2>🪪 Carte adhérent</h2>
 
-    <p>
-        Carte membre liée au numéro permanent :
-        <strong>${adherent.numeroAdherent}</strong>
-    </p>
+        <a href="fiche-adherent-complete.html?id=${adherent.numeroAdherent}" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">📄</div>
+                <div class="navigation-content">
+                    <h2>Fiche adhérent</h2>
+                    <p>Générer la fiche administrative complète de l'adhérent.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
 
-    <button class="primary-button order-button" onclick="window.open('fiche-adherent-complete.html?id=${adherent.numeroAdherent}', '_blank')">
-        📄 Générer la fiche adhérent
-    </button>
-</section>
-`;
+        <a href="carte-adherent.html?id=${adherent.numeroAdherent}" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">🪪</div>
+                <div class="navigation-content">
+                    <h2>Carte adhérent</h2>
+                    <p>Générer la carte membre individuelle.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+    `;
 }

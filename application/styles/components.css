@@ -1079,13 +1079,14 @@
     }
 
     .print-button {
-        display: none;
+        display: none !important;
     }
 
     .card-print-page {
-        padding: 0;
+        padding: 5mm 0 0 0; /* marge haute impression */
         background: white !important;
         min-height: auto;
+        box-sizing: border-box;
     }
 
     .fold-card {
@@ -1105,9 +1106,6 @@
     .fold-line {
         width: 0.5mm;
     }
-
-
-    /* ---------- RECTO IMPRESSION ---------- */
 
     .card-content {
         padding: 6mm;
@@ -1142,9 +1140,6 @@
         margin-top: 1mm;
     }
 
-
-    /* ---------- VERSO IMPRESSION ---------- */
-
     .back-info {
         font-weight: bold;
         padding: 6mm;
@@ -1175,9 +1170,6 @@
         padding: 0.8mm;
     }
 
-
-    /* ---------- LOGOS IMPRESSION ---------- */
-
     .card-watermark {
         width: 60mm;
         right: 1mm;
@@ -1192,9 +1184,12 @@
         opacity: 0.2;
     }
 }
+
+
 /* ========================================================= */
 /* MON CLUB */
 /* ========================================================= */
+
 .club-member {
     display: flex;
     gap: 16px;
@@ -1211,18 +1206,28 @@
     object-fit: cover;
     background: #222;
 }
+
+
 /* ========================================================= */
-/* RESEAUX Sociaux page d'acceuil */
+/* RESEAUX SOCIAUX PAGE D'ACCUEIL */
 /* ========================================================= */
+
 .big-button {
     font-size: 18px;
     font-weight: 600;
 }
+
+
 /* ============================= */
 /* PLANNING - CASE AVEC INFO */
 /* ============================= */
 
 .slot.has-info {
+    animation: planningCaseInfoPulse 1.8s ease-in-out infinite;
+    box-shadow: 0 0 12px rgba(255, 152, 0, 0.8);
+}
+
+.dot.has-info {
     animation: planningCaseInfoPulse 1.8s ease-in-out infinite;
     box-shadow: 0 0 12px rgba(255, 152, 0, 0.8);
 }
@@ -1242,120 +1247,182 @@
     }
 }
 
-
-
-/* ============================= */
-/* légende bouton orange brillant planning */
-/* ============================= */
-.dot.has-info {
-    animation: planningCaseInfoPulse 1.8s ease-in-out infinite;
-    box-shadow: 0 0 12px rgba(255, 152, 0, 0.8);
-}
-
 /* ================================================= */
-/* FICHE ADHÉRENT PDF */
+/* FICHE ADHÉRENT PDF - FORMULAIRE A4 */
 /* ================================================= */
 
-.fiche-a4 {
-    width: 210mm;
-    min-height: 297mm;
-    margin: 20px auto;
-    padding: 10mm;
-    background: white;
-    color: black;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-}
-
-.fiche-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8mm;
-}
-
-.photo-identite {
-    width: 38mm;
-    height: 48mm;
-    border: 2px solid black;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 10px;
-    padding-bottom: 4px;
-}
-
-.fiche-title {
-    text-align: center;
-}
-
-.fiche-title h1 {
-    font-size: 34px;
+.fiche-body {
     margin: 0;
-    font-weight: 900;
+    background: #ddd;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
-.fiche-title h2 {
-    margin: 6px 0 0 0;
-    font-size: 18px;
-}
-
-.fiche-title p {
-    margin: 4px 0 0 0;
-}
-
-.fiche-logo {
-    width: 42mm;
-}
-
-.fiche-section {
-    border: 1px solid #111;
-    margin-bottom: 5mm;
-    padding: 0 4mm 3mm 4mm;
-}
-
-.fiche-section h3 {
-    background: #111;
-    color: white;
-    margin: 0 -4mm 3mm -4mm;
-    padding: 2mm 4mm;
-    font-size: 13px;
-}
-
-.fiche-section p {
-    margin: 2mm 0;
-    font-size: 12px;
-}
-
-.decoupe {
-    margin: 6mm 0 4mm 0;
-    text-align: center;
-    font-weight: bold;
-    font-size: 11px;
-}
-
-.fiche-carte-frame {
-    width: 100%;
-    height: 65mm;
-    border: none;
-    overflow: hidden;
-}
-
-@media print {
-    body {
-        background: white !important;
-    }
-
-    .print-button {
-        display: none !important;
-    }
-
-    .fiche-a4 {
+.fiche-pdf-page {
     width: 210mm;
     height: 297mm;
     margin: 0 auto;
-    padding: 6mm;
+    padding: 8mm;
+    background: white;
+    color: black;
+    box-sizing: border-box;
     overflow: hidden;
+}
+
+.fiche-pdf-header {
+    display: grid;
+    grid-template-columns: 34mm 1fr 42mm;
+    align-items: center;
+    gap: 8mm;
+    margin-bottom: 5mm;
+}
+
+.fiche-photo-box {
+    height: 42mm;
+    border: 1.5px solid black;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    text-align: center;
+}
+
+.fiche-photo-icon {
+    font-size: 30px;
+    color: #bbb;
+    margin-top: 7mm;
+}
+
+.fiche-photo-label {
+    background: black;
+    color: white;
+    font-size: 8px;
+    font-weight: bold;
+    padding: 2mm 0;
+}
+
+.fiche-pdf-title {
+    text-align: center;
+}
+
+.fiche-pdf-title h1 {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.fiche-pdf-title h2 {
+    margin: 3mm 0 0 0;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.fiche-pdf-title p {
+    margin: 1mm 0 0 0;
+    font-size: 11px;
+}
+
+.fiche-pdf-logo {
+    width: 38mm;
+}
+
+.fiche-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4mm;
+}
+
+.fiche-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3mm;
+}
+
+.fiche-block {
+    border: 1px solid #222;
+    margin-bottom: 3mm;
+    font-size: 10px;
+}
+
+.fiche-block h3 {
+    margin: 0;
+    background: black;
+    color: white;
+    font-size: 10px;
+    padding: 1.5mm 2mm;
+    text-transform: uppercase;
+}
+
+.fiche-block p {
+    margin: 0;
+    padding: 1.5mm 2mm;
+    border-bottom: 1px solid #ddd;
+    min-height: 5mm;
+}
+
+.fiche-block p:last-child {
+    border-bottom: none;
+}
+
+.fiche-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9px;
+}
+
+.fiche-table th,
+.fiche-table td {
+    border: 1px solid #ddd;
+    padding: 1.5mm;
+    text-align: center;
+}
+
+.fiche-table th {
+    font-weight: 900;
+}
+
+.fiche-signature {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4mm;
+    font-size: 11px;
+}
+
+.print-button-fiche {
+    display: block;
+    width: 210mm;
+    margin: 10px auto;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: #0057ff;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+@page {
+    size: A4 portrait;
+    margin: 0;
+}
+
+@media print {
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        background: white !important;
+    }
+
+    .print-button-fiche {
+        display: none !important;
+    }
+
+    .fiche-pdf-page {
+        margin: 0;
+        width: 210mm;
+        height: 297mm;
+        padding: 8mm;
+        box-shadow: none;
+        page-break-after: avoid;
     }
 }

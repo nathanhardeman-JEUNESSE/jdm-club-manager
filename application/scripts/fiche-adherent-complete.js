@@ -26,88 +26,137 @@ function champ(donnees, mots) {
     return cle ? donnees[cle] : "";
 }
 
+function valeur(texte) {
+    return texte || "";
+}
+
 if (!adherent) {
     fiche.innerHTML = `<h1>Adhérent introuvable</h1>`;
 } else {
     fiche.innerHTML = `
-        <section class="fiche-a4">
+        <section class="fiche-pdf-page">
 
-            <header class="fiche-header">
-                <div class="photo-identite">PHOTO<br>D'IDENTITÉ</div>
+            <header class="fiche-pdf-header">
+                <div class="fiche-photo-box">
+                    <div class="fiche-photo-icon">👤</div>
+                    <div class="fiche-photo-label">PHOTO D'IDENTITÉ</div>
+                </div>
 
-                <div class="fiche-title">
+                <div class="fiche-pdf-title">
                     <h1>FICHE ADHÉRENT</h1>
                     <h2>LA JEUNESSE DU MARAIS</h2>
                     <p>CLUB DE GYMNASTIQUE - LOMME</p>
                 </div>
 
-                <img src="../images/logo-jdm.png" class="fiche-logo">
+                <img src="../images/logo-j-noir.png" class="fiche-pdf-logo">
             </header>
 
-            <section class="fiche-section">
-                <h3>IDENTITÉ</h3>
-                <p><strong>Nom :</strong> ${adherent.nom || ""}</p>
-                <p><strong>Prénom :</strong> ${adherent.prenom || ""}</p>
-                <p><strong>Date de naissance :</strong> ${adherent.dateNaissance || ""}</p>
-                <p><strong>N° adhérent :</strong> ${adherent.numeroAdherent || ""}</p>
-            </section>
+            <div class="fiche-grid-2">
+                <section class="fiche-block">
+                    <h3>IDENTITÉ</h3>
+                    <p><strong>Nom :</strong> ${valeur(adherent.nom)}</p>
+                    <p><strong>Prénom :</strong> ${valeur(adherent.prenom)}</p>
+                    <p><strong>Date de naissance :</strong> ${valeur(adherent.dateNaissance)}</p>
+                    <p><strong>N° adhérent :</strong> ${valeur(adherent.numeroAdherent)}</p>
+                </section>
 
-            <section class="fiche-section">
-                <h3>INSCRIPTION</h3>
-                <p><strong>Saison :</strong> ${derniereInscription ? derniereInscription.saison : ""}</p>
-                <p><strong>Groupe / formule :</strong> ${champ(donnees, ["tarif"])}</p>
-                <p><strong>Statut paiement :</strong> ${champ(donnees, ["statut", "commande"])}</p>
-                <p><strong>Moyen de paiement :</strong> ${champ(donnees, ["moyen", "paiement"])}</p>
-            </section>
-
-            <section class="fiche-section">
-                <h3>RESPONSABLES LÉGAUX</h3>
-                <p><strong>Parent 1 :</strong> ${champ(donnees, ["parent", "1"])}</p>
-                <p><strong>Parent 2 :</strong> ${champ(donnees, ["parent", "2"])}</p>
-                <p><strong>Email :</strong> ${champ(donnees, ["email"])}</p>
-            </section>
-
-            <section class="fiche-section">
-                <h3>URGENCE</h3>
-                <p><strong>Personne à contacter :</strong> ${champ(donnees, ["personne", "urgence"])}</p>
-                <p><strong>Téléphone :</strong> ${champ(donnees, ["telephone", "urgence"])}</p>
-            </section>
-
-            <section class="fiche-section">
-                <h3>COORDONNÉES</h3>
-                <p><strong>Adresse :</strong> ${champ(donnees, ["adresse"])}</p>
-                <p><strong>Code postal :</strong> ${champ(donnees, ["code", "postal"])}</p>
-                <p><strong>Ville :</strong> ${champ(donnees, ["ville"])}</p>
-            </section>
-
-            <section class="fiche-section">
-                <h3>AUTORISATIONS / DOCUMENTS</h3>
-                <p><strong>Droit à l'image :</strong> ${champ(donnees, ["droit", "image"])}</p>
-                <p><strong>Certificat médical :</strong> ${champ(donnees, ["certificat", "medical"])}</p>
-                <p><strong>Photo licence :</strong> ${champ(donnees, ["photo", "licence"])}</p>
-                <p><strong>Justificatif domicile :</strong> ${champ(donnees, ["justificatif", "domicile"])}</p>
-            </section>
-
-            <section class="fiche-section">
-                <h3>HISTORIQUE</h3>
-                ${historique.length === 0 ? `
-                    <p>Aucune inscription trouvée.</p>
-                ` : historique.map(inscription => `
-                    <p>
-                        <strong>${inscription.saison}</strong> —
-                        ${champ(inscription.donneesHelloAsso || {}, ["tarif"])}
-                    </p>
-                `).join("")}
-            </section>
-
-            <div class="decoupe">
-                ✂ ------------------------------------------------ PARTIE À DÉCOUPER : CARTE ADHÉRENT ------------------------------------------------
+                <section class="fiche-block">
+                    <h3>INSCRIPTION</h3>
+                    <p><strong>Saison :</strong> ${derniereInscription ? derniereInscription.saison : ""}</p>
+                    <p><strong>Groupe / formule :</strong> ${champ(donnees, ["tarif"])}</p>
+                    <p><strong>Statut paiement :</strong> ${champ(donnees, ["statut", "commande"])}</p>
+                    <p><strong>Moyen de paiement :</strong> ${champ(donnees, ["moyen", "paiement"])}</p>
+                </section>
             </div>
 
-            <iframe
-                src="carte-adherent.html?id=${encodeURIComponent(adherent.numeroAdherent)}"
-                class="fiche-carte-frame">
-            </iframe>
+            <div class="fiche-grid-2">
+                <section class="fiche-block">
+                    <h3>RESPONSABLE LÉGAL 1</h3>
+                    <p><strong>Nom / prénom :</strong> ${champ(donnees, ["parent", "1"])}</p>
+                    <p><strong>Téléphone :</strong> ${champ(donnees, ["telephone", "parent", "1"])}</p>
+                    <p><strong>Email :</strong> ${champ(donnees, ["email", "adherent"])}</p>
+                </section>
+
+                <section class="fiche-block">
+                    <h3>RESPONSABLE LÉGAL 2</h3>
+                    <p><strong>Nom / prénom :</strong> ${champ(donnees, ["parent", "2"])}</p>
+                    <p><strong>Téléphone :</strong> ${champ(donnees, ["telephone", "parent", "2"])}</p>
+                    <p><strong>Email :</strong> ${champ(donnees, ["email", "parent", "2"])}</p>
+                </section>
+            </div>
+
+            <div class="fiche-grid-2">
+                <section class="fiche-block">
+                    <h3>URGENCE</h3>
+                    <p><strong>Personne à contacter :</strong> ${champ(donnees, ["personne", "urgence"])}</p>
+                    <p><strong>Téléphone :</strong> ${champ(donnees, ["telephone", "urgence"])}</p>
+                </section>
+
+                <section class="fiche-block">
+                    <h3>DROIT À L'IMAGE</h3>
+                    <p>${champ(donnees, ["droit", "image"]) || "Non renseigné"}</p>
+                </section>
+            </div>
+
+            <section class="fiche-block">
+                <h3>COORDONNÉES</h3>
+                <div class="fiche-grid-2">
+                    <p><strong>Adresse :</strong> ${champ(donnees, ["adresse"])}</p>
+                    <p><strong>Contact mail :</strong> ${champ(donnees, ["email"])}</p>
+                    <p><strong>Code postal :</strong> ${champ(donnees, ["code", "postal"])}</p>
+                    <p><strong>Ville :</strong> ${champ(donnees, ["ville"])}</p>
+                </div>
+            </section>
+
+            <section class="fiche-block">
+                <h3>INFORMATIONS SPORTIVES</h3>
+                <div class="fiche-grid-3">
+                    <p><strong>Compétition :</strong> ${champ(donnees, ["competition"])}</p>
+                    <p><strong>Groupe / catégorie :</strong> ${champ(donnees, ["tarif"])}</p>
+                    <p><strong>Fédération :</strong> ${champ(donnees, ["federation"])}</p>
+                </div>
+            </section>
+
+            <section class="fiche-block">
+                <h3>DOCUMENTS FOURNIS</h3>
+                <div class="fiche-grid-3">
+                    <p><strong>Certificat médical :</strong> ${champ(donnees, ["certificat", "medical"])}</p>
+                    <p><strong>Photo licence :</strong> ${champ(donnees, ["photo", "licence"])}</p>
+                    <p><strong>Justificatif domicile :</strong> ${champ(donnees, ["justificatif", "domicile"])}</p>
+                </div>
+            </section>
+
+            <section class="fiche-block">
+                <h3>HISTORIQUE DES INSCRIPTIONS</h3>
+
+                <table class="fiche-table">
+                    <thead>
+                        <tr>
+                            <th>Saison</th>
+                            <th>Groupe / catégorie</th>
+                            <th>Statut paiement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${historique.length === 0 ? `
+                            <tr>
+                                <td colspan="3">Aucune inscription trouvée.</td>
+                            </tr>
+                        ` : historique.map(inscription => `
+                            <tr>
+                                <td>${inscription.saison || ""}</td>
+                                <td>${champ(inscription.donneesHelloAsso || {}, ["tarif"])}</td>
+                                <td>${champ(inscription.donneesHelloAsso || {}, ["statut", "commande"])}</td>
+                            </tr>
+                        `).join("")}
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="fiche-signature">
+                <p><strong>Date :</strong> ____ / ____ / ______</p>
+                <p><strong>Signature :</strong> ______________________________</p>
+            </section>
 
         </section>
     `;
