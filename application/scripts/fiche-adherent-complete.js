@@ -48,7 +48,7 @@ if (!adherent) {
                     <p>CLUB DE GYMNASTIQUE - LOMME</p>
                 </div>
 
-                <img src="../images/logo-j-noir.png" class="fiche-pdf-logo">
+                <img src="../images/logo-jdm-noir.png" class="fiche-pdf-logo">
             </header>
 
             <div class="fiche-grid-2">
