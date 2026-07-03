@@ -15,37 +15,76 @@ function creerDonneesDemo() {
     const adherentsDemo = [
         {
             numeroAdherent: "JDM-000001",
-            cle: "hardeman-nathan-01/01/1990",
             nom: "Hardeman",
             prenom: "Nathan",
             dateNaissance: "01/01/1990",
+            groupe: "Gym loisir adulte coach",
             demo: true
         },
         {
             numeroAdherent: "JDM-000002",
-            cle: "martin-lucas-12/04/2013",
-            nom: "Martin",
+            nom: "Dupont",
             prenom: "Lucas",
-            dateNaissance: "12/04/2013",
+            dateNaissance: "15/04/2016",
+            groupe: "École de Gym 8/10 ans",
             demo: true
         },
         {
             numeroAdherent: "JDM-000003",
-            cle: "dupont-emma-08/09/2020",
-            nom: "Dupont",
+            nom: "Martin",
             prenom: "Emma",
-            dateNaissance: "08/09/2020",
+            dateNaissance: "10/08/2020",
+            groupe: "Initiation gymnique 5/6 ans",
+            demo: true
+        },
+        {
+            numeroAdherent: "JDM-000004",
+            nom: "Petit",
+            prenom: "Léo",
+            dateNaissance: "22/02/2023",
+            groupe: "Baby Gym 2/3 ans",
+            demo: true
+        },
+        {
+            numeroAdherent: "JDM-000005",
+            nom: "Durand",
+            prenom: "Camille",
+            dateNaissance: "05/11/2013",
+            groupe: "Compétiteurs 11/15 ans",
             demo: true
         }
     ];
+
+    const inscriptionsDemo = adherentsDemo.map(adherent => ({
+        numeroAdherent: adherent.numeroAdherent,
+        saison: "2026-2027",
+        donneesHelloAsso: {
+            "Tarif": adherent.groupe,
+            "Statut commande": "Payé",
+            "Moyen de paiement": "Carte bancaire",
+            "Email adhérent": "demo@jeunessedumarais.fr",
+            "Parent 1": "Parent " + adherent.nom,
+            "Parent 2": "",
+            "Adresse postale": "123 rue de la Gymnastique",
+            "Code postal": "59160",
+            "Ville": "Lomme",
+            "Personne à contacter en cas d'urgence": "Parent " + adherent.nom,
+            "Téléphone urgence": "06 00 00 00 00",
+            "Droit image": "Oui",
+            "Certificat médical": "Reçu",
+            "Photo licence": "Reçue",
+            "Justificatif domicile": "Reçu"
+        },
+        demo: true
+    }));
 
     const organisationDemo = [
         {
             prenom: "Nathan",
             nom: "Hardeman",
             email: "",
-            roles: ["Admin principal", "Vice-président", "Coach", "Gymnaste"],
-            groupes: ["Compétiteurs 11/15"],
+            roles: ["Admin principal", "Vice-président", "Coach"],
+            groupes: ["Compétiteurs 11/15 ans", "Gym loisir adulte coach"],
             photo: "../images/logo-jdm.png",
             demo: true
         },
@@ -55,6 +94,15 @@ function creerDonneesDemo() {
             email: "",
             roles: ["Trésorier", "Juge", "Bénévole"],
             groupes: [],
+            photo: "../images/logo-jdm.png",
+            demo: true
+        },
+        {
+            prenom: "Julie",
+            nom: "Coach",
+            email: "",
+            roles: ["Coach"],
+            groupes: ["Baby Gym 2/3 ans", "Initiation gymnique 5/6 ans"],
             photo: "../images/logo-jdm.png",
             demo: true
         },
@@ -72,23 +120,56 @@ function creerDonneesDemo() {
     const groupesDemo = [
         {
             id: 1001,
-            nom: "Baby Gym",
+            nom: "Baby Gym 2/3 ans",
             sexe: "Mixte",
             type: "Loisir",
-            federation: "Libre",
-            anneeMin: "2020",
-            anneeMax: "2021",
+            federation: "-",
+            anneeMin: "2023",
+            anneeMax: "2024",
             effectifMax: "16",
-            coachs: ["Nathan Hardeman"],
+            coachs: ["Julie Coach"],
             horaires: {
                 samedi: "9h00 - 9h45"
             },
+            whatsapp: "",
             demo: true
         },
         {
             id: 1002,
-            nom: "Compétiteurs 11/15",
+            nom: "Initiation gymnique 5/6 ans",
             sexe: "Mixte",
+            type: "Loisir",
+            federation: "-",
+            anneeMin: "2020",
+            anneeMax: "2021",
+            effectifMax: "20",
+            coachs: ["Julie Coach"],
+            horaires: {
+                samedi: "11h00 - 11h45"
+            },
+            whatsapp: "",
+            demo: true
+        },
+        {
+            id: 1003,
+            nom: "École de Gym 8/10 ans",
+            sexe: "Garçons",
+            type: "Loisir",
+            federation: "FFG",
+            anneeMin: "2016",
+            anneeMax: "2018",
+            effectifMax: "24",
+            coachs: ["Nathan Hardeman"],
+            horaires: {
+                samedi: "9h30 - 11h00"
+            },
+            whatsapp: "",
+            demo: true
+        },
+        {
+            id: 1004,
+            nom: "Compétiteurs 11/15 ans",
+            sexe: "Garçons",
             type: "Compétition",
             federation: "FFG",
             anneeMin: "2011",
@@ -100,14 +181,34 @@ function creerDonneesDemo() {
                 mercredi: "18h00 - 19h30",
                 vendredi: "18h00 - 19h30"
             },
+            whatsapp: "",
+            demo: true
+        },
+        {
+            id: 1005,
+            nom: "Gym loisir adulte coach",
+            sexe: "Mixte",
+            type: "Loisir",
+            federation: "FFG",
+            anneeMin: "1900",
+            anneeMax: "2008",
+            effectifMax: "30",
+            coachs: ["Nathan Hardeman"],
+            horaires: {
+                lundi: "19h30 - 21h00",
+                vendredi: "19h30 - 21h00"
+            },
+            whatsapp: "",
             demo: true
         }
     ];
 
+    const aujourdHui = new Date().toISOString().split("T")[0];
+
     const exceptionsDemo = [
         {
-            groupeId: 1002,
-            date: new Date().toISOString().split("T")[0],
+            groupeId: 1004,
+            date: aujourdHui,
             jour: "demo",
             statut: "annule",
             horaire: "Cours annulé",
@@ -122,9 +223,9 @@ function creerDonneesDemo() {
             id: Date.now(),
             type: "groupes-parents",
             titre: "Cours annulé",
-            message: "Le cours du groupe Compétiteurs 11/15 est annulé exceptionnellement.",
-            destinataires: [1002],
-            destinatairesNoms: ["Compétiteurs 11/15"],
+            message: "Le cours du groupe Compétiteurs 11/15 ans est annulé exceptionnellement.",
+            destinataires: [1004],
+            destinatairesNoms: ["Compétiteurs 11/15 ans"],
             dateCreation: new Date().toISOString(),
             lue: false,
             demo: true
@@ -132,6 +233,7 @@ function creerDonneesDemo() {
     ];
 
     localStorage.setItem("adherentsJDM", JSON.stringify(adherentsDemo));
+    localStorage.setItem("inscriptionsJDM", JSON.stringify(inscriptionsDemo));
     localStorage.setItem("organisationJDM", JSON.stringify(organisationDemo));
     localStorage.setItem("groupesJDM", JSON.stringify(groupesDemo));
     localStorage.setItem("planningExceptionsJDM", JSON.stringify(exceptionsDemo));
@@ -144,11 +246,33 @@ function supprimerDonneesDemo() {
     if (!demanderCodeSecurite()) return;
 
     localStorage.removeItem("adherentsJDM");
+    localStorage.removeItem("inscriptionsJDM");
     localStorage.removeItem("organisationJDM");
     localStorage.removeItem("groupesJDM");
     localStorage.removeItem("planningExceptionsJDM");
     localStorage.removeItem("notificationsJDM");
-    localStorage.removeItem("inscriptionsJDM");
+    localStorage.removeItem("commandesJDM");
+    localStorage.removeItem("notificationsTresorierJDM");
+    localStorage.removeItem("panierJDM");
 
     alert("Toutes les données de démonstration ont été supprimées ✅");
+}
+
+function viderAdherents() {
+    if (!demanderCodeSecurite()) return;
+
+    localStorage.removeItem("adherentsJDM");
+    localStorage.removeItem("inscriptionsJDM");
+
+    alert("Adhérents et inscriptions vidés ✅");
+}
+
+function viderBoutique() {
+    if (!demanderCodeSecurite()) return;
+
+    localStorage.removeItem("commandesJDM");
+    localStorage.removeItem("notificationsTresorierJDM");
+    localStorage.removeItem("panierJDM");
+
+    alert("Données boutique vidées ✅");
 }

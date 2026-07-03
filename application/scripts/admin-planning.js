@@ -1,6 +1,7 @@
 const groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
 let exceptions = JSON.parse(localStorage.getItem("planningExceptionsJDM")) || [];
 
+
 const zonePlanning = document.getElementById("planning-admin");
 const titreSemaine = document.getElementById("titre-semaine");
 const boutonPrecedent = document.getElementById("semaine-precedente");
@@ -330,10 +331,51 @@ boutonEnregistrer.addEventListener("click", () => {
 
     localStorage.setItem("planningExceptionsJDM", JSON.stringify(exceptions));
 
-    zoneEdition.style.display = "none";
-    selection = null;
+proposerNotificationPlanning();
 
-    afficherPlanning();
+zoneEdition.style.display = "none";
+selection = null;
+
+    function proposerNotificationPlanning() {
+    const parametresNotifications = JSON.parse(localStorage.getItem("parametresNotificationsJDM")) || {
+        parents: false
+    };
+
+    if (!parametresNotifications.parents) {
+        return;
+    }
+
+    const envoyer = confirm("Notifier les parents du groupe de ce changement ?");
+
+    if (!envoyer || !selection) return;
+
+    let notifications = JSON.parse(localStorage.getItem("notificationsJDM")) || [];
+
+    const titre = titreCase.value.trim() || "Modification du planning";
+    const message = messageCase.value.trim() || "Le planning du groupe a été modifié.";
+
+    notifications.push({
+        id: Date.now(),
+        type: "planning",
+        titre,
+        message,
+        groupeId: selection.groupeId,
+        groupeNom: selection.groupeNom,
+        date: selection.dateISO,
+        statut: statutCase.value,
+        horaire: horaireCase.value.trim(),
+        dateCreation: new Date().toISOString(),
+        lue: false
+    });
+
+    localStorage.setItem("notificationsJDM", JSON.stringify(notifications));
+
+    alert("Notification créée ✅");
+}
+
+
+
+afficherPlanning();
 });
 
 boutonAnnuler.addEventListener("click", () => {

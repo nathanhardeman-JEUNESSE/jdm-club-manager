@@ -1,11 +1,16 @@
 const CODE_SECURITE_DEV = "JDM-admin-0";
 
 let groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
+let adherents = JSON.parse(localStorage.getItem("adherentsJDM")) || [];
+let inscriptions = JSON.parse(localStorage.getItem("inscriptionsJDM")) || [];
+
 const organisation = JSON.parse(localStorage.getItem("organisationJDM")) || [];
 
 const listeGroupes = document.getElementById("liste-groupes");
 const boutonAjouter = document.getElementById("ajouter-groupe");
 const zoneCoachs = document.getElementById("liste-coachs-groupe");
+const rechercheAdherent = document.getElementById("recherche-adherent");
+const filtreGroupeAdherent = document.getElementById("filtre-groupe-adherent");
 
 let groupeEnModification = null;
 
@@ -31,6 +36,135 @@ function demanderCodeSecurite() {
     }
 
     return true;
+}
+
+function nettoyer(texte) {
+    return String(texte || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+}
+
+function champ(donnees, mots) {
+    if (!donnees) return "";
+
+    const cle = Object.keys(donnees).find(cle =>
+        mots.every(mot => nettoyer(cle).includes(nettoyer(mot)))
+    );
+
+    return cle ? donnees[cle] : "";
+}
+
+function calculerAge(dateNaissance) {
+    if (!dateNaissance) return "";
+
+    const morceaux = String(dateNaissance).split("/");
+    if (morceaux.length !== 3) return "";
+
+    const jour = Number(morceaux[0]);
+    const mois = Number(morceaux[1]) - 1;
+    const annee = Number(morceaux[2]);
+
+    const naissance = new Date(annee, mois, jour);
+    const aujourdHui = new Date();
+
+    let age = aujourdHui.getFullYear() - naissance.getFullYear();
+    const moisDiff = aujourdHui.getMonth() - naissance.getMonth();
+
+    if (moisDiff < 0 || (moisDiff === 0 && aujourdHui.getDate() < naissance.getDate())) {
+        age--;
+    }
+
+    return age;
+}
+
+function trouverInscriptionAdherent(numeroAdherent) {
+    const inscriptionsAdherent = inscriptions.filter(i => i.numeroAdherent === numeroAdherent);
+    return inscriptionsAdherent[inscriptionsAdherent.length - 1];
+}
+
+function trouverGroupeDepuisInscription(adherent) {
+    if (adherent.groupe) return adherent.groupe;
+
+    const inscription = trouverInscriptionAdherent(adherent.numeroAdherent);
+    const donnees = inscription ? inscription.donneesHelloAsso || {} : {};
+
+    return champ(donnees, ["tarif"]) || "";
+}
+
+function analyserGroupeDepuisTarif(tarif) {
+    const texte = String(tarif || "");
+
+    let sexe = "Mixte";
+
+    if (nettoyer(texte).includes("feminin") || nettoyer(texte).includes("fille")) {
+        sexe = "Filles";
+    }
+
+    if (nettoyer(texte).includes("masculin") || nettoyer(texte).includes("garcon")) {
+        sexe = "Garçons";
+    }
+
+    let type = "Loisir";
+
+    if (nettoyer(texte).includes("compet")) {
+        type = "Compétition";
+    }
+
+    let federation = "-";
+
+    if (nettoyer(texte).includes("ffg")) {
+        federation = "FFG";
+    }
+
+    if (nettoyer(texte).includes("uffolep")) {
+        federation = "UFOLEP";
+    }
+
+    const annees = texte.match(/\b(19|20)\d{2}\b/g) || [];
+
+    return {
+        nom: texte.trim(),
+        sexe,
+        type,
+        federation,
+        anneeMin: annees[0] || "",
+        anneeMax: annees[1] || annees[0] || "",
+        effectifMax: "",
+        coachs: [],
+        horaires: {},
+        whatsapp: ""
+    };
+}
+
+function synchroniserGroupesDepuisInscriptions() {
+    let modification = false;
+
+    adherents.forEach(adherent => {
+        const groupeInscription = trouverGroupeDepuisInscription(adherent);
+
+        if (groupeInscription && !adherent.groupe) {
+            adherent.groupe = groupeInscription;
+            modification = true;
+        }
+
+        if (groupeInscription && !groupes.some(g => g.nom === groupeInscription)) {
+            const nouveauGroupe = analyserGroupeDepuisTarif(groupeInscription);
+
+            groupes.push({
+                id: Date.now() + Math.floor(Math.random() * 100000),
+                ...nouveauGroupe,
+                creeDepuisHelloAsso: true
+            });
+
+            modification = true;
+        }
+    });
+
+    if (modification) {
+        localStorage.setItem("adherentsJDM", JSON.stringify(adherents));
+        localStorage.setItem("groupesJDM", JSON.stringify(groupes));
+    }
 }
 
 function afficherCoachs() {
@@ -78,7 +212,105 @@ function afficherHoraires(horaires) {
     return lignes.length > 0 ? lignes.join("<br>") : "Non renseignés";
 }
 
+function adherentsDuGroupe(nomGroupe) {
+    return adherents.filter(adherent => trouverGroupeDepuisInscription(adherent) === nomGroupe);
+}
+
+function passerAdherentDansGroupe(numeroAdherent, nouveauGroupe) {
+    const adherent = adherents.find(a => a.numeroAdherent === numeroAdherent);
+
+    if (!adherent) return;
+
+    adherent.groupe = nouveauGroupe;
+
+    const inscription = trouverInscriptionAdherent(numeroAdherent);
+
+    if (inscription) {
+        if (!inscription.donneesHelloAsso) {
+            inscription.donneesHelloAsso = {};
+        }
+
+        inscription.donneesHelloAsso["Tarif"] = nouveauGroupe;
+        inscription.groupeFinal = nouveauGroupe;
+    }
+
+    localStorage.setItem("adherentsJDM", JSON.stringify(adherents));
+    localStorage.setItem("inscriptionsJDM", JSON.stringify(inscriptions));
+
+    afficherGroupes();
+}
+
+function remplirFiltreGroupes() {
+    if (!filtreGroupeAdherent) return;
+
+    const valeurActuelle = filtreGroupeAdherent.value;
+
+    filtreGroupeAdherent.innerHTML = `<option value="">Tous les groupes</option>`;
+
+    groupes.forEach(groupe => {
+        filtreGroupeAdherent.innerHTML += `
+            <option value="${groupe.nom}">${groupe.nom}</option>
+        `;
+    });
+
+    filtreGroupeAdherent.value = valeurActuelle;
+}
+
+function adherentVisible(adherent, nomGroupe) {
+    const recherche = rechercheAdherent ? nettoyer(rechercheAdherent.value) : "";
+    const filtreGroupe = filtreGroupeAdherent ? filtreGroupeAdherent.value : "";
+
+    const age = calculerAge(adherent.dateNaissance);
+    const groupe = trouverGroupeDepuisInscription(adherent);
+
+    if (filtreGroupe && groupe !== filtreGroupe) return false;
+
+    if (!recherche) return true;
+
+    const texte = nettoyer(`
+        ${adherent.nom}
+        ${adherent.prenom}
+        ${age}
+        ${groupe}
+    `);
+
+    return texte.includes(recherche);
+}
+
+function afficherListeAdherents(groupe) {
+    const membres = adherentsDuGroupe(groupe.nom).filter(adherent =>
+        adherentVisible(adherent, groupe.nom)
+    );
+
+    if (membres.length === 0) {
+        return `<p>Aucun adhérent affiché pour ce groupe.</p>`;
+    }
+
+    return membres.map(adherent => {
+        const age = calculerAge(adherent.dateNaissance);
+
+        return `
+            <div class="order-line">
+                <p>
+                    <strong>${adherent.prenom} ${adherent.nom}</strong><br>
+                    ${adherent.dateNaissance || "Date inconnue"} ${age !== "" ? `— ${age} ans` : ""}
+                </p>
+
+                <select class="form-input" onchange="passerAdherentDansGroupe('${adherent.numeroAdherent}', this.value)">
+                    ${groupes.map(g => `
+                        <option value="${g.nom}" ${g.nom === groupe.nom ? "selected" : ""}>
+                            ${g.nom}
+                        </option>
+                    `).join("")}
+                </select>
+            </div>
+        `;
+    }).join("");
+}
+
 function afficherGroupes() {
+    remplirFiltreGroupes();
+
     if (groupes.length === 0) {
         listeGroupes.innerHTML = `
             <section class="card">
@@ -92,10 +324,14 @@ function afficherGroupes() {
     listeGroupes.innerHTML = "";
 
     groupes.forEach((groupe, index) => {
+        const effectif = adherentsDuGroupe(groupe.nom).length;
+        const quota = groupe.effectifMax || "∞";
+
         listeGroupes.innerHTML += `
             <section class="card">
                 <h2>${groupe.nom}</h2>
 
+                <p><strong>Effectif :</strong> ${effectif} / ${quota}</p>
                 <p><strong>Années :</strong> ${groupe.anneeMin || "Non renseigné"} à ${groupe.anneeMax || "Non renseigné"}</p>
                 <p><strong>Public :</strong> ${groupe.sexe || "Mixte"}</p>
                 <p><strong>Type :</strong> ${groupe.type || "Non renseigné"}</p>
@@ -112,6 +348,9 @@ function afficherGroupes() {
                 <button class="secondary-button" onclick="supprimerGroupe(${index})">
                     Supprimer
                 </button>
+
+                <h3>👥 Adhérents du groupe</h3>
+                ${afficherListeAdherents(groupe)}
             </section>
         `;
     });
@@ -246,5 +485,14 @@ function viderFormulaire() {
     });
 }
 
+if (rechercheAdherent) {
+    rechercheAdherent.addEventListener("input", afficherGroupes);
+}
+
+if (filtreGroupeAdherent) {
+    filtreGroupeAdherent.addEventListener("change", afficherGroupes);
+}
+
+synchroniserGroupesDepuisInscriptions();
 afficherCoachs();
 afficherGroupes();
