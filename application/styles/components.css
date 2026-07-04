@@ -1426,3 +1426,145 @@
         page-break-after: avoid;
     }
 }
+/* ================================================= */
+/* ARCHITECTURE */
+/* ================================================= */
+
+.architecture-zone {
+    margin-top: 20px;
+}
+
+.architecture-block {
+    background: var(--card);
+    color: var(--white);
+    border-radius: var(--radius);
+    padding: 18px;
+    box-shadow: var(--shadow);
+    border-left: 6px solid var(--jdm-blue);
+}
+
+.architecture-block h2 {
+    margin-top: 0;
+}
+
+.architecture-block p {
+    color: var(--light-grey);
+    line-height: 1.5;
+}
+
+.architecture-block.done {
+    border-left-color: #2f8f46;
+}
+
+.architecture-block.progress {
+    border-left-color: #ff9800;
+}
+
+.architecture-block.important {
+    border-left-color: var(--jdm-blue);
+}
+
+.architecture-block.future {
+    border-left-color: #9c27b0;
+}
+
+.architecture-arrow {
+    text-align: center;
+    color: var(--white);
+    font-size: 28px;
+    margin: 10px 0;
+}
+/* ================================================= */
+/* ADMIN GROUPES - ACCORDÉON */
+/* ================================================= */
+
+.groupe-card {
+    padding: 0;
+    overflow: hidden;
+}
+
+.groupe-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 18px;
+    cursor: pointer;
+}
+
+.groupe-header h2 {
+    margin: 0 0 6px 0;
+}
+
+.groupe-header p {
+    margin: 0;
+    color: var(--light-grey);
+}
+
+.groupe-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.groupe-fleche {
+    font-size: 24px;
+    color: var(--jdm-blue);
+    font-weight: bold;
+}
+
+.groupe-contenu {
+    padding: 0 18px 18px 18px;
+    border-top: 1px solid var(--border);
+}
+
+.switch-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--white);
+    font-weight: bold;
+    cursor: pointer;
+}
+/* ================================================= */
+/* ADMIN GROUPES - PLANNING FORMULAIRE */
+/* ================================================= */
+
+.admin-week-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    margin-top: 14px;
+}
+
+.admin-day-cell {
+    min-height: 62px;
+    border-radius: 10px;
+    background: #4b4b4b;
+    color: #cccccc;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    text-align: center;
+    cursor: pointer;
+    padding: 6px;
+    box-sizing: border-box;
+    font-size: 11px;
+}
+
+.admin-day-cell strong {
+    color: white;
+    font-size: 13px;
+}
+
+.admin-day-cell.ok {
+    background: #2f8f46;
+    color: white;
+}
+
+.admin-day-cell.off {
+    background: #4b4b4b;
+    color: #cccccc;
+}

@@ -3,7 +3,6 @@ const CODE_SECURITE_DEV = "JDM-admin-0";
 let groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
 let adherents = JSON.parse(localStorage.getItem("adherentsJDM")) || [];
 let inscriptions = JSON.parse(localStorage.getItem("inscriptionsJDM")) || [];
-
 const organisation = JSON.parse(localStorage.getItem("organisationJDM")) || [];
 
 const listeGroupes = document.getElementById("liste-groupes");
@@ -12,15 +11,24 @@ const zoneCoachs = document.getElementById("liste-coachs-groupe");
 const rechercheAdherent = document.getElementById("recherche-adherent");
 const filtreGroupeAdherent = document.getElementById("filtre-groupe-adherent");
 
+const cellulesPlanningGroupe = document.querySelectorAll(".admin-day-cell");
+const zoneEditionHoraire = document.getElementById("edition-horaire-groupe");
+const titreEditionHoraire = document.getElementById("titre-edition-horaire");
+const champHoraireSelectionne = document.getElementById("horaire-selectionne");
+const boutonEnregistrerHoraire = document.getElementById("enregistrer-horaire-groupe");
+const boutonSupprimerHoraire = document.getElementById("supprimer-horaire-groupe");
+
 let groupeEnModification = null;
+let horairesFormulaire = {};
+let jourEnEdition = null;
 
 const joursConfig = [
-    { jour: "Lundi", champ: "horaireLundi" },
-    { jour: "Mardi", champ: "horaireMardi" },
-    { jour: "Mercredi", champ: "horaireMercredi" },
-    { jour: "Jeudi", champ: "horaireJeudi" },
-    { jour: "Vendredi", champ: "horaireVendredi" },
-    { jour: "Samedi", champ: "horaireSamedi" }
+    { jour: "Lundi", cle: "lundi" },
+    { jour: "Mardi", cle: "mardi" },
+    { jour: "Mercredi", cle: "mercredi" },
+    { jour: "Jeudi", cle: "jeudi" },
+    { jour: "Vendredi", cle: "vendredi" },
+    { jour: "Samedi", cle: "samedi" }
 ];
 
 const coachs = organisation.filter(personne =>
@@ -61,11 +69,12 @@ function calculerAge(dateNaissance) {
     const morceaux = String(dateNaissance).split("/");
     if (morceaux.length !== 3) return "";
 
-    const jour = Number(morceaux[0]);
-    const mois = Number(morceaux[1]) - 1;
-    const annee = Number(morceaux[2]);
+    const naissance = new Date(
+        Number(morceaux[2]),
+        Number(morceaux[1]) - 1,
+        Number(morceaux[0])
+    );
 
-    const naissance = new Date(annee, mois, jour);
     const aujourdHui = new Date();
 
     let age = aujourdHui.getFullYear() - naissance.getFullYear();
@@ -94,32 +103,17 @@ function trouverGroupeDepuisInscription(adherent) {
 
 function analyserGroupeDepuisTarif(tarif) {
     const texte = String(tarif || "");
+    const texteNettoye = nettoyer(texte);
 
     let sexe = "Mixte";
+    if (texteNettoye.includes("feminin") || texteNettoye.includes("fille")) sexe = "Filles";
+    if (texteNettoye.includes("masculin") || texteNettoye.includes("garcon")) sexe = "Garçons";
 
-    if (nettoyer(texte).includes("feminin") || nettoyer(texte).includes("fille")) {
-        sexe = "Filles";
-    }
-
-    if (nettoyer(texte).includes("masculin") || nettoyer(texte).includes("garcon")) {
-        sexe = "Garçons";
-    }
-
-    let type = "Loisir";
-
-    if (nettoyer(texte).includes("compet")) {
-        type = "Compétition";
-    }
+    const type = texteNettoye.includes("compet") ? "Compétition" : "Loisir";
 
     let federation = "-";
-
-    if (nettoyer(texte).includes("ffg")) {
-        federation = "FFG";
-    }
-
-    if (nettoyer(texte).includes("uffolep")) {
-        federation = "UFOLEP";
-    }
+    if (texteNettoye.includes("ffg")) federation = "FFG";
+    if (texteNettoye.includes("uffolep")) federation = "UFOLEP";
 
     const annees = texte.match(/\b(19|20)\d{2}\b/g) || [];
 
@@ -133,7 +127,8 @@ function analyserGroupeDepuisTarif(tarif) {
         effectifMax: "",
         coachs: [],
         horaires: {},
-        whatsapp: ""
+        whatsapp: "",
+        notificationsParents: true
     };
 }
 
@@ -149,11 +144,9 @@ function synchroniserGroupesDepuisInscriptions() {
         }
 
         if (groupeInscription && !groupes.some(g => g.nom === groupeInscription)) {
-            const nouveauGroupe = analyserGroupeDepuisTarif(groupeInscription);
-
             groupes.push({
                 id: Date.now() + Math.floor(Math.random() * 100000),
-                ...nouveauGroupe,
+                ...analyserGroupeDepuisTarif(groupeInscription),
                 creeDepuisHelloAsso: true
             });
 
@@ -177,7 +170,7 @@ function afficherCoachs() {
         return;
     }
 
-    coachs.forEach((coach) => {
+    coachs.forEach(coach => {
         zoneCoachs.innerHTML += `
             <label class="checkbox-row">
                 <input type="checkbox" name="coachsGroupe" value="${coach.prenom} ${coach.nom}">
@@ -187,27 +180,31 @@ function afficherCoachs() {
     });
 }
 
-function lireHoraires() {
-    const horaires = {};
+function rafraichirPlanningFormulaire() {
+    cellulesPlanningGroupe.forEach(cellule => {
+        const jourCle = cellule.dataset.jour.toLowerCase();
+        const horaire = horairesFormulaire[jourCle] || "";
+        const span = cellule.querySelector("span");
 
-    joursConfig.forEach(config => {
-        const jourCoche = document.querySelector(`input[name="joursGroupe"][value="${config.jour}"]`);
-        const champHoraire = document.querySelector(`input[name="${config.champ}"]`);
-
-        if (jourCoche && jourCoche.checked && champHoraire && champHoraire.value.trim()) {
-            horaires[config.jour.toLowerCase()] = champHoraire.value.trim();
+        if (span) {
+            span.textContent = horaire || "-";
         }
-    });
 
-    return horaires;
+        cellule.classList.toggle("ok", Boolean(horaire));
+        cellule.classList.toggle("off", !horaire);
+    });
+}
+
+function lireHoraires() {
+    return { ...horairesFormulaire };
 }
 
 function afficherHoraires(horaires) {
     if (!horaires) return "Non renseignés";
 
-    const lignes = Object.entries(horaires).map(([jour, horaire]) => {
-        return `${jour.charAt(0).toUpperCase() + jour.slice(1)} : ${horaire}`;
-    });
+    const lignes = Object.entries(horaires).map(([jour, horaire]) =>
+        `${jour.charAt(0).toUpperCase() + jour.slice(1)} : ${horaire}`
+    );
 
     return lignes.length > 0 ? lignes.join("<br>") : "Non renseignés";
 }
@@ -218,7 +215,6 @@ function adherentsDuGroupe(nomGroupe) {
 
 function passerAdherentDansGroupe(numeroAdherent, nouveauGroupe) {
     const adherent = adherents.find(a => a.numeroAdherent === numeroAdherent);
-
     if (!adherent) return;
 
     adherent.groupe = nouveauGroupe;
@@ -256,31 +252,21 @@ function remplirFiltreGroupes() {
     filtreGroupeAdherent.value = valeurActuelle;
 }
 
-function adherentVisible(adherent, nomGroupe) {
+function adherentVisible(adherent) {
     const recherche = rechercheAdherent ? nettoyer(rechercheAdherent.value) : "";
     const filtreGroupe = filtreGroupeAdherent ? filtreGroupeAdherent.value : "";
-
-    const age = calculerAge(adherent.dateNaissance);
     const groupe = trouverGroupeDepuisInscription(adherent);
+    const age = calculerAge(adherent.dateNaissance);
 
     if (filtreGroupe && groupe !== filtreGroupe) return false;
-
     if (!recherche) return true;
 
-    const texte = nettoyer(`
-        ${adherent.nom}
-        ${adherent.prenom}
-        ${age}
-        ${groupe}
-    `);
-
+    const texte = nettoyer(`${adherent.nom} ${adherent.prenom} ${age} ${groupe}`);
     return texte.includes(recherche);
 }
 
 function afficherListeAdherents(groupe) {
-    const membres = adherentsDuGroupe(groupe.nom).filter(adherent =>
-        adherentVisible(adherent, groupe.nom)
-    );
+    const membres = adherentsDuGroupe(groupe.nom).filter(adherent => adherentVisible(adherent));
 
     if (membres.length === 0) {
         return `<p>Aucun adhérent affiché pour ce groupe.</p>`;
@@ -326,31 +312,50 @@ function afficherGroupes() {
     groupes.forEach((groupe, index) => {
         const effectif = adherentsDuGroupe(groupe.nom).length;
         const quota = groupe.effectifMax || "∞";
+        const notificationsParents = groupe.notificationsParents !== false;
 
         listeGroupes.innerHTML += `
-            <section class="card">
-                <h2>${groupe.nom}</h2>
+            <section class="card groupe-card">
+                <div class="groupe-header" onclick="basculerGroupe(${index})">
+                    <div>
+                        <h2>${groupe.nom}</h2>
+                        <p><strong>Effectif :</strong> ${effectif} / ${quota}</p>
+                    </div>
 
-                <p><strong>Effectif :</strong> ${effectif} / ${quota}</p>
-                <p><strong>Années :</strong> ${groupe.anneeMin || "Non renseigné"} à ${groupe.anneeMax || "Non renseigné"}</p>
-                <p><strong>Public :</strong> ${groupe.sexe || "Mixte"}</p>
-                <p><strong>Type :</strong> ${groupe.type || "Non renseigné"}</p>
-                <p><strong>Fédération :</strong> ${groupe.federation || "-"}</p>
-                <p><strong>Effectif max :</strong> ${groupe.effectifMax || "Non limité"}</p>
-                <p><strong>Horaires :</strong><br>${afficherHoraires(groupe.horaires)}</p>
-                <p><strong>Coachs :</strong> ${groupe.coachs && groupe.coachs.length > 0 ? groupe.coachs.join(" / ") : "Aucun coach"}</p>
-                <p><strong>WhatsApp :</strong> ${groupe.whatsapp ? "Lien renseigné" : "Non renseigné"}</p>
+                    <div class="groupe-actions">
+                        <label class="switch-row" onclick="event.stopPropagation()">
+                            <input type="checkbox"
+                                   ${notificationsParents ? "checked" : ""}
+                                   onchange="changerNotificationGroupe(${index}, this.checked)">
+                            🔔
+                        </label>
 
-                <button class="primary-button order-button" onclick="modifierGroupe(${index})">
-                    Modifier
-                </button>
+                        <span id="fleche-groupe-${index}" class="groupe-fleche">▼</span>
+                    </div>
+                </div>
 
-                <button class="secondary-button" onclick="supprimerGroupe(${index})">
-                    Supprimer
-                </button>
+                <div id="contenu-groupe-${index}" class="groupe-contenu" style="display:none;">
+                    <p><strong>Années :</strong> ${groupe.anneeMin || "Non renseigné"} à ${groupe.anneeMax || "Non renseigné"}</p>
+                    <p><strong>Public :</strong> ${groupe.sexe || "Mixte"}</p>
+                    <p><strong>Type :</strong> ${groupe.type || "Non renseigné"}</p>
+                    <p><strong>Fédération :</strong> ${groupe.federation || "-"}</p>
+                    <p><strong>Effectif max :</strong> ${groupe.effectifMax || "Non limité"}</p>
+                    <p><strong>Horaires :</strong><br>${afficherHoraires(groupe.horaires)}</p>
+                    <p><strong>Coachs :</strong> ${groupe.coachs && groupe.coachs.length > 0 ? groupe.coachs.join(" / ") : "Aucun coach"}</p>
+                    <p><strong>WhatsApp :</strong> ${groupe.whatsapp ? "Lien renseigné" : "Non renseigné"}</p>
+                    <p><strong>Notifications parents :</strong> ${notificationsParents ? "Activées" : "Désactivées"}</p>
 
-                <h3>👥 Adhérents du groupe</h3>
-                ${afficherListeAdherents(groupe)}
+                    <button class="primary-button order-button" onclick="modifierGroupe(${index})">
+                        Modifier
+                    </button>
+
+                    <button class="secondary-button" onclick="supprimerGroupe(${index})">
+                        Supprimer
+                    </button>
+
+                    <h3>👥 Adhérents du groupe</h3>
+                    ${afficherListeAdherents(groupe)}
+                </div>
             </section>
         `;
     });
@@ -392,7 +397,10 @@ boutonAjouter.addEventListener("click", () => {
         federation,
         jours,
         horaires,
-        whatsapp
+        whatsapp,
+        notificationsParents: groupeEnModification !== null
+            ? groupes[groupeEnModification].notificationsParents !== false
+            : true
     };
 
     if (groupeEnModification !== null) {
@@ -423,22 +431,12 @@ function modifierGroupe(index) {
     document.getElementById("federation-groupe").value = groupe.federation || "Libre";
     document.getElementById("whatsapp-groupe").value = groupe.whatsapp || "";
 
-    document.querySelectorAll('input[name="coachsGroupe"]').forEach((checkbox) => {
+    document.querySelectorAll('input[name="coachsGroupe"]').forEach(checkbox => {
         checkbox.checked = groupe.coachs && groupe.coachs.includes(checkbox.value);
     });
 
-    document.querySelectorAll('input[name="joursGroupe"]').forEach((checkbox) => {
-        checkbox.checked = groupe.jours && groupe.jours.includes(checkbox.value);
-    });
-
-    joursConfig.forEach(config => {
-        const champHoraire = document.querySelector(`input[name="${config.champ}"]`);
-        const cle = config.jour.toLowerCase();
-
-        if (champHoraire) {
-            champHoraire.value = groupe.horaires && groupe.horaires[cle] ? groupe.horaires[cle] : "";
-        }
-    });
+    horairesFormulaire = groupe.horaires ? { ...groupe.horaires } : {};
+    rafraichirPlanningFormulaire();
 
     boutonAjouter.textContent = "Enregistrer les modifications";
 
@@ -468,20 +466,86 @@ function viderFormulaire() {
     document.getElementById("type-groupe").value = "Loisir";
     document.getElementById("federation-groupe").value = "FFG";
 
-    document.querySelectorAll('input[name="joursGroupe"]').forEach((checkbox) => {
+    document.querySelectorAll('input[name="coachsGroupe"]').forEach(checkbox => {
         checkbox.checked = false;
     });
 
-    joursConfig.forEach(config => {
-        const champHoraire = document.querySelector(`input[name="${config.champ}"]`);
+    horairesFormulaire = {};
+    jourEnEdition = null;
 
-        if (champHoraire) {
-            champHoraire.value = "";
+    if (zoneEditionHoraire) {
+        zoneEditionHoraire.style.display = "none";
+    }
+
+    rafraichirPlanningFormulaire();
+}
+
+function basculerGroupe(index) {
+    const contenu = document.getElementById(`contenu-groupe-${index}`);
+    const fleche = document.getElementById(`fleche-groupe-${index}`);
+
+    if (!contenu || !fleche) return;
+
+    const ouvert = contenu.style.display === "block";
+
+    contenu.style.display = ouvert ? "none" : "block";
+    fleche.textContent = ouvert ? "▼" : "▲";
+}
+
+function changerNotificationGroupe(index, actif) {
+    groupes[index].notificationsParents = actif;
+
+    localStorage.setItem("groupesJDM", JSON.stringify(groupes));
+
+    afficherGroupes();
+}
+
+cellulesPlanningGroupe.forEach(cellule => {
+    cellule.addEventListener("click", () => {
+        const jour = cellule.dataset.jour;
+        const jourCle = jour.toLowerCase();
+
+        jourEnEdition = jourCle;
+
+        titreEditionHoraire.textContent = `Horaire du ${jour}`;
+        champHoraireSelectionne.value = horairesFormulaire[jourCle] || "";
+
+        zoneEditionHoraire.style.display = "block";
+
+        zoneEditionHoraire.scrollIntoView({
+            behavior: "smooth"
+        });
+    });
+});
+
+if (boutonEnregistrerHoraire) {
+    boutonEnregistrerHoraire.addEventListener("click", () => {
+        if (!jourEnEdition) return;
+
+        const horaire = champHoraireSelectionne.value.trim();
+
+        if (horaire) {
+            horairesFormulaire[jourEnEdition] = horaire;
         }
-    });
 
-    document.querySelectorAll('input[name="coachsGroupe"]').forEach((checkbox) => {
-        checkbox.checked = false;
+        zoneEditionHoraire.style.display = "none";
+        jourEnEdition = null;
+
+        rafraichirPlanningFormulaire();
+    });
+}
+
+if (boutonSupprimerHoraire) {
+    boutonSupprimerHoraire.addEventListener("click", () => {
+        if (!jourEnEdition) return;
+
+        delete horairesFormulaire[jourEnEdition];
+
+        champHoraireSelectionne.value = "";
+        zoneEditionHoraire.style.display = "none";
+        jourEnEdition = null;
+
+        rafraichirPlanningFormulaire();
     });
 }
 
@@ -495,4 +559,5 @@ if (filtreGroupeAdherent) {
 
 synchroniserGroupesDepuisInscriptions();
 afficherCoachs();
+rafraichirPlanningFormulaire();
 afficherGroupes();

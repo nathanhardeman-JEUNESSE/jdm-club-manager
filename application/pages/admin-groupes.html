@@ -45,39 +45,53 @@
 
     <h3>Jours d'entraînement</h3>
 
-<div id="jours-groupe">
+<h3>Jours d'entraînement</h3>
 
-    <label class="checkbox-row">
-        <input type="checkbox" name="joursGroupe" value="Lundi"> Lundi
-    </label>
-    <input class="form-input" name="horaireLundi" placeholder="Horaire lundi ex : 18h - 19h30">
+<div class="admin-week-grid" id="planning-groupe-form">
+    <div class="admin-day-cell" data-jour="Lundi" data-champ="horaireLundi">
+        <strong>Lun</strong>
+        <span>-</span>
+    </div>
 
-    <label class="checkbox-row">
-        <input type="checkbox" name="joursGroupe" value="Mardi"> Mardi
-    </label>
-    <input class="form-input" name="horaireMardi" placeholder="Horaire mardi ex : 18h - 19h30">
+    <div class="admin-day-cell" data-jour="Mardi" data-champ="horaireMardi">
+        <strong>Mar</strong>
+        <span>-</span>
+    </div>
 
-    <label class="checkbox-row">
-        <input type="checkbox" name="joursGroupe" value="Mercredi"> Mercredi
-    </label>
-    <input class="form-input" name="horaireMercredi" placeholder="Horaire mercredi ex : 18h - 19h30">
+    <div class="admin-day-cell" data-jour="Mercredi" data-champ="horaireMercredi">
+        <strong>Mer</strong>
+        <span>-</span>
+    </div>
 
-    <label class="checkbox-row">
-        <input type="checkbox" name="joursGroupe" value="Jeudi"> Jeudi
-    </label>
-    <input class="form-input" name="horaireJeudi" placeholder="Horaire jeudi ex : 18h - 19h30">
+    <div class="admin-day-cell" data-jour="Jeudi" data-champ="horaireJeudi">
+        <strong>Jeu</strong>
+        <span>-</span>
+    </div>
 
-    <label class="checkbox-row">
-        <input type="checkbox" name="joursGroupe" value="Vendredi"> Vendredi
-    </label>
-    <input class="form-input" name="horaireVendredi" placeholder="Horaire vendredi ex : 18h - 19h30">
+    <div class="admin-day-cell" data-jour="Vendredi" data-champ="horaireVendredi">
+        <strong>Ven</strong>
+        <span>-</span>
+    </div>
 
-    <label class="checkbox-row">
-        <input type="checkbox" name="joursGroupe" value="Samedi"> Samedi
-    </label>
-    <input class="form-input" name="horaireSamedi" placeholder="Horaire samedi ex : 18h - 19h30">
-
+    <div class="admin-day-cell" data-jour="Samedi" data-champ="horaireSamedi">
+        <strong>Sam</strong>
+        <span>-</span>
+    </div>
 </div>
+
+<section class="card" id="edition-horaire-groupe" style="display:none;">
+    <h2 id="titre-edition-horaire">Horaire</h2>
+
+    <input class="form-input" id="horaire-selectionne" placeholder="Ex : 18h00 - 19h30">
+
+    <button class="primary-button order-button" id="enregistrer-horaire-groupe">
+        Enregistrer l'horaire
+    </button>
+
+    <button class="secondary-button" id="supprimer-horaire-groupe">
+        Supprimer l'horaire
+    </button>
+</section>
 
 
         <h3>👨‍🏫 Coach(s) du groupe</h3>

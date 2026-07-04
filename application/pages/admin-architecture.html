@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture - JDM Club Manager</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Architecture</h1>
+    </header>
+
+    <section class="card">
+        <h2>🧠 Vision globale</h2>
+        <p>
+            Cette page permet de visualiser l'architecture prévue de JDM Club Manager.
+            Certains modules sont déjà fonctionnels, d'autres sont en cours ou prévus.
+        </p>
+    </section>
+
+    <section class="architecture-zone">
+
+        <div class="architecture-block done">
+            <h2>🌐 Espace public</h2>
+            <p>Accueil, réseaux, inscription, boutique, planning public.</p>
+        </div>
+
+        <div class="architecture-arrow">↓</div>
+
+        <div class="architecture-block progress">
+            <h2>👤 Mon espace</h2>
+            <p>Planning personnel, notifications, résultats, documents, profil.</p>
+        </div>
+
+        <div class="architecture-arrow">↓</div>
+
+        <div class="architecture-block done">
+            <h2>🔧 Administration</h2>
+            <p>Adhérents, groupes, planning, organisation, boutique, notifications.</p>
+        </div>
+
+        <div class="architecture-arrow">↓</div>
+
+        <div class="architecture-block important">
+            <h2>🗂 Données centrales</h2>
+            <p>
+                Personnes, adhérents, groupes, saisons, inscriptions, paiements,
+                planning, notifications.
+            </p>
+        </div>
+
+        <div class="architecture-arrow">↓</div>
+
+        <div class="architecture-block future">
+            <h2>☁️ Future architecture sécurisée</h2>
+            <p>
+                HelloAsso API, Firebase/Supabase, authentification, rôles,
+                synchronisation, exports, sauvegardes.
+            </p>
+        </div>
+
+    </section>
+
+    <section class="card">
+        <h2>✅ Modules déjà fonctionnels</h2>
+        <p>Accueil</p>
+        <p>Import HelloAsso</p>
+        <p>Adhérents</p>
+        <p>Groupes</p>
+        <p>Planning intelligent</p>
+        <p>Fiche adhérent PDF</p>
+        <p>Carte adhérent</p>
+        <p>Boutique</p>
+        <p>Organisation</p>
+    </section>
+
+    <section class="card">
+        <h2>🚧 Modules à adapter à la nouvelle architecture</h2>
+        <p>Connexion utilisateurs</p>
+        <p>Base de données partagée</p>
+        <p>Notifications parents / coachs / bureau</p>
+        <p>Absences signalées par les parents</p>
+        <p>Paiement boutique via HelloAsso</p>
+        <p>Exports PDF de masse</p>
+        <p>Résultats sportifs</p>
+    </section>
+
+</main>
+
+</body>
+</html>
