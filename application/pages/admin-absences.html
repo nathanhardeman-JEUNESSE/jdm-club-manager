@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absences - JDM Club Manager</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Absences</h1>
+    </header>
+
+    <section class="card">
+        <h2>🙋 Absences déclarées</h2>
+        <p>
+            Retrouvez ici les absences signalées par les parents depuis leur espace membre.
+        </p>
+    </section>
+
+    <section class="card">
+        <input class="form-input" id="recherche-absence" placeholder="Rechercher nom, prénom, groupe, motif">
+
+        <select class="form-input" id="filtre-groupe-absence">
+            <option value="">Tous les groupes</option>
+        </select>
+
+        <select class="form-input" id="filtre-statut-absence">
+            <option value="">Tous les statuts</option>
+            <option value="déclarée">Déclarée</option>
+            <option value="traitée">Traitée</option>
+        </select>
+    </section>
+
+    <section id="liste-absences-admin"></section>
+
+</main>
+
+<script src="../scripts/admin-absences.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Mon planning</title>
+
+<link rel="stylesheet" href="../styles/theme.css">
+<link rel="stylesheet" href="../styles/components.css">
+
+</head>
+
+<body>
+
+<main class="page">
+
+<header class="page-header">
+
+<a href="espace-membre.html" class="back-button">←</a>
+
+<h1>Mon planning</h1>
+
+</header>
+
+<section class="card">
+
+<h2>📅 Mon planning</h2>
+
+<p>
+
+Retrouvez ici vos entraînements,
+
+les informations du club
+
+et signalez une absence.
+
+</p>
+
+</section>
+
+<section class="week-selector">
+
+<button class="week-button" id="semaine-precedente">←</button>
+
+<div class="week-title" id="titre-semaine"></div>
+
+<button class="week-button" id="semaine-suivante">→</button>
+
+</section>
+
+<section id="planning-membre"></section>
+
+<section class="card" id="absence-card" style="display:none;">
+
+<h2>🙋 Signaler une absence</h2>
+
+<p id="absence-seance"></p>
+
+<select class="form-input" id="motif-absence">
+
+<option value="">Motif...</option>
+
+<option>Maladie</option>
+
+<option>Vacances</option>
+
+<option>Rendez-vous</option>
+
+<option>Blessure</option>
+
+<option>Autre</option>
+
+</select>
+
+<textarea
+class="form-input"
+id="message-absence"
+placeholder="Message complémentaire"></textarea>
+
+<button class="primary-button order-button" id="envoyer-absence">
+
+Envoyer
+
+</button>
+
+</section>
+
+</main>
+
+<script src="../scripts/planning-membre.js"></script>
+
+</body>
+
+</html>

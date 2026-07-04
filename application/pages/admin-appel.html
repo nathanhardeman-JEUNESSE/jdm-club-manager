@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appel - JDM Club Manager</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Appel</h1>
+    </header>
+
+    <section class="card">
+        <h2>📋 Feuille d'appel</h2>
+        <p>
+            Sélectionnez une semaine, un groupe et une séance pour faire l'appel.
+        </p>
+    </section>
+
+    <section class="week-selector">
+        <button class="week-button" id="semaine-precedente">←</button>
+
+        <div class="week-title" id="titre-semaine">
+            Semaine
+        </div>
+
+        <button class="week-button" id="semaine-suivante">→</button>
+    </section>
+
+    <section class="card">
+        <select class="form-input" id="groupe-appel">
+            <option value="">Choisir un groupe</option>
+        </select>
+
+        <select class="form-input" id="seance-appel">
+            <option value="">Choisir une séance</option>
+        </select>
+    </section>
+
+    <section id="zone-appel"></section>
+
+</main>
+
+<script src="../scripts/admin-appel.js"></script>
+
+</body>
+</html>

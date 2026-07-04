@@ -238,6 +238,13 @@ function creerDonneesDemo() {
     localStorage.setItem("groupesJDM", JSON.stringify(groupesDemo));
     localStorage.setItem("planningExceptionsJDM", JSON.stringify(exceptionsDemo));
     localStorage.setItem("notificationsJDM", JSON.stringify(notificationsDemo));
+    localStorage.setItem("utilisateurConnecteJDM", JSON.stringify({
+    id: "parent-demo-001",
+    role: "parent",
+    nom: "Parent",
+    prenom: "Démo",
+    enfants: ["JDM-000003"]
+}));
 
     alert("Données de démonstration complètes créées ✅");
 }
@@ -254,6 +261,7 @@ function supprimerDonneesDemo() {
     localStorage.removeItem("commandesJDM");
     localStorage.removeItem("notificationsTresorierJDM");
     localStorage.removeItem("panierJDM");
+    localStorage.removeItem("utilisateurConnecteJDM");
 
     alert("Toutes les données de démonstration ont été supprimées ✅");
 }

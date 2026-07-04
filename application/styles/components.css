@@ -1568,3 +1568,81 @@
     background: #4b4b4b;
     color: #cccccc;
 }
+/* ================================================= */
+/* espace membre notification */
+/* ================================================= */
+
+
+
+.notification-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    margin-left: 8px;
+    border-radius: 999px;
+    background: var(--jdm-red);
+    color: white;
+    font-size: 13px;
+    font-weight: bold;
+}
+.absence-admin-info {
+    margin: 12px 0;
+    padding: 12px;
+    border-left: 5px solid #ff9800;
+    border-radius: 10px;
+    background: rgba(255, 152, 0, 0.12);
+}
+
+.absence-admin-info p {
+    margin: 6px 0;
+}
+.absence-admin-info {
+    margin: 14px 0;
+    padding: 14px;
+    border-left: 6px solid #ff2b2b;
+    border-radius: 12px;
+    background: rgba(255, 43, 43, 0.15);
+    box-shadow: 0 0 14px rgba(255, 43, 43, 0.45);
+}
+
+.absence-admin-title {
+    color: #ff3b3b;
+    font-weight: 900;
+    font-size: 15px;
+    animation: absenceBlink 1.2s infinite;
+}
+
+@keyframes absenceBlink {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.35;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+/* ================================================= */
+/* ADMIN ABSENCES */
+/* ================================================= */
+
+.absence-card-admin {
+    border-left: 6px solid #ff9800;
+}
+
+.absence-card-admin.absence-declaree {
+    border-left-color: #ff2b2b;
+    box-shadow: 0 0 12px rgba(255, 43, 43, 0.25);
+}
+
+.absence-card-admin.absence-traitee {
+    border-left-color: #2f8f46;
+    opacity: 0.85;
+}

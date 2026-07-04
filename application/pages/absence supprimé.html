@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signaler une absence - JDM Club Manager</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="espace-membre.html" class="back-button">←</a>
+        <h1>Absence</h1>
+    </header>
+
+    <section class="card">
+        <h2>🙋 Signaler une absence</h2>
+        <p>
+            Prévenez le club qu’un gymnaste sera absent à un entraînement ou à un événement.
+        </p>
+
+        <input class="form-input" id="absence-nom" placeholder="Nom du gymnaste">
+        <input class="form-input" id="absence-prenom" placeholder="Prénom du gymnaste">
+
+        <select class="form-input" id="absence-groupe">
+            <option value="">Choisir le groupe</option>
+        </select>
+
+        <input class="form-input" id="absence-date" type="date">
+
+        <select class="form-input" id="absence-motif">
+            <option value="">Motif</option>
+            <option value="Maladie">Maladie</option>
+            <option value="Rendez-vous">Rendez-vous</option>
+            <option value="Vacances">Vacances</option>
+            <option value="Raison familiale">Raison familiale</option>
+            <option value="Autre">Autre</option>
+        </select>
+
+        <textarea class="form-input" id="absence-message" placeholder="Message complémentaire facultatif"></textarea>
+
+        <button class="primary-button order-button" id="envoyer-absence">
+            Envoyer l'absence
+        </button>
+    </section>
+
+    <section id="liste-absences-parent"></section>
+
+</main>
+
+<script src="../scripts/absence.js"></script>
+
+</body>
+</html>

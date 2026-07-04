@@ -345,6 +345,12 @@ selection = null;
         return;
     }
 
+    const groupe = groupes.find(g => String(g.id) === String(selection.groupeId));
+
+    if (groupe && groupe.notificationsParents === false) {
+    return;
+    }
+
     const envoyer = confirm("Notifier les parents du groupe de ce changement ?");
 
     if (!envoyer || !selection) return;
