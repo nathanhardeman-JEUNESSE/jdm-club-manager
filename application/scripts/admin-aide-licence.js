@@ -89,6 +89,8 @@ function aidePour(numeroAdherent) {
     if (!aide) {
         aide = {
             numeroAdherent,
+            typeLicence: "loisir",
+            montantLicence: "",
             aideLomme: "non",
             codeLomme: "",
             montantAideLomme: "",
@@ -104,6 +106,11 @@ function aidePour(numeroAdherent) {
         sauvegarderAides();
     }
 
+    if (!aide.typeLicence) aide.typeLicence = "loisir";
+    if (!("montantLicence" in aide)) aide.montantLicence = "";
+    if (!("aideLomme" in aide)) aide.aideLomme = "non";
+    if (!("passSport" in aide)) aide.passSport = "non";
+
     return aide;
 }
 
@@ -118,9 +125,9 @@ function adherentsEligibles() {
     });
 }
 
-function modifierAide(numeroAdherent, champ, valeur) {
+function modifierAide(numeroAdherent, champNom, valeur) {
     const aide = aidePour(numeroAdherent);
-    aide[champ] = valeur;
+    aide[champNom] = valeur;
 
     sauvegarderAides();
     afficherStats();
@@ -141,6 +148,8 @@ function afficherStats() {
     let cheque = 0;
     let espece = 0;
     let passSportOui = 0;
+    let loisir = 0;
+    let competition = 0;
 
     const parAge = {};
 
@@ -164,12 +173,19 @@ function afficherStats() {
         if (modePaiement.includes("espece") || modePaiement.includes("espèce")) espece++;
 
         if (aide.passSport === "oui") passSportOui++;
+        if (aide.typeLicence === "loisir") loisir++;
+        if (aide.typeLicence === "competition") competition++;
     });
 
     zoneStats.innerHTML = `
         <p><strong>Adhérents éligibles 2 à 18 ans :</strong> ${eligibles.length}</p>
         <p><strong>Résidents Lomme repérés :</strong> ${lomme}</p>
-        <p><strong>Hors Lomme :</strong> ${horsLomme}</p>
+        <p><strong>Hors Lomme / à vérifier :</strong> ${horsLomme}</p>
+
+        <hr>
+
+        <p><strong>Licences loisir :</strong> ${loisir}</p>
+        <p><strong>Licences compétition :</strong> ${competition}</p>
 
         <hr>
 
@@ -180,6 +196,7 @@ function afficherStats() {
         <hr>
 
         <p><strong>Pass’Sport déclarés :</strong> ${passSportOui}</p>
+        <p><strong>Total licences / cotisations :</strong> ${totalNombre("montantLicence")} €</p>
         <p><strong>Total aides Lomme prévues :</strong> ${totalNombre("montantAideLomme")} €</p>
         <p><strong>Total Pass’Sport :</strong> ${totalNombre("montantPassSport")} €</p>
         <p><strong>Total remboursé aux familles :</strong> ${totalNombre("remboursementFamille")} €</p>
@@ -201,7 +218,6 @@ function adherentVisible(adherent) {
     const filtre = filtreStatut.value;
 
     if (filtre && aide.statut !== filtre) return false;
-
     if (!recherche) return true;
 
     const texte = nettoyer(`
@@ -212,6 +228,7 @@ function adherentVisible(adherent) {
         ${codePostalAdherent(donnees)}
         ${aide.codeLomme}
         ${aide.codePassSport}
+        ${aide.typeLicence}
     `);
 
     return texte.includes(recherche);
@@ -251,6 +268,23 @@ function afficherListe() {
                 <p><strong>Code postal :</strong> ${codePostalAdherent(donnees) || "Non renseigné"}</p>
                 <p><strong>Résident Lomme :</strong> ${residentLomme ? "Oui" : "Non / à vérifier"}</p>
                 <p><strong>Paiement :</strong> ${paiementAdherent(donnees)}</p>
+
+                <hr>
+
+                <h3>🏷️ Licence / cotisation</h3>
+
+                <select class="form-input"
+                        onchange="modifierAide('${adherent.numeroAdherent}', 'typeLicence', this.value)">
+                    <option value="loisir" ${aide.typeLicence === "loisir" ? "selected" : ""}>Loisir</option>
+                    <option value="competition" ${aide.typeLicence === "competition" ? "selected" : ""}>Compétition</option>
+                    <option value="autre" ${aide.typeLicence === "autre" ? "selected" : ""}>Autre</option>
+                </select>
+
+                <input class="form-input"
+                       type="number"
+                       placeholder="Montant licence / cotisation"
+                       value="${aide.montantLicence || ""}"
+                       onchange="modifierAide('${adherent.numeroAdherent}', 'montantLicence', this.value)">
 
                 <hr>
 
@@ -324,8 +358,123 @@ function afficherListe() {
     });
 }
 
-rechercheAide.addEventListener("input", afficherListe);
-filtreStatut.addEventListener("change", afficherListe);
+function telechargerCSV(nomFichier, lignes) {
+    const contenu = lignes
+        .map(ligne => ligne.map(valeur =>
+            `"${String(valeur || "").replace(/"/g, '""')}"`
+        ).join(";"))
+        .join("\n");
+
+    const blob = new Blob(["\uFEFF" + contenu], {
+        type: "text/csv;charset=utf-8;"
+    });
+
+    const lien = document.createElement("a");
+    lien.href = URL.createObjectURL(blob);
+    lien.download = nomFichier;
+    lien.click();
+}
+
+function exporterBordereauAide() {
+    const lignes = [[
+        "Nom",
+        "Prénom",
+        "Âge",
+        "Groupe",
+        "Ville",
+        "Code postal",
+        "Résident Lomme",
+        "Type licence",
+        "Montant licence",
+        "Code aide Lomme",
+        "Montant aide Lomme",
+        "PassSport",
+        "Code PassSport",
+        "Montant PassSport",
+        "Remboursé famille",
+        "Statut"
+    ]];
+
+    adherentsEligibles().forEach(adherent => {
+        const inscription = derniereInscription(adherent.numeroAdherent);
+        const donnees = inscription ? inscription.donneesHelloAsso || {} : {};
+        const aide = aidePour(adherent.numeroAdherent);
+
+        lignes.push([
+            adherent.nom,
+            adherent.prenom,
+            calculerAge(adherent.dateNaissance),
+            groupeAdherent(adherent),
+            villeAdherent(donnees),
+            codePostalAdherent(donnees),
+            estLomme(donnees) ? "Oui" : "Non / à vérifier",
+            aide.typeLicence,
+            aide.montantLicence,
+            aide.codeLomme,
+            aide.montantAideLomme,
+            aide.passSport,
+            aide.codePassSport,
+            aide.montantPassSport,
+            aide.remboursementFamille,
+            aide.statut
+        ]);
+    });
+
+    telechargerCSV("bordereau-aide-licence-lomme.csv", lignes);
+}
+
+function exporterRapportAide() {
+    const lignes = [
+        ["Rapport aide licence Lomme"],
+        ["Date", new Date().toLocaleString("fr-FR")],
+        [],
+        ["Total adhérents éligibles", adherentsEligibles().length],
+        ["Total licences / cotisations", totalNombre("montantLicence") + " €"],
+        ["Total aide Lomme", totalNombre("montantAideLomme") + " €"],
+        ["Total PassSport", totalNombre("montantPassSport") + " €"],
+        ["Total remboursé familles", totalNombre("remboursementFamille") + " €"],
+        [],
+        ["Nom", "Prénom", "Âge", "Groupe", "Type licence", "Montant licence", "Aide Lomme", "PassSport", "Remboursé", "Statut"]
+    ];
+
+    adherentsEligibles().forEach(adherent => {
+        const aide = aidePour(adherent.numeroAdherent);
+
+        lignes.push([
+            adherent.nom,
+            adherent.prenom,
+            calculerAge(adherent.dateNaissance),
+            groupeAdherent(adherent),
+            aide.typeLicence,
+            aide.montantLicence,
+            aide.montantAideLomme,
+            aide.montantPassSport,
+            aide.remboursementFamille,
+            aide.statut
+        ]);
+    });
+
+    telechargerCSV("rapport-tresorier-aide-licence.csv", lignes);
+}
+
+if (rechercheAide) {
+    rechercheAide.addEventListener("input", afficherListe);
+}
+
+if (filtreStatut) {
+    filtreStatut.addEventListener("change", afficherListe);
+}
+
+const boutonBordereau = document.getElementById("exporter-bordereau-aide");
+const boutonRapport = document.getElementById("exporter-rapport-aide");
+
+if (boutonBordereau) {
+    boutonBordereau.addEventListener("click", exporterBordereauAide);
+}
+
+if (boutonRapport) {
+    boutonRapport.addEventListener("click", exporterRapportAide);
+}
 
 afficherStats();
 afficherListe();

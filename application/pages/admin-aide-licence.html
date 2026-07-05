@@ -21,7 +21,7 @@
     <section class="card">
         <h2>💶 Aide licence sportive</h2>
         <p>
-            Suivi des adhérents éligibles, codes mairie, montants d’aide,
+            Suivi des adhérents éligibles, codes mairie, Pass’Sport,
             remboursements et statistiques.
         </p>
     </section>
@@ -32,9 +32,21 @@
     </section>
 
     <section class="card">
+        <h2>📤 Exports</h2>
+
+        <button class="primary-button order-button" id="exporter-bordereau-aide">
+            Exporter le bordereau CSV
+        </button>
+
+        <button class="secondary-button" id="exporter-rapport-aide">
+            Exporter le rapport trésorier CSV
+        </button>
+    </section>
+
+    <section class="card">
         <h2>🔎 Filtres</h2>
 
-        <input class="form-input" id="recherche-aide" placeholder="Rechercher nom, prénom, groupe">
+        <input class="form-input" id="recherche-aide" placeholder="Rechercher nom, prénom, groupe, ville, code">
 
         <select class="form-input" id="filtre-aide-statut">
             <option value="">Tous les statuts</option>
