@@ -1,32 +1,66 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notifications trésorier - JDM Club Manager</title>
+    <title>Centre de notifications - JDM Club Manager</title>
 
     <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="../styles/components.css">
 </head>
+
 <body>
 
 <main class="page">
 
     <header class="page-header">
         <a href="administration.html" class="back-button">←</a>
-        <h1>Trésorier</h1>
+        <h1>Centre de notifications</h1>
     </header>
 
     <section class="card">
-        <h2>🔔 Notifications trésorier</h2>
-        <p>Suivi des remboursements ou actions financières à prévoir.</p>
+        <h2>🔔 Centre de notifications</h2>
+        <p>
+            Retrouvez ici les notifications importantes du club, classées par catégorie.
+        </p>
     </section>
 
-    <section id="notifications-tresorier"></section>
+    <a href="admin-notifications-tresorier-detail.html" class="navigation-link">
+        <section class="navigation-card">
+            <div class="navigation-icon">💰</div>
+            <div class="navigation-content">
+                <h2>Trésorier</h2>
+                <p>Cotisations, paiements, remboursements et alertes financières.</p>
+            </div>
+            <div class="navigation-arrow">➜</div>
+        </section>
+    </a>
+
+    <a href="admin-notifications-groupes-parents.html" class="navigation-link">
+        <section class="navigation-card">
+            <div class="navigation-icon">👨‍👩‍👧</div>
+            <div class="navigation-content">
+                <h2>Parents / Groupes</h2>
+                <p>Messages liés aux familles, groupes, absences et planning.</p>
+            </div>
+            <div class="navigation-arrow">➜</div>
+        </section>
+    </a>
+
+    <a href="admin-notifications-boutique.html" class="navigation-link">
+        <section class="navigation-card">
+            <div class="navigation-icon">🛍️</div>
+            <div class="navigation-content">
+                <h2>Boutique</h2>
+                <p>Commandes, retraits, paiements et informations boutique.</p>
+            </div>
+            <div class="navigation-arrow">➜</div>
+        </section>
+    </a>
 
 </main>
 
-<script src="../scripts/admin-notifications-tresorier.js"></script>
-
 </body>
+
 </html>

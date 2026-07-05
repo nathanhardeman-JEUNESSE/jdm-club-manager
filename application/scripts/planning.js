@@ -18,6 +18,12 @@ const jours = [
     { cle: "dimanche", label: "Dim" }
 ];
 
+const fermeturesAutoJDM = {
+    joursFeries: {},
+    vacances: [],
+    anneesChargees: []
+};
+
 function securiserTexte(texte) {
     return String(texte || "").replace(/'/g, "\\'");
 }
@@ -26,8 +32,10 @@ function debutSemaine(date) {
     const copie = new Date(date);
     const jour = copie.getDay();
     const difference = jour === 0 ? -6 : 1 - jour;
+
     copie.setDate(copie.getDate() + difference);
     copie.setHours(0, 0, 0, 0);
+
     return copie;
 }
 
@@ -57,6 +65,7 @@ function mettreAJourTitreSemaine() {
     const debut = debutSemaine(dateReference);
     const fin = new Date(debut);
     fin.setDate(debut.getDate() + 6);
+
     titreSemaine.textContent = `Semaine du ${formatDateFR(debut)} au ${formatDateFR(fin)}`;
 }
 
@@ -67,6 +76,117 @@ function trouverException(groupeId, dateISO) {
     );
 }
 
+function chargerCacheFermetures() {
+    const cache = JSON.parse(localStorage.getItem("fermeturesAutoJDM")) || null;
+
+    if (!cache) return;
+
+    fermeturesAutoJDM.joursFeries = cache.joursFeries || {};
+    fermeturesAutoJDM.vacances = cache.vacances || [];
+    fermeturesAutoJDM.anneesChargees = cache.anneesChargees || [];
+}
+
+function sauverCacheFermetures() {
+    localStorage.setItem("fermeturesAutoJDM", JSON.stringify(fermeturesAutoJDM));
+}
+
+async function chargerFermeturesAnnee(annee) {
+    if (fermeturesAutoJDM.anneesChargees.includes(annee)) return;
+
+    try {
+        const joursFeriesUrl = `https://calendrier.api.gouv.fr/jours-feries/metropole/${annee}.json`;
+
+        const vacancesUrl =
+            "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-calendrier-scolaire/records" +
+            `?limit=100` +
+            `&where=start_date%20%3E%3D%20%22${annee}-01-01%22%20AND%20start_date%20%3C%3D%20%22${annee + 1}-12-31%22` +
+            `&refine=zones%3A%22Zone%20B%22`;
+
+        const [joursFeriesReponse, vacancesReponse] = await Promise.all([
+            fetch(joursFeriesUrl),
+            fetch(vacancesUrl)
+        ]);
+
+        if (joursFeriesReponse.ok) {
+            const joursFeries = await joursFeriesReponse.json();
+            Object.assign(fermeturesAutoJDM.joursFeries, joursFeries);
+        }
+
+        if (vacancesReponse.ok) {
+            const vacancesData = await vacancesReponse.json();
+
+            const vacances = (vacancesData.results || [])
+                .filter(v => v.start_date && v.end_date)
+                .map(v => ({
+                    debut: v.start_date.split("T")[0],
+                    fin: v.end_date.split("T")[0],
+                    nom: v.description || "Vacances scolaires"
+                }));
+
+            vacances.forEach(vacance => {
+                const existeDeja = fermeturesAutoJDM.vacances.some(v =>
+                    v.debut === vacance.debut &&
+                    v.fin === vacance.fin &&
+                    v.nom === vacance.nom
+                );
+
+                if (!existeDeja) {
+                    fermeturesAutoJDM.vacances.push(vacance);
+                }
+            });
+        }
+
+        fermeturesAutoJDM.anneesChargees.push(annee);
+        sauverCacheFermetures();
+
+    } catch (erreur) {
+        console.warn("Fermetures automatiques indisponibles :", erreur);
+    }
+}
+
+async function chargerFermeturesSemaine() {
+    chargerCacheFermetures();
+
+    const debut = debutSemaine(dateReference);
+    const fin = new Date(debut);
+    fin.setDate(debut.getDate() + 6);
+
+    const annees = [...new Set([
+        debut.getFullYear() - 1,
+        debut.getFullYear(),
+        fin.getFullYear(),
+        fin.getFullYear() + 1
+    ])];
+
+    await Promise.all(annees.map(annee => chargerFermeturesAnnee(annee)));
+}
+
+function trouverFermetureAutomatique(dateISO) {
+    if (fermeturesAutoJDM.joursFeries[dateISO]) {
+        return {
+            statut: "pas-cours",
+            horaire: "",
+            titre: fermeturesAutoJDM.joursFeries[dateISO],
+            message: `Pas de cours : ${fermeturesAutoJDM.joursFeries[dateISO]}`
+        };
+    }
+
+    const vacances = fermeturesAutoJDM.vacances.find(v =>
+        dateISO >= v.debut && dateISO < v.fin
+    );
+
+    if (vacances) {
+        return {
+            statut: "pas-cours",
+            horaire: "",
+            titre: vacances.nom,
+            message: `Pas de cours : ${vacances.nom}`
+        };
+    }
+
+    return null;
+}
+
 function classeStatut(statut, horaire) {
     if (statut === "annule") return "cancel";
     if (statut === "pas-cours") return "off";
@@ -75,8 +195,9 @@ function classeStatut(statut, horaire) {
     return "off";
 }
 
-function afficherPlanning() {
+async function afficherPlanning() {
     mettreAJourTitreSemaine();
+    await chargerFermeturesSemaine();
 
     if (groupes.length === 0) {
         zonePlanning.innerHTML = `
@@ -90,7 +211,7 @@ function afficherPlanning() {
 
     zonePlanning.innerHTML = "";
 
-    groupes.forEach((groupe) => {
+    groupes.forEach(groupe => {
         zonePlanning.innerHTML += `
             <section class="schedule-card">
                 <div class="schedule-info">
@@ -104,7 +225,10 @@ function afficherPlanning() {
                     ${jours.map((jour, index) => {
                         const date = dateJour(index);
                         const dateISO = formatDateISO(date);
-                        const exception = trouverException(groupe.id, dateISO);
+
+                        const exceptionManuelle = trouverException(groupe.id, dateISO);
+                        const exceptionAuto = trouverFermetureAutomatique(dateISO);
+                        const exception = exceptionManuelle || exceptionAuto;
 
                         const horaireHabituel = groupe.horaires ? groupe.horaires[jour.cle] : "";
                         const statut = exception ? exception.statut : "cours";

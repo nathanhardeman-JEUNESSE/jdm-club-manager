@@ -25,7 +25,7 @@
             Espace réservé aux administrateurs du club.
         </p>
     </section>
-
+<!--
     <a href="admin-architecture.html" class="navigation-link">
     <section class="navigation-card">
         <div class="navigation-icon">🧠</div>
@@ -38,7 +38,7 @@
         <div class="navigation-arrow">➜</div>
     </section>
 </a>
-
+-->
     <!-- Adhérents -->
     <a href="admin-adherents.html" class="navigation-link">
         <section class="navigation-card">
@@ -102,9 +102,21 @@
         <section class="navigation-card">
             <div class="navigation-icon">🔔</div>
             <div class="navigation-content">
-                <h2>Notifications trésorier</h2>
+                <h2>Notifications <span id="badge-notifications-admin"></span></h2>
                 <p>Consulter les alertes de remboursement et informations financières.</p>
             </div>
+            <div class="navigation-arrow">➜</div>
+        </section>
+    </a>
+    <a href="admin-aide-licence.html" class="navigation-link">
+        <section class="navigation-card">
+            <div class="navigation-icon">💶</div>
+
+            <div class="navigation-content">
+                <h2>Aide licence Lomme</h2>
+                <p>Suivre les aides, codes, remboursements et statistiques trésorier.</p>
+            </div>
+
             <div class="navigation-arrow">➜</div>
         </section>
     </a>
@@ -170,6 +182,8 @@
     </a>
 
 </main>
+
+<script src="../scripts/administration.js"></script>
 
 </body>
 </html>

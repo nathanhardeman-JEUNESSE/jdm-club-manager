@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aide licence Lomme - JDM Club Manager</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Aide licence Lomme</h1>
+    </header>
+
+    <section class="card">
+        <h2>💶 Aide licence sportive</h2>
+        <p>
+            Suivi des adhérents éligibles, codes mairie, montants d’aide,
+            remboursements et statistiques.
+        </p>
+    </section>
+
+    <section class="card">
+        <h2>📊 Statistiques</h2>
+        <div id="stats-aide-licence"></div>
+    </section>
+
+    <section class="card">
+        <h2>🔎 Filtres</h2>
+
+        <input class="form-input" id="recherche-aide" placeholder="Rechercher nom, prénom, groupe">
+
+        <select class="form-input" id="filtre-aide-statut">
+            <option value="">Tous les statuts</option>
+            <option value="a-traiter">À traiter</option>
+            <option value="code-recu">Code reçu</option>
+            <option value="transmis-ville">Transmis à la Ville</option>
+            <option value="rembourse-ville">Remboursé par la Ville</option>
+            <option value="rembourse-famille">Famille remboursée</option>
+        </select>
+    </section>
+
+    <section id="liste-aide-licence"></section>
+
+</main>
+
+<script src="../scripts/admin-aide-licence.js"></script>
+
+</body>
+</html>
