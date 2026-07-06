@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des actualités - JDM Club Manager</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Gestion des actus</h1>
+    </header>
+
+    <section class="card">
+        <h2>📰 Actualité accueil</h2>
+        <p>Texte court affiché sur la page d'accueil.</p>
+
+        <textarea class="form-input" id="actualite-accueil-admin"></textarea>
+    </section>
+
+    <section class="card">
+        <h2>📄 Page actualités</h2>
+        <p>Texte complet affiché lorsque l'utilisateur clique sur l'actualité.</p>
+
+        <textarea class="form-input" id="actualite-detail-admin"></textarea>
+
+        <button class="primary-button order-button" id="enregistrer-actualites">
+            Enregistrer les actualités
+        </button>
+    </section>
+
+</main>
+
+<script src="../scripts/admin-actualites.js"></script>
+
+</body>
+</html>

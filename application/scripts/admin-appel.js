@@ -107,23 +107,10 @@ function adherentsDuGroupe(nomGroupe) {
 }
 
 function absenceDeclaree(numeroAdherent, groupeNom, dateISO) {
-    const adherent = adherents.find(a => a.numeroAdherent === numeroAdherent);
-
-    if (!adherent) return null;
-
     return absences.find(absence =>
+        absence.numeroAdherent === numeroAdherent &&
         absence.groupeNom === groupeNom &&
-        absence.date === dateISO &&
-        (
-            !absence.numeroAdherent ||
-            absence.numeroAdherent === numeroAdherent ||
-            (
-                absence.nom &&
-                absence.prenom &&
-                absence.nom.toLowerCase() === String(adherent.nom || "").toLowerCase() &&
-                absence.prenom.toLowerCase() === String(adherent.prenom || "").toLowerCase()
-            )
-        )
+        absence.date === dateISO
     );
 }
 

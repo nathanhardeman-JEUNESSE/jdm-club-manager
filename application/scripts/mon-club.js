@@ -1,63 +1,50 @@
-const membresClub = JSON.parse(localStorage.getItem("organisationJDM")) || [];
-
-const zoneClub = document.getElementById("club-organisation");
-
-function prioriteMembre(membre) {
-    const roles = membre.roles || [];
-
-    if (roles.includes("Admin principal")) return 1;
-    if (roles.includes("Président")) return 2;
-    if (roles.includes("Vice-président")) return 3;
-    if (roles.includes("Trésorier")) return 4;
-    if (roles.includes("Secrétaire")) return 5;
-    if (roles.includes("Coach")) return 6;
-    if (roles.includes("Juge")) return 7;
-    if (roles.includes("Bénévole")) return 8;
-    return 99;
-}
-
-function afficherOrganisationComplete() {
-    if (membresClub.length === 0) {
-        zoneClub.innerHTML = `
-            <section class="card">
-                <h2>Organisation à compléter</h2>
-                <p>Aucun membre du bureau ou coach n'a encore été ajouté.</p>
-            </section>
-        `;
-        return;
+const contenuSite = JSON.parse(localStorage.getItem("contenuSiteJDM")) || {
+    club: {
+        titre: "La Jeunesse du Marais",
+        presentation: "Association sportive dédiée à la pratique de la gymnastique.",
+        histoire: "Le club accompagne les gymnastes dans un cadre familial, sportif et associatif.",
+        valeurs: "Respect, engagement, esprit d'équipe, progression et plaisir de pratiquer.",
+        disciplines: "Baby Gym, loisirs, compétition, gymnastique artistique.",
+        installations: "Les entraînements se déroulent dans les installations sportives de Lomme.",
+        adresse: "Lomme",
+        telephone: "",
+        email: "",
+        horaires: "",
+        facebook: "https://www.facebook.com/groups/255772491691570/?ref=share",
+        instagram: "https://www.instagram.com/jeunesse.du.marais",
+        tiktok: "https://www.tiktok.com/@jeunesse.du.marais"
     }
+};
 
-    const membresTries = membresClub
-        .slice()
-        .sort((a, b) => prioriteMembre(a) - prioriteMembre(b));
+const club = contenuSite.club || {};
 
-    zoneClub.innerHTML = `
-        <section class="card">
-            <h2>🏛 Membres du club</h2>
+function remplirTexte(id, valeur, defaut = "") {
+    const element = document.getElementById(id);
 
-            ${membresTries.map(membre => `
-                <div class="club-member">
-                    <img src="${membre.photo || "../images/logo-jdm.png"}"
-                         alt="${membre.prenom} ${membre.nom}"
-                         class="club-member-photo">
-
-                    <div>
-                        <h3>${membre.prenom} ${membre.nom}</h3>
-
-                        <p>
-                            ${membre.roles.join(" / ")}
-                        </p>
-
-                        ${membre.groupes && membre.groupes.length > 0 ? `
-                            <p>
-                                ${membre.groupes.join(" / ")}
-                            </p>
-                        ` : ""}
-                    </div>
-                </div>
-            `).join("")}
-        </section>
-    `;
+    if (element) {
+        element.textContent = valeur || defaut;
+    }
 }
 
-afficherOrganisationComplete();
+function remplirLien(id, valeur) {
+    const element = document.getElementById(id);
+
+    if (element) {
+        element.href = valeur || "#";
+    }
+}
+
+remplirTexte("club-titre", club.titre, "La Jeunesse du Marais");
+remplirTexte("club-presentation", club.presentation);
+remplirTexte("club-histoire", club.histoire);
+remplirTexte("club-valeurs", club.valeurs);
+remplirTexte("club-disciplines", club.disciplines);
+remplirTexte("club-installations", club.installations);
+remplirTexte("club-adresse", club.adresse);
+remplirTexte("club-telephone", club.telephone);
+remplirTexte("club-email", club.email);
+remplirTexte("club-horaires", club.horaires);
+
+remplirLien("club-facebook", club.facebook);
+remplirLien("club-instagram", club.instagram);
+remplirLien("club-tiktok", club.tiktok);

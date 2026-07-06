@@ -13,18 +13,29 @@ function nettoyer(texte) {
         .replace(/[\u0300-\u036f]/g, "");
 }
 
+function sauvegarderAbsences() {
+    localStorage.setItem("absencesJDM", JSON.stringify(absences));
+}
+
 function remplirGroupes() {
+    if (!filtreGroupeAbsence) return;
+
+    const valeurActuelle = filtreGroupeAbsence.value;
+    filtreGroupeAbsence.innerHTML = `<option value="">Tous les groupes</option>`;
+
     groupes.forEach(groupe => {
         filtreGroupeAbsence.innerHTML += `
             <option value="${groupe.nom}">${groupe.nom}</option>
         `;
     });
+
+    filtreGroupeAbsence.value = valeurActuelle;
 }
 
 function absenceVisible(absence) {
-    const recherche = nettoyer(rechercheAbsence.value);
-    const filtreGroupe = filtreGroupeAbsence.value;
-    const filtreStatut = filtreStatutAbsence.value;
+    const recherche = rechercheAbsence ? nettoyer(rechercheAbsence.value) : "";
+    const filtreGroupe = filtreGroupeAbsence ? filtreGroupeAbsence.value : "";
+    const filtreStatut = filtreStatutAbsence ? filtreStatutAbsence.value : "";
 
     if (filtreGroupe && absence.groupeNom !== filtreGroupe) return false;
     if (filtreStatut && absence.statut !== filtreStatut) return false;
@@ -43,11 +54,40 @@ function absenceVisible(absence) {
     return texte.includes(recherche);
 }
 
+function marquerAbsenceLue(id) {
+    absences = absences.map(absence => {
+        if (String(absence.id) === String(id)) {
+            return {
+                ...absence,
+                lueAdmin: true,
+                dateLectureAdmin: new Date().toISOString()
+            };
+        }
+
+        return absence;
+    });
+
+    sauvegarderAbsences();
+    afficherAbsences();
+}
+
+function marquerToutesAbsencesLues() {
+    absences = absences.map(absence => ({
+        ...absence,
+        lueAdmin: true,
+        dateLectureAdmin: absence.dateLectureAdmin || new Date().toISOString()
+    }));
+
+    sauvegarderAbsences();
+    afficherAbsences();
+}
+
 function marquerAbsenceTraitee(id) {
     absences = absences.map(absence => {
         if (String(absence.id) === String(id)) {
             return {
                 ...absence,
+                lueAdmin: true,
                 statut: "traitée",
                 dateTraitement: new Date().toISOString()
             };
@@ -56,7 +96,7 @@ function marquerAbsenceTraitee(id) {
         return absence;
     });
 
-    localStorage.setItem("absencesJDM", JSON.stringify(absences));
+    sauvegarderAbsences();
     afficherAbsences();
 }
 
@@ -73,7 +113,7 @@ function remettreAbsenceDeclaree(id) {
         return absence;
     });
 
-    localStorage.setItem("absencesJDM", JSON.stringify(absences));
+    sauvegarderAbsences();
     afficherAbsences();
 }
 
@@ -82,17 +122,33 @@ function supprimerAbsence(id) {
 
     absences = absences.filter(absence => String(absence.id) !== String(id));
 
-    localStorage.setItem("absencesJDM", JSON.stringify(absences));
+    sauvegarderAbsences();
     afficherAbsences();
 }
 
 function afficherAbsences() {
+    if (!listeAbsences) return;
+
+    const totalNonLues = absences.filter(absence => !absence.lueAdmin && absence.statut !== "traitée").length;
+
     const absencesFiltrees = absences
         .filter(absenceVisible)
         .sort((a, b) => String(b.dateDeclaration).localeCompare(String(a.dateDeclaration)));
 
+    listeAbsences.innerHTML = `
+        <section class="card">
+            <h2>🙋 Suivi des absences</h2>
+            <p><strong>Absences non lues :</strong> ${totalNonLues}</p>
+            ${totalNonLues > 0 ? `
+                <button class="primary-button order-button" onclick="marquerToutesAbsencesLues()">
+                    Tout marquer comme lu
+                </button>
+            ` : ""}
+        </section>
+    `;
+
     if (absencesFiltrees.length === 0) {
-        listeAbsences.innerHTML = `
+        listeAbsences.innerHTML += `
             <section class="card">
                 <h2>Aucune absence</h2>
                 <p>Aucune absence ne correspond aux filtres.</p>
@@ -101,14 +157,14 @@ function afficherAbsences() {
         return;
     }
 
-    listeAbsences.innerHTML = "";
-
     absencesFiltrees.forEach(absence => {
-        const statutClasse = absence.statut === "traitée" ? "absence-traitee" : "absence-declaree";
+        const traitee = absence.statut === "traitée";
+        const nonLue = !absence.lueAdmin && !traitee;
+        const statutClasse = traitee ? "absence-traitee" : "absence-declaree";
 
         listeAbsences.innerHTML += `
-            <section class="card absence-card-admin ${statutClasse}">
-                <h2>🙋 ${absence.prenom || ""} ${absence.nom || ""}</h2>
+            <section class="card absence-card-admin ${statutClasse} ${nonLue ? "notification-non-lue" : ""}">
+                <h2>${nonLue ? "🔴 " : ""}🙋 ${absence.prenom || ""} ${absence.nom || ""}</h2>
 
                 <p><strong>Groupe :</strong> ${absence.groupeNom || "Non renseigné"}</p>
                 <p><strong>Date :</strong> ${absence.date || "Non renseignée"}</p>
@@ -120,6 +176,7 @@ function afficherAbsences() {
                 ` : ""}
 
                 <p><strong>Statut :</strong> ${absence.statut || "déclarée"}</p>
+                <p><strong>Lecture admin :</strong> ${absence.lueAdmin ? "Lue" : "Non lue"}</p>
 
                 <p>
                     <strong>Déclarée le :</strong>
@@ -133,12 +190,18 @@ function afficherAbsences() {
                     </p>
                 ` : ""}
 
-                ${absence.statut === "traitée" ? `
+                ${nonLue ? `
+                    <button class="primary-button order-button" onclick="marquerAbsenceLue('${absence.id}')">
+                        Marquer comme lu
+                    </button>
+                ` : ""}
+
+                ${traitee ? `
                     <button class="secondary-button" onclick="remettreAbsenceDeclaree('${absence.id}')">
                         Remettre en déclarée
                     </button>
                 ` : `
-                    <button class="primary-button order-button" onclick="marquerAbsenceTraitee('${absence.id}')">
+                    <button class="secondary-button" onclick="marquerAbsenceTraitee('${absence.id}')">
                         Marquer comme traitée
                     </button>
                 `}
@@ -151,9 +214,9 @@ function afficherAbsences() {
     });
 }
 
-rechercheAbsence.addEventListener("input", afficherAbsences);
-filtreGroupeAbsence.addEventListener("change", afficherAbsences);
-filtreStatutAbsence.addEventListener("change", afficherAbsences);
+if (rechercheAbsence) rechercheAbsence.addEventListener("input", afficherAbsences);
+if (filtreGroupeAbsence) filtreGroupeAbsence.addEventListener("change", afficherAbsences);
+if (filtreStatutAbsence) filtreStatutAbsence.addEventListener("change", afficherAbsences);
 
 remplirGroupes();
 afficherAbsences();

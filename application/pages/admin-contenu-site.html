@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion du contenu - JDM Club Manager</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Contenu du site</h1>
+    </header>
+
+    <section class="card">
+        <h2>📰 Accueil</h2>
+        <p>Texte court affiché dans la carte Actualité de la page d'accueil.</p>
+        <textarea class="form-input" id="contenu-actualite-accueil"></textarea>
+    </section>
+
+    <section class="card">
+        <h2>📄 Page Actualités</h2>
+        <p>Texte complet affiché sur la page Actualités.</p>
+        <textarea class="form-input" id="contenu-actualite-detail"></textarea>
+    </section>
+
+    <section class="card">
+        <h2>🏛️ Mon club</h2>
+
+        <input class="form-input" id="contenu-club-titre" placeholder="Titre du club">
+
+        <textarea class="form-input" id="contenu-club-presentation" placeholder="Présentation"></textarea>
+        <textarea class="form-input" id="contenu-club-histoire" placeholder="Histoire"></textarea>
+        <textarea class="form-input" id="contenu-club-valeurs" placeholder="Valeurs"></textarea>
+        <textarea class="form-input" id="contenu-club-disciplines" placeholder="Disciplines"></textarea>
+        <textarea class="form-input" id="contenu-club-installations" placeholder="Installations"></textarea>
+    </section>
+
+    <section class="card">
+        <h2>📍 Infos pratiques</h2>
+
+        <input class="form-input" id="contenu-club-adresse" placeholder="Adresse">
+        <input class="form-input" id="contenu-club-telephone" placeholder="Téléphone">
+        <input class="form-input" id="contenu-club-email" placeholder="Email">
+        <textarea class="form-input" id="contenu-club-horaires" placeholder="Horaires"></textarea>
+    </section>
+
+    <section class="card">
+        <h2>🌐 Réseaux sociaux</h2>
+
+        <input class="form-input" id="contenu-club-facebook" placeholder="Lien Facebook">
+        <input class="form-input" id="contenu-club-instagram" placeholder="Lien Instagram">
+        <input class="form-input" id="contenu-club-tiktok" placeholder="Lien TikTok">
+
+        <button class="primary-button order-button" id="enregistrer-contenu-site">
+            Enregistrer le contenu
+        </button>
+    </section>
+
+</main>
+
+<script src="../scripts/admin-contenu-site.js"></script>
+
+</body>
+</html>

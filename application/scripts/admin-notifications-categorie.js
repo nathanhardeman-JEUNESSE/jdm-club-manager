@@ -12,7 +12,9 @@ const titres = {
     "boutique": "🛍️ Notifications boutique"
 };
 
-titreCategorie.textContent = titres[categorie] || "Notifications";
+if (titreCategorie) {
+    titreCategorie.textContent = titres[categorie] || "Notifications";
+}
 
 function sauvegarder() {
     localStorage.setItem("notificationsJDM", JSON.stringify(notifications));
@@ -23,7 +25,6 @@ function marquerCommeLue(id) {
         if (String(notification.id) === String(id)) {
             return { ...notification, lue: true };
         }
-
         return notification;
     });
 
@@ -36,7 +37,6 @@ function marquerCommeTraitee(id) {
         if (String(notification.id) === String(id)) {
             return { ...notification, lue: true, traitee: true };
         }
-
         return notification;
     });
 
@@ -49,7 +49,6 @@ function archiverNotification(id) {
         if (String(notification.id) === String(id)) {
             return { ...notification, lue: true, traitee: true, archivee: true };
         }
-
         return notification;
     });
 
@@ -57,7 +56,41 @@ function archiverNotification(id) {
     afficherNotifications();
 }
 
+function detailsNotification(notification) {
+    const donnees = notification.donnees || {};
+
+    let html = "";
+
+    if (notification.groupeNom) {
+        html += `<p><strong>Groupe :</strong> ${notification.groupeNom}</p>`;
+    }
+
+    if (notification.date) {
+        html += `<p><strong>Date :</strong> ${notification.date}</p>`;
+    }
+
+    if (donnees.commande || donnees.numeroCommande) {
+        html += `<p><strong>Commande :</strong> n°${donnees.commande || donnees.numeroCommande}</p>`;
+    }
+
+    if (donnees.client) {
+        html += `<p><strong>Client :</strong> ${donnees.client}</p>`;
+    }
+
+    if (donnees.total) {
+        html += `<p><strong>Montant :</strong> ${donnees.total} €</p>`;
+    }
+
+    if (donnees.paiement) {
+        html += `<p><strong>Paiement :</strong> ${donnees.paiement}</p>`;
+    }
+
+    return html;
+}
+
 function afficherNotifications() {
+    if (!zone) return;
+
     const liste = notifications
         .filter(notification =>
             notification.categorie === categorie &&
@@ -84,14 +117,12 @@ function afficherNotifications() {
         zone.innerHTML += `
             <section class="card ${classe}">
                 <h2>
-                    ${!notification.lue ? "🔴 " : ""}
+                    ${!notification.lue ? "🔴 " : "✅ "}
                     ${notification.titre || "Notification"}
                 </h2>
 
                 <p>${notification.message || ""}</p>
-
-                ${notification.groupeNom ? `<p><strong>Groupe :</strong> ${notification.groupeNom}</p>` : ""}
-                ${notification.date ? `<p><strong>Date :</strong> ${notification.date}</p>` : ""}
+                ${detailsNotification(notification)}
 
                 <p>
                     <strong>Créée le :</strong>

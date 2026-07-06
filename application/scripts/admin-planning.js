@@ -1,7 +1,6 @@
 const groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
 let exceptions = JSON.parse(localStorage.getItem("planningExceptionsJDM")) || [];
 
-
 const zonePlanning = document.getElementById("planning-admin");
 const titreSemaine = document.getElementById("titre-semaine");
 const boutonPrecedent = document.getElementById("semaine-precedente");
@@ -13,6 +12,7 @@ const statutCase = document.getElementById("statut-case");
 const horaireCase = document.getElementById("horaire-case");
 const titreCase = document.getElementById("titre-case");
 const messageCase = document.getElementById("message-case");
+const notifierParentsCase = document.getElementById("notifier-parents-case");
 const boutonEnregistrer = document.getElementById("enregistrer-case");
 const boutonAnnuler = document.getElementById("annuler-edition");
 
@@ -34,6 +34,10 @@ const fermeturesAutoJDM = {
     vacances: [],
     anneesChargees: []
 };
+
+function securiserTexte(texte) {
+    return String(texte || "").replace(/'/g, "\\'");
+}
 
 function debutSemaine(date) {
     const copie = new Date(date);
@@ -61,6 +65,13 @@ function formatDateISO(date) {
 }
 
 function formatDateFR(date) {
+    if (typeof date === "string") {
+        const morceaux = date.split("-");
+        if (morceaux.length === 3) {
+            return `${morceaux[2]}/${morceaux[1]}/${morceaux[0]}`;
+        }
+    }
+
     return date.toLocaleDateString("fr-FR", {
         day: "2-digit",
         month: "2-digit",
@@ -251,15 +262,16 @@ async function afficherPlanning() {
                         const texte = horaire || "-";
                         const point = exception && exception.message ? "•" : "";
                         const titre = exception && exception.titre ? exception.titre : "";
+                        const infoClass = exception && exception.message ? " has-info" : "";
 
                         return `
                             <div>
                                 ${jour.label}<br>
                                 <small>${date.getDate()}</small>
 
-                                <span class="slot ${classeStatut(statut, horaire)}"
+                                <span class="slot ${classeStatut(statut, horaire)}${infoClass}"
                                       title="${titre}"
-                                      onclick="ouvrirEdition('${groupe.id}', '${groupe.nom}', '${jour.cle}', '${jour.nom}', '${dateISO}')">
+                                      onclick="ouvrirEdition('${groupe.id}', '${securiserTexte(groupe.nom)}', '${jour.cle}', '${jour.nom}', '${dateISO}')">
                                     ${texte}
                                     ${point ? `<strong style="color:orange;"> ${point}</strong>` : ""}
                                 </span>
@@ -283,19 +295,20 @@ function ouvrirEdition(groupeId, groupeNom, jourCle, jourNom, dateISO) {
         groupeNom,
         jourCle,
         jourNom,
-        dateISO
+        dateISO,
+        horaireHabituel
     };
 
-    caseSelectionneeTexte.textContent = `${groupeNom} - ${jourNom} ${dateISO}`;
+    caseSelectionneeTexte.textContent = `${groupeNom} - ${jourNom} ${formatDateFR(dateISO)}`;
 
     if (exception) {
         statutCase.value = exception.statut;
-        horaireCase.value = exception.horaire;
+        horaireCase.value = exception.horaire || "";
         titreCase.value = exception.titre || "";
         messageCase.value = exception.message || "";
     } else if (fermetureAuto) {
         statutCase.value = fermetureAuto.statut;
-        horaireCase.value = fermetureAuto.horaire;
+        horaireCase.value = fermetureAuto.horaire || "";
         titreCase.value = fermetureAuto.titre || "";
         messageCase.value = fermetureAuto.message || "";
     } else {
@@ -305,11 +318,75 @@ function ouvrirEdition(groupeId, groupeNom, jourCle, jourNom, dateISO) {
         messageCase.value = "";
     }
 
-    zoneEdition.style.display = "block";
+    mettreAJourCaseNotifier();
 
-    zoneEdition.scrollIntoView({
-        behavior: "smooth"
+    zoneEdition.style.display = "block";
+    zoneEdition.scrollIntoView({ behavior: "smooth" });
+}
+
+function mettreAJourCaseNotifier() {
+    if (!notifierParentsCase) return;
+
+    if (statutCase.value === "annule") {
+        notifierParentsCase.checked = true;
+    } else {
+        notifierParentsCase.checked = false;
+    }
+}
+
+function notificationsParentsAutorisees(groupeId) {
+    const groupe = groupes.find(g => String(g.id) === String(groupeId));
+
+    if (groupe && groupe.notificationsParents === false) {
+        return false;
+    }
+
+    return true;
+}
+
+function creerNotificationPlanning(exception) {
+    if (!selection) return;
+    if (!notifierParentsCase || !notifierParentsCase.checked) return;
+    if (!notificationsParentsAutorisees(selection.groupeId)) return;
+
+    let notifications = JSON.parse(localStorage.getItem("notificationsJDM")) || [];
+
+    let titre = exception.titre || "Modification du planning";
+    let message = exception.message || "Le planning du groupe a été modifié. Consultez votre planning.";
+    let priorite = "normale";
+
+    if (exception.statut === "annule") {
+        titre = exception.titre || "⚠️ Cours annulé";
+        message = exception.message || `Le cours du ${selection.jourNom} ${formatDateFR(selection.dateISO)} est annulé. Consultez votre planning.`;
+        priorite = "haute";
+    }
+
+    if (exception.statut === "pas-cours") {
+        titre = exception.titre || "Pas de cours";
+        message = exception.message || `Pas de cours le ${selection.jourNom} ${formatDateFR(selection.dateISO)}.`;
+    }
+
+    notifications.push({
+        id: Date.now(),
+        categorie: "parents-groupes",
+        type: "planning",
+        titre,
+        message,
+        groupeId: selection.groupeId,
+        groupeNom: selection.groupeNom,
+        date: selection.dateISO,
+        jour: selection.jourCle,
+        horaire: exception.horaire || selection.horaireHabituel || "",
+        statut: exception.statut,
+        priorite,
+        lue: false,
+        traitee: false,
+        archivee: false,
+        auteur: "admin",
+        dateCreation: new Date().toISOString()
     });
+
+    localStorage.setItem("notificationsJDM", JSON.stringify(notifications));
 }
 
 boutonEnregistrer.addEventListener("click", () => {
@@ -319,7 +396,7 @@ boutonEnregistrer.addEventListener("click", () => {
         !(String(item.groupeId) === String(selection.groupeId) && item.date === selection.dateISO)
     );
 
-    exceptions.push({
+    const nouvelleException = {
         groupeId: selection.groupeId,
         date: selection.dateISO,
         jour: selection.jourCle,
@@ -327,67 +404,27 @@ boutonEnregistrer.addEventListener("click", () => {
         horaire: horaireCase.value.trim(),
         titre: titreCase.value.trim(),
         message: messageCase.value.trim()
-    });
-
-    localStorage.setItem("planningExceptionsJDM", JSON.stringify(exceptions));
-
-proposerNotificationPlanning();
-
-zoneEdition.style.display = "none";
-selection = null;
-
-    function proposerNotificationPlanning() {
-    const parametresNotifications = JSON.parse(localStorage.getItem("parametresNotificationsJDM")) || {
-        parents: false
     };
 
-    if (!parametresNotifications.parents) {
-        return;
-    }
+    exceptions.push(nouvelleException);
+    localStorage.setItem("planningExceptionsJDM", JSON.stringify(exceptions));
 
-    const groupe = groupes.find(g => String(g.id) === String(selection.groupeId));
+    creerNotificationPlanning(nouvelleException);
 
-    if (groupe && groupe.notificationsParents === false) {
-    return;
-    }
+    zoneEdition.style.display = "none";
+    selection = null;
 
-    const envoyer = confirm("Notifier les parents du groupe de ce changement ?");
-
-    if (!envoyer || !selection) return;
-
-    let notifications = JSON.parse(localStorage.getItem("notificationsJDM")) || [];
-
-    const titre = titreCase.value.trim() || "Modification du planning";
-    const message = messageCase.value.trim() || "Le planning du groupe a été modifié.";
-
-    notifications.push({
-        id: Date.now(),
-        type: "planning",
-        titre,
-        message,
-        groupeId: selection.groupeId,
-        groupeNom: selection.groupeNom,
-        date: selection.dateISO,
-        statut: statutCase.value,
-        horaire: horaireCase.value.trim(),
-        dateCreation: new Date().toISOString(),
-        lue: false
-    });
-
-    localStorage.setItem("notificationsJDM", JSON.stringify(notifications));
-
-    alert("Notification créée ✅");
-}
-
-
-
-afficherPlanning();
+    afficherPlanning();
 });
 
 boutonAnnuler.addEventListener("click", () => {
     zoneEdition.style.display = "none";
     selection = null;
 });
+
+if (statutCase) {
+    statutCase.addEventListener("change", mettreAJourCaseNotifier);
+}
 
 boutonPrecedent.addEventListener("click", () => {
     dateReference.setDate(dateReference.getDate() - 7);

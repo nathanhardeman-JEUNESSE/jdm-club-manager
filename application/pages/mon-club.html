@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mon Club - JDM Club Manager</title>
+    <title>Mon club - JDM Club Manager</title>
 
     <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="../styles/components.css">
@@ -14,71 +15,53 @@
 <main class="page">
 
     <header class="page-header">
-  <a href="accueil.html" class="back-button">←</a>
-    <h1>Mon Club</h1>
-</header>
+        <a href="accueil.html" class="back-button">←</a>
+        <h1>Mon club</h1>
+    </header>
 
-<section class="card">
-    <h2>🏛 Organisation du club</h2>
-    <p>
-        Retrouvez ici les membres du bureau, les coachs et les personnes investies dans la vie du club.
-    </p>
-</section>
+    <section class="card">
+        <h2 id="club-titre">La Jeunesse du Marais</h2>
+        <p id="club-presentation"></p>
+    </section>
 
-<div id="club-organisation"></div>
+    <section class="card">
+        <h2>📖 Notre histoire</h2>
+        <p id="club-histoire"></p>
+    </section>
 
-<section class="card">
+    <section class="card">
+        <h2>💙 Nos valeurs</h2>
+        <p id="club-valeurs"></p>
+    </section>
 
-    <h2>📖 Notre histoire</h2>
+    <section class="card">
+        <h2>🤸 Nos disciplines</h2>
+        <p id="club-disciplines"></p>
+    </section>
 
-    <p>
-        La Jeunesse du Marais est un club de gymnastique situé à Lomme,
-        accueillant les gymnastes de tous âges dans une ambiance conviviale,
-        avec pour objectif de transmettre les valeurs du sport, du respect
-        et du dépassement de soi.
-    </p>
+    <section class="card">
+        <h2>🏟️ Nos installations</h2>
+        <p id="club-installations"></p>
+    </section>
 
-</section>
+    <section class="card">
+        <h2>📍 Informations pratiques</h2>
+        <p><strong>Adresse :</strong> <span id="club-adresse"></span></p>
+        <p><strong>Téléphone :</strong> <span id="club-telephone"></span></p>
+        <p><strong>Email :</strong> <span id="club-email"></span></p>
+        <p><strong>Horaires :</strong></p>
+        <p id="club-horaires"></p>
+    </section>
 
-<section class="card">
-
-    <h2>📍 Adresse</h2>
-
-    <p>
-        Complexe sportif...
-        <br>
-        Lomme
-    </p>
-
-</section>
-
-<section class="card">
-
-    <h2>🤝 Nos partenaires</h2>
-
-    <p>
-        La Jeunesse du Marais remercie ses partenaires institutionnels pour leur
-        soutien et leur engagement auprès du club.
-    </p>
-
-    <p>
-        La Ville de Lomme accompagne le développement du club à travers son
-        soutien aux activités sportives et à la vie associative.
-    </p>
-
-    <p>
-        L'ACSL (Association Culturelle, Sportive et de Loisirs) participe
-        également au fonctionnement du club grâce à son accompagnement et à ses
-        subventions, permettant de proposer des activités de qualité aux
-        gymnastes.
-    </p>
-
-</section>
+    <section class="social-row">
+        <a id="club-facebook" href="#" class="social-square" target="_blank" rel="noopener noreferrer">f</a>
+        <a id="club-instagram" href="#" class="social-square" target="_blank" rel="noopener noreferrer">◎</a>
+        <a id="club-tiktok" href="#" class="social-square" target="_blank" rel="noopener noreferrer">♪</a>
+    </section>
 
 </main>
 
 <script src="../scripts/mon-club.js"></script>
 
 </body>
-
 </html>

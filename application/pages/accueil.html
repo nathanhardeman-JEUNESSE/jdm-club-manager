@@ -1,142 +1,101 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Accueil public - JDM Club Manager</title>
+    <title>Accueil - JDM Club Manager</title>
 
     <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="../styles/components.css">
 </head>
+
 <body>
 
 <main class="page">
 
     <section class="hero">
         <div class="hero-overlay">
-            <img src="../images/logo-jdm.png" alt="Logo JDM" class="hero-logo">
-
-            <h1>La Jeunesse du Marais</h1>
-
-            <p>Club de gymnastique à Lomme</p>
+            <img src="../images/logo-jdm.png" class="hero-logo" alt="Logo JDM">
+            <h1>Jeunesse du Marais</h1>
+            <p>Gymnastique · Club · Familles</p>
         </div>
     </section>
 
-    <section class="news-card">
+    <a href="actualites.html" class="navigation-link">
+        <section class="news-card">
+            <div class="news-icon">📰</div>
+            <div class="news-content">
+                <h2>Actualité</h2>
+                <p id="actualite-accueil-public">Chargement...</p>
+            </div>
+        </section>
+    </a>
 
-        <div class="news-icon">
-            📢
-        </div>
-
-        <div class="news-content">
-            <h2>Actualité</h2>
-
-            <p>
-                Les inscriptions pour la saison 2026-2027 sont ouvertes.
-            </p>
-
-            <button class="primary-button">
-            <a href="reseaux.html" class="primary-button order-button big-button">
-                📱 Suivre nos actualités
-            </a>
-            </button>
-        </div>
-        
-
+    <section class="social-row">
+        <a id="lien-facebook" href="#" class="social-square" target="_blank" rel="noopener noreferrer">f</a>
+        <a id="lien-instagram" href="#" class="social-square" target="_blank" rel="noopener noreferrer">◎</a>
+        <a id="lien-tiktok" href="#" class="social-square" target="_blank" rel="noopener noreferrer">♪</a>
     </section>
 
     <a href="mon-club.html" class="navigation-link">
+        <section class="navigation-card">
+            <div class="navigation-icon">🏛️</div>
+            <div class="navigation-content">
+                <h2>Mon club</h2>
+                <p>Présentation, valeurs, disciplines et informations pratiques.</p>
+            </div>
+            <div class="navigation-arrow">➜</div>
+        </section>
+    </a>
 
-    <section class="navigation-card">
+    <a href="planning.html" class="navigation-link">
+        <section class="navigation-card">
+            <div class="navigation-icon">📅</div>
+            <div class="navigation-content">
+                <h2>Planning</h2>
+                <p>Consulter les entraînements, événements et annulations.</p>
+            </div>
+            <div class="navigation-arrow">➜</div>
+        </section>
+    </a>
 
-        <div class="navigation-icon">
-            🏛
-        </div>
+    <a href="boutique.html" class="navigation-link">
+        <section class="navigation-card">
+            <div class="navigation-icon">🛍️</div>
+            <div class="navigation-content">
+                <h2>Boutique</h2>
+                <p>Retrouvez les articles du club.</p>
+            </div>
+            <div class="navigation-arrow">➜</div>
+        </section>
+    </a>
 
-        <div class="navigation-content">
-            <h2>Mon Club</h2>
+    <a href="espace-membre.html" class="navigation-link">
+        <section class="navigation-card">
+            <div class="navigation-icon">👤</div>
+            <div class="navigation-content">
+                <h2>Mon espace</h2>
+                <p>Planning, notifications, documents et informations personnelles.</p>
+            </div>
+            <div class="navigation-arrow">➜</div>
+        </section>
+    </a>
 
-            <p>
-                Découvrez La Jeunesse du Marais, son histoire, ses entraîneurs et les informations utiles.
-            </p>
-        </div>
-
-        <div class="navigation-arrow">
-            ➜
-        </div>
-
-    </section>
-
-</a>
-
-   <a href="planning.html" class="navigation-link">
-
-    <section class="navigation-card">
-
-        <div class="navigation-icon">
-            📅
-        </div>
-
-        <div class="navigation-content">
-            <h2>Planning</h2>
-
-            <p>
-                Consultez les horaires des entraînements et l'occupation des salles.
-            </p>
-        </div>
-
-        <div class="navigation-arrow">
-            ➜
-        </div>
-
-    </section>
-
-</a>
-<a href="boutique.html" class="navigation-link">
-    <section class="navigation-card">
-        <div class="navigation-icon">🛍️</div>
-        <div class="navigation-content">
-            <h2>Boutique</h2>
-            <p>Retrouvez les vêtements et les articles officiels du club.</p>
-        </div>
-        <div class="navigation-arrow">➜</div>
-    </section>
-</a>
-
-<a href="inscription.html" class="navigation-link">
-    <section class="navigation-card">
-        <div class="navigation-icon">📝</div>
-        <div class="navigation-content">
-            <h2>Inscription</h2>
-            <p>Inscrivez-vous pour la saison en cours directement en ligne.</p>
-        </div>
-        <div class="navigation-arrow">➜</div>
-    </section>
-</a>
-
-<a href="espace-membre.html" class="navigation-link">
-    <section class="navigation-card">
-        <div class="navigation-icon">👤</div>
-        <div class="navigation-content">
-            <h2>Mon espace</h2>
-            <p>Accédez à votre compte, vos documents et vos informations personnelles.</p>
-        </div>
-        <div class="navigation-arrow">➜</div>
-    </section>
-</a>
-
-<a href="administration.html" class="navigation-link">
-    <section class="navigation-card">
-        <div class="navigation-icon">🔧</div>
-        <div class="navigation-content">
-            <h2>Administration</h2>
-            <p>Accès aux outils de gestion du club.</p>
-        </div>
-        <div class="navigation-arrow">➜</div>
-    </section>
-</a>
+    <a href="administration.html" class="navigation-link">
+        <section class="navigation-card">
+            <div class="navigation-icon">🔐</div>
+            <div class="navigation-content">
+                <h2>Administration</h2>
+                <p>Accès réservé aux responsables du club.</p>
+            </div>
+            <div class="navigation-arrow">➜</div>
+        </section>
+    </a>
 
 </main>
+
+<script src="../scripts/accueil.js"></script>
 
 </body>
 </html>

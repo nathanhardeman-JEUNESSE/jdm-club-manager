@@ -30,8 +30,21 @@ const jours = [
     { cle: "dimanche", label: "Dim", nom: "Dimanche" }
 ];
 
+const fermeturesAutoJDM = {
+    joursFeries: {},
+    vacances: [],
+    anneesChargees: []
+};
+
 function securiserTexte(texte) {
     return String(texte || "").replace(/'/g, "\\'");
+}
+
+function nettoyer(texte) {
+    return String(texte || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
 }
 
 function debutSemaine(date) {
@@ -75,9 +88,149 @@ function mettreAJourTitreSemaine() {
     titreSemaine.textContent = `Semaine du ${formatDateFR(debut)} au ${formatDateFR(fin)}`;
 }
 
+function chargerCacheFermetures() {
+    const cache = JSON.parse(localStorage.getItem("fermeturesAutoJDM")) || null;
+
+    if (!cache) return;
+
+    fermeturesAutoJDM.joursFeries = cache.joursFeries || {};
+    fermeturesAutoJDM.vacances = cache.vacances || [];
+    fermeturesAutoJDM.anneesChargees = cache.anneesChargees || [];
+}
+
+function sauverCacheFermetures() {
+    localStorage.setItem("fermeturesAutoJDM", JSON.stringify({
+        joursFeries: fermeturesAutoJDM.joursFeries,
+        vacances: fermeturesAutoJDM.vacances,
+        anneesChargees: fermeturesAutoJDM.anneesChargees
+    }));
+}
+
+async function chargerFermeturesAnnee(annee) {
+    if (fermeturesAutoJDM.anneesChargees.includes(annee)) return;
+
+    try {
+        const joursFeriesUrl = `https://calendrier.api.gouv.fr/jours-feries/metropole/${annee}.json`;
+
+        const vacancesUrl =
+            "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-calendrier-scolaire/records" +
+            `?limit=100` +
+            `&where=start_date%20%3E%3D%20%22${annee}-01-01%22%20AND%20start_date%20%3C%3D%20%22${annee + 1}-12-31%22` +
+            `&refine=zones%3A%22Zone%20B%22`;
+
+        const [joursFeriesReponse, vacancesReponse] = await Promise.all([
+            fetch(joursFeriesUrl),
+            fetch(vacancesUrl)
+        ]);
+
+        if (joursFeriesReponse.ok) {
+            const joursFeries = await joursFeriesReponse.json();
+            Object.assign(fermeturesAutoJDM.joursFeries, joursFeries);
+        }
+
+        if (vacancesReponse.ok) {
+            const vacancesData = await vacancesReponse.json();
+
+            const vacances = (vacancesData.results || [])
+                .filter(v => v.start_date && v.end_date)
+                .map(v => ({
+                    debut: v.start_date.split("T")[0],
+                    fin: v.end_date.split("T")[0],
+                    nom: v.description || "Vacances scolaires"
+                }));
+
+            vacances.forEach(vacance => {
+                const existeDeja = fermeturesAutoJDM.vacances.some(v =>
+                    v.debut === vacance.debut &&
+                    v.fin === vacance.fin &&
+                    v.nom === vacance.nom
+                );
+
+                if (!existeDeja) {
+                    fermeturesAutoJDM.vacances.push(vacance);
+                }
+            });
+        }
+
+        fermeturesAutoJDM.anneesChargees.push(annee);
+        sauverCacheFermetures();
+
+    } catch (erreur) {
+        console.warn("Impossible de charger les fermetures automatiques :", erreur);
+    }
+}
+
+async function chargerFermeturesSemaine() {
+    chargerCacheFermetures();
+
+    const debut = debutSemaine(dateReference);
+    const fin = new Date(debut);
+    fin.setDate(debut.getDate() + 6);
+
+    const annees = [...new Set([
+        debut.getFullYear() - 1,
+        debut.getFullYear(),
+        fin.getFullYear(),
+        fin.getFullYear() + 1
+    ])];
+
+    await Promise.all(annees.map(annee => chargerFermeturesAnnee(annee)));
+}
+
+function trouverFermetureAutomatique(dateISO) {
+    if (fermeturesAutoJDM.joursFeries[dateISO]) {
+        return {
+            statut: "pas-cours",
+            horaire: "",
+            titre: fermeturesAutoJDM.joursFeries[dateISO],
+            message: `Pas de cours : ${fermeturesAutoJDM.joursFeries[dateISO]}`
+        };
+    }
+
+    const vacances = fermeturesAutoJDM.vacances.find(v =>
+        dateISO >= v.debut && dateISO < v.fin
+    );
+
+    if (vacances) {
+        return {
+            statut: "pas-cours",
+            horaire: "",
+            titre: vacances.nom,
+            message: `Pas de cours : ${vacances.nom}`
+        };
+    }
+
+    return null;
+}
+
+function champ(donnees, mots) {
+    if (!donnees) return "";
+
+    const cle = Object.keys(donnees).find(cle =>
+        mots.every(mot => nettoyer(cle).includes(nettoyer(mot)))
+    );
+
+    return cle ? donnees[cle] : "";
+}
+
+function derniereInscription(numeroAdherent) {
+    const inscriptions = JSON.parse(localStorage.getItem("inscriptionsJDM")) || [];
+    const liste = inscriptions.filter(i => i.numeroAdherent === numeroAdherent);
+    return liste[liste.length - 1] || null;
+}
+
+function groupeAdherent(adherent) {
+    if (adherent.groupe) return adherent.groupe;
+
+    const inscription = derniereInscription(adherent.numeroAdherent);
+    const donnees = inscription ? inscription.donneesHelloAsso || {} : {};
+
+    return champ(donnees, ["tarif"]);
+}
+
 function groupesDuMembre() {
-    if (!utilisateurConnecte || !utilisateurConnecte.enfants) {
-        return groupes;
+    if (!utilisateurConnecte || !utilisateurConnecte.enfants || utilisateurConnecte.enfants.length === 0) {
+        return [];
     }
 
     const enfants = adherents.filter(adherent =>
@@ -85,14 +238,16 @@ function groupesDuMembre() {
     );
 
     const nomsGroupes = enfants
-        .map(enfant => enfant.groupe)
+        .map(enfant => groupeAdherent(enfant))
         .filter(Boolean);
 
-    return groupes.filter(groupe => nomsGroupes.includes(groupe.nom));
+    return groupes.filter(groupe =>
+        nomsGroupes.some(nomGroupe => nettoyer(nomGroupe) === nettoyer(groupe.nom))
+    );
 }
 
 function enfantConnecte() {
-    if (!utilisateurConnecte || !utilisateurConnecte.enfants) {
+    if (!utilisateurConnecte || !utilisateurConnecte.enfants || utilisateurConnecte.enfants.length === 0) {
         return null;
     }
 
@@ -108,17 +263,15 @@ function trouverException(groupeId, dateISO) {
     );
 }
 
-function absenceDejaDeclaree(groupeId, dateISO) {
+function absenceDejaSignalee(groupeId, dateISO) {
     const enfant = enfantConnecte();
 
+    if (!enfant) return null;
+
     return absences.find(absence =>
+        absence.numeroAdherent === enfant.numeroAdherent &&
         String(absence.groupeId) === String(groupeId) &&
-        absence.date === dateISO &&
-        (
-            !enfant ||
-            !absence.numeroAdherent ||
-            absence.numeroAdherent === enfant.numeroAdherent
-        )
+        absence.date === dateISO
     );
 }
 
@@ -130,16 +283,18 @@ function classeStatut(statut, horaire) {
     return "off";
 }
 
-function afficherPlanning() {
+async function afficherPlanning() {
     mettreAJourTitreSemaine();
+    await chargerFermeturesSemaine();
 
     const groupesAffiches = groupesDuMembre();
 
     if (groupesAffiches.length === 0) {
         zonePlanning.innerHTML = `
             <section class="card">
-                <h2>Aucun planning disponible</h2>
-                <p>Aucun groupe n'est rattaché à ce compte pour le moment.</p>
+                <h2>Aucun planning personnel</h2>
+                <p>Aucun enfant n'est rattaché à ce compte pour le moment.</p>
+                <p>En mode test, créez une connexion parent/enfant depuis la page Dev.</p>
             </section>
         `;
         return;
@@ -160,20 +315,26 @@ function afficherPlanning() {
                     ${jours.map((jour, index) => {
                         const date = dateJour(index);
                         const dateISO = formatDateISO(date);
-                        const exception = trouverException(groupe.id, dateISO);
+
+                        const exceptionManuelle = trouverException(groupe.id, dateISO);
+                        const exceptionAuto = trouverFermetureAutomatique(dateISO);
+                        const exception = exceptionManuelle || exceptionAuto;
 
                         const horaireHabituel = groupe.horaires ? groupe.horaires[jour.cle] : "";
                         const statut = exception ? exception.statut : "cours";
                         const horaire = exception ? exception.horaire : horaireHabituel;
+                        const titre = exception && exception.titre ? exception.titre : "";
                         const messageInfo = exception && exception.message ? exception.message : "";
-                        const absence = absenceDejaDeclaree(groupe.id, dateISO);
-
+                        const absence = absenceDejaSignalee(groupe.id, dateISO);
                         const infoClass = messageInfo || absence ? " has-info" : "";
 
                         return `
                             <div>
-                                ${jour.label}
+                                ${jour.label}<br>
+                                <small>${date.getDate()}</small>
+
                                 <span class="slot ${classeStatut(statut, horaire)}${infoClass}"
+                                      title="${securiserTexte(titre)}"
                                       onclick="ouvrirSeance(
                                           '${groupe.id}',
                                           '${securiserTexte(groupe.nom)}',
@@ -185,7 +346,8 @@ function afficherPlanning() {
                                       )">
                                     ${horaire || "-"}
                                 </span>
-                                ${absence ? `<small>🙋 Absence déclarée</small>` : ""}
+
+                                ${absence ? `<small>🙋 Absence signalée</small>` : ""}
                             </div>
                         `;
                     }).join("")}
@@ -232,8 +394,20 @@ boutonEnvoyerAbsence.addEventListener("click", () => {
     const message = messageAbsence.value.trim();
     const enfant = enfantConnecte();
 
+    if (!enfant) {
+        alert("Aucun enfant n'est rattaché à ce compte.");
+        return;
+    }
+
     if (!motif) {
         alert("Merci d'indiquer le motif de l'absence.");
+        return;
+    }
+
+    const dejaSignalee = absenceDejaSignalee(seanceSelectionnee.groupeId, seanceSelectionnee.dateISO);
+
+    if (dejaSignalee) {
+        alert("Une absence est déjà signalée pour cette séance.");
         return;
     }
 
@@ -246,25 +420,33 @@ boutonEnvoyerAbsence.addEventListener("click", () => {
         horaire: seanceSelectionnee.horaire,
         motif,
         message,
-        numeroAdherent: enfant ? enfant.numeroAdherent : "",
-        nom: enfant ? enfant.nom : "",
-        prenom: enfant ? enfant.prenom : "",
+        numeroAdherent: enfant.numeroAdherent,
+        nom: enfant.nom || "",
+        prenom: enfant.prenom || "",
         dateDeclaration: new Date().toISOString(),
-        statut: "déclarée"
+        statut: "déclarée",
+        lueAdmin: false,
+        traiteeAdmin: false
     };
 
     absences.push(absence);
 
     notifications.push({
         id: Date.now() + 1,
+        categorie: "parents-groupes",
         type: "absence",
-        titre: "Absence déclarée",
+        titre: "Absence signalée",
         message: `${absence.prenom || "Un adhérent"} ${absence.nom || ""} sera absent(e). Motif : ${absence.motif}`,
         groupeId: absence.groupeId,
         groupeNom: absence.groupeNom,
         date: absence.date,
-        dateCreation: new Date().toISOString(),
-        lue: false
+        priorite: "normale",
+        lue: false,
+        traitee: false,
+        archivee: false,
+        auteur: "parent",
+        destinataire: "admin",
+        dateCreation: new Date().toISOString()
     });
 
     localStorage.setItem("absencesJDM", JSON.stringify(absences));

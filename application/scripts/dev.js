@@ -280,7 +280,6 @@ function viderBoutique() {
 
     localStorage.removeItem("commandesJDM");
     localStorage.removeItem("notificationsTresorierJDM");
-    localStorage.removeItem("panierJDM");
 
     alert("Données boutique vidées ✅");
 }
