@@ -19,6 +19,14 @@ let contenuSite = JSON.parse(localStorage.getItem("contenuSiteJDM")) || {
         facebook: "https://www.facebook.com/groups/255772491691570/?ref=share",
         instagram: "https://www.instagram.com/jeunesse.du.marais",
         tiktok: "https://www.tiktok.com/@jeunesse.du.marais"
+    },
+    contact: {
+        introduction: "Retrouvez ici les informations utiles pour contacter le club.",
+        adresse: "",
+        telephone: "",
+        email: "",
+        horaires: "",
+        responsables: ""
     }
 };
 
@@ -29,31 +37,44 @@ function valeur(id) {
 
 function remplir(id, valeur) {
     const element = document.getElementById(id);
+    if (element) element.value = valeur || "";
+}
 
-    if (element) {
-        element.value = valeur || "";
-    }
+function completerStructure() {
+    contenuSite.accueil = contenuSite.accueil || {};
+    contenuSite.actualites = contenuSite.actualites || {};
+    contenuSite.club = contenuSite.club || {};
+    contenuSite.contact = contenuSite.contact || {};
 }
 
 function chargerFormulaire() {
-    remplir("contenu-actualite-accueil", contenuSite.accueil?.actualite);
-    remplir("contenu-actualite-detail", contenuSite.actualites?.detail);
+    completerStructure();
 
-    remplir("contenu-club-titre", contenuSite.club?.titre);
-    remplir("contenu-club-presentation", contenuSite.club?.presentation);
-    remplir("contenu-club-histoire", contenuSite.club?.histoire);
-    remplir("contenu-club-valeurs", contenuSite.club?.valeurs);
-    remplir("contenu-club-disciplines", contenuSite.club?.disciplines);
-    remplir("contenu-club-installations", contenuSite.club?.installations);
+    remplir("contenu-actualite-accueil", contenuSite.accueil.actualite);
+    remplir("contenu-actualite-detail", contenuSite.actualites.detail);
 
-    remplir("contenu-club-adresse", contenuSite.club?.adresse);
-    remplir("contenu-club-telephone", contenuSite.club?.telephone);
-    remplir("contenu-club-email", contenuSite.club?.email);
-    remplir("contenu-club-horaires", contenuSite.club?.horaires);
+    remplir("contenu-club-titre", contenuSite.club.titre);
+    remplir("contenu-club-presentation", contenuSite.club.presentation);
+    remplir("contenu-club-histoire", contenuSite.club.histoire);
+    remplir("contenu-club-valeurs", contenuSite.club.valeurs);
+    remplir("contenu-club-disciplines", contenuSite.club.disciplines);
+    remplir("contenu-club-installations", contenuSite.club.installations);
 
-    remplir("contenu-club-facebook", contenuSite.club?.facebook);
-    remplir("contenu-club-instagram", contenuSite.club?.instagram);
-    remplir("contenu-club-tiktok", contenuSite.club?.tiktok);
+    remplir("contenu-club-adresse", contenuSite.club.adresse);
+    remplir("contenu-club-telephone", contenuSite.club.telephone);
+    remplir("contenu-club-email", contenuSite.club.email);
+    remplir("contenu-club-horaires", contenuSite.club.horaires);
+
+    remplir("contenu-contact-introduction", contenuSite.contact.introduction);
+    remplir("contenu-contact-adresse", contenuSite.contact.adresse || contenuSite.club.adresse);
+    remplir("contenu-contact-telephone", contenuSite.contact.telephone || contenuSite.club.telephone);
+    remplir("contenu-contact-email", contenuSite.contact.email || contenuSite.club.email);
+    remplir("contenu-contact-horaires", contenuSite.contact.horaires || contenuSite.club.horaires);
+    remplir("contenu-contact-responsables", contenuSite.contact.responsables);
+
+    remplir("contenu-club-facebook", contenuSite.club.facebook);
+    remplir("contenu-club-instagram", contenuSite.club.instagram);
+    remplir("contenu-club-tiktok", contenuSite.club.tiktok);
 }
 
 function enregistrerContenu() {
@@ -78,18 +99,22 @@ function enregistrerContenu() {
             facebook: valeur("contenu-club-facebook"),
             instagram: valeur("contenu-club-instagram"),
             tiktok: valeur("contenu-club-tiktok")
+        },
+        contact: {
+            introduction: valeur("contenu-contact-introduction"),
+            adresse: valeur("contenu-contact-adresse"),
+            telephone: valeur("contenu-contact-telephone"),
+            email: valeur("contenu-contact-email"),
+            horaires: valeur("contenu-contact-horaires"),
+            responsables: valeur("contenu-contact-responsables")
         }
     };
 
     localStorage.setItem("contenuSiteJDM", JSON.stringify(contenuSite));
-
     alert("Contenu du site enregistré ✅");
 }
 
 const bouton = document.getElementById("enregistrer-contenu-site");
-
-if (bouton) {
-    bouton.addEventListener("click", enregistrerContenu);
-}
+if (bouton) bouton.addEventListener("click", enregistrerContenu);
 
 chargerFormulaire();
