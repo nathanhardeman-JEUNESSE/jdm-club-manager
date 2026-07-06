@@ -1652,3 +1652,17 @@
 .aide-licence-card {
     border-left: 6px solid #ff9800;
 }
+/* ================================================= */
+/* notificatios */
+/* ================================================= */
+
+
+.notification-non-lue {
+    border-left: 6px solid #ff2b2b;
+    box-shadow: 0 0 14px rgba(255, 43, 43, 0.25);
+}
+
+.notification-lue {
+    border-left: 6px solid #2f8f46;
+    opacity: 0.9;
+}
