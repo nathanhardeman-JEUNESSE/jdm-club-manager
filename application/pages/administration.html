@@ -21,181 +21,188 @@
 
     <section class="card">
         <h2>🔧 Tableau de bord</h2>
-        <p>
-            Espace réservé aux administrateurs du club.
-        </p>
+        <p>Espace réservé aux administrateurs du club.</p>
     </section>
-<!--
-    <a href="admin-architecture.html" class="navigation-link">
-    <section class="navigation-card">
-        <div class="navigation-icon">🧠</div>
 
-        <div class="navigation-content">
-            <h2>Architecture</h2>
-            <p>Visualiser la structure globale et les évolutions prévues.</p>
-        </div>
-
-        <div class="navigation-arrow">➜</div>
+    <section class="card collapsible-title" onclick="toggleSection('coach')">
+        <h2><span id="arrow-coach">▼</span> 👨‍🏫 Espace coach</h2>
     </section>
-</a>
--->
-    <!-- Adhérents -->
-    <a href="admin-adherents.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">👤</div>
-            <div class="navigation-content">
-                <h2>Adhérents</h2>
-                <p>Consulter la base adhérents et les fiches individuelles.</p>
-            </div>
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
 
-    <!-- Planning --->
-    <a href="admin-planning.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">📅</div>
-            <div class="navigation-content">
-                <h2>Planning</h2>
-                <p>Préparer les groupes, horaires et séances de la saison.</p>
-            </div>
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
+    <div id="section-coach">
 
-    <a href="admin-appel.html" class="navigation-link">
-    <section class="navigation-card">
-        <div class="navigation-icon">📋</div>
-        <div class="navigation-content">
-            <h2>Appel</h2>
-            <p>Faire l'appel par groupe, séance et semaine.</p>
-        </div>
-        <div class="navigation-arrow">➜</div>
+        <a href="admin-appel.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">📋</div>
+                <div class="navigation-content">
+                    <h2>Appel</h2>
+                    <p>Faire l'appel par groupe, séance et semaine.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+
+        <a href="admin-absences.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">🙋</div>
+                <div class="navigation-content">
+                    <h2>Absences</h2>
+                    <p>Consulter et traiter les absences déclarées par les parents.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+
+        <a href="admin-planning.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">📅</div>
+                <div class="navigation-content">
+                    <h2>Planning</h2>
+                    <p>Gérer les séances, annulations et événements.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+
+        <a href="admin-groupes.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">🤸</div>
+                <div class="navigation-content">
+                    <h2>Groupes</h2>
+                    <p>Créer et paramétrer les groupes de la saison.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+
+        <a href="admin-adherents.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">👤</div>
+                <div class="navigation-content">
+                    <h2>Adhérents</h2>
+                    <p>Consulter la base adhérents et les fiches individuelles.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+
+    </div>
+
+    <section class="card collapsible-title" onclick="toggleSection('club')">
+        <h2><span id="arrow-club">▶</span> 🏛️ Gestion club</h2>
     </section>
-    </a>
 
-    <a href="admin-absences.html" class="navigation-link">
-    <section class="navigation-card">
-        <div class="navigation-icon">🙋</div>
-        <div class="navigation-content">
-            <h2>Absences</h2>
-            <p>Consulter et traiter les absences déclarées par les parents.</p>
-        </div>
-        <div class="navigation-arrow">➜</div>
+    <div id="section-club">
+
+        <a href="admin-import-helloasso.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">📥</div>
+                <div class="navigation-content">
+                    <h2>Import HelloAsso</h2>
+                    <p>Importer les inscriptions et mettre à jour les adhérents.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+
+        <a href="admin-aide-licence.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">💶</div>
+                <div class="navigation-content">
+                    <h2>Aide licence Lomme</h2>
+                    <p>Suivre les aides, codes, remboursements et statistiques trésorier.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+
+        <a href="admin-organisation.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">👥</div>
+                <div class="navigation-content">
+                    <h2>Organisation</h2>
+                    <p>Gérer les membres du bureau, coachs, juges et bénévoles.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+
+        <a href="admin-notifications-tresorier.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">🔔</div>
+                <div class="navigation-content">
+                    <h2>Notifications <span id="badge-notifications-admin"></span></h2>
+                    <p>Consulter les alertes et notifications du club.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+
+    </div>
+
+    <section class="card collapsible-title" onclick="toggleSection('communication')">
+        <h2><span id="arrow-communication">▶</span> 📣 Communication & site</h2>
     </section>
-    </a>
 
-    <!-- Groupes -->
-    <a href="admin-groupes.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">🤸</div>
-            <div class="navigation-content">
-                <h2>Groupes</h2>
-                <p>Créer et paramétrer les groupes de la saison.</p>
-            </div>
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
+    <div id="section-communication">
 
-    <!-- Notifications trésorier -->
-    <a href="admin-notifications-tresorier.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">🔔</div>
-            <div class="navigation-content">
-                <h2>Notifications <span id="badge-notifications-admin"></span></h2>
-                <p>Consulter les alertes de remboursement et informations financières.</p>
-            </div>
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
-    <a href="admin-aide-licence.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">💶</div>
+        <a href="admin-contenu-site.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">📝</div>
+                <div class="navigation-content">
+                    <h2>Contenu du site</h2>
+                    <p>Modifier les actualités, Mon club, contact, documents et réseaux sociaux.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
 
-            <div class="navigation-content">
-                <h2>Aide licence Lomme</h2>
-                <p>Suivre les aides, codes, remboursements et statistiques trésorier.</p>
-            </div>
+        <a href="admin-boutique.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">🛍️</div>
+                <div class="navigation-content">
+                    <h2>Boutique</h2>
+                    <p>Gérer les produits et le fonctionnement de la boutique.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
 
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
+        <a href="admin-commandes.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">📦</div>
+                <div class="navigation-content">
+                    <h2>Commandes</h2>
+                    <p>Suivre les commandes boutique et les statuts de règlement.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
 
-    </a>
-    <a href="admin-contenu-site.html" class="navigation-link">
-    <section class="navigation-card">
-        <div class="navigation-icon">📝</div>
-        <div class="navigation-content">
-            <h2>Contenu du site</h2>
-            <p>Modifier les actualités, Mon club, les infos pratiques et les réseaux sociaux.</p>
-        </div>
-        <div class="navigation-arrow">➜</div>
+    </div>
+
+    <section class="card collapsible-title" onclick="toggleSection('technique')">
+        <h2><span id="arrow-technique">▶</span> ⚙️ Technique</h2>
     </section>
-    </a>
 
-    <!-- Boutique -->
-    <a href="admin-boutique.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">🛍️</div>
-            <div class="navigation-content">
-                <h2>Boutique</h2>
-                <p>Gérer les produits et le fonctionnement de la boutique.</p>
-            </div>
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
+    <div id="section-technique">
 
-    <!-- Commandes -->
-    <a href="admin-commandes.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">📦</div>
-            <div class="navigation-content">
-                <h2>Commandes</h2>
-                <p>Suivre les commandes boutique et les statuts de règlement.</p>
-            </div>
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
+        <a href="dev.html" class="navigation-link">
+            <section class="navigation-card">
+                <div class="navigation-icon">⚙️</div>
+                <div class="navigation-content">
+                    <h2>Développement</h2>
+                    <p>Outils de test et réinitialisations sécurisées.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
 
-    <!-- Organisation -->
-    <a href="admin-organisation.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">👥</div>
-            <div class="navigation-content">
-                <h2>Organisation</h2>
-                <p>Gérer les membres du bureau, coachs, juges et bénévoles.</p>
-            </div>
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
-
-    <!-- Import HelloAsso -->
-    <a href="admin-import-helloasso.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">📥</div>
-            <div class="navigation-content">
-                <h2>Import HelloAsso</h2>
-                <p>Importer les inscriptions et mettre à jour les adhérents.</p>
-            </div>
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
-
-    <!-- Développement -->
-    <a href="dev.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">⚙️</div>
-            <div class="navigation-content">
-                <h2>Développement</h2>
-                <p>Outils de test et réinitialisations sécurisées.</p>
-            </div>
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
+    </div>
 
 </main>
 
 <script src="../scripts/administration.js"></script>
 
 </body>
+
 </html>

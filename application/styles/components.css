@@ -1714,3 +1714,26 @@
     font-weight: bold;
     box-shadow: var(--shadow);
 }
+/* ================================================= */
+/* page d'accueil administration */
+/* ================================================= */
+.collapsible-title{
+    cursor:pointer;
+    user-select:none;
+    transition:.2s;
+}
+
+.collapsible-title:hover{
+    transform:scale(1.01);
+}
+
+.collapsible-title h2{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.collapsible-title span{
+    font-size:18px;
+    width:18px;
+}

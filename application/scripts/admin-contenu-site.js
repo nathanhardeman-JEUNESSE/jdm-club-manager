@@ -75,6 +75,16 @@ function chargerFormulaire() {
     remplir("contenu-club-facebook", contenuSite.club.facebook);
     remplir("contenu-club-instagram", contenuSite.club.instagram);
     remplir("contenu-club-tiktok", contenuSite.club.tiktok);
+
+    const documents = contenuSite.documents || [];
+
+for (let i = 1; i <= 3; i++) {
+    const documentClub = documents[i - 1] || {};
+
+    remplir(`document-${i}-titre`, documentClub.titre || "");
+    remplir(`document-${i}-description`, documentClub.description || "");
+    remplir(`document-${i}-lien`, documentClub.lien || "");
+}
 }
 
 function enregistrerContenu() {
@@ -100,14 +110,25 @@ function enregistrerContenu() {
             instagram: valeur("contenu-club-instagram"),
             tiktok: valeur("contenu-club-tiktok")
         },
-        contact: {
+         contact: {
             introduction: valeur("contenu-contact-introduction"),
             adresse: valeur("contenu-contact-adresse"),
             telephone: valeur("contenu-contact-telephone"),
             email: valeur("contenu-contact-email"),
             horaires: valeur("contenu-contact-horaires"),
             responsables: valeur("contenu-contact-responsables")
-        }
+        },
+
+        documents: [1, 2, 3].map(i => ({
+            titre: valeur(`document-${i}-titre`),
+            description: valeur(`document-${i}-description`),
+            lien: valeur(`document-${i}-lien`)
+        })).filter(documentClub =>
+            documentClub.titre ||
+            documentClub.description ||
+            documentClub.lien
+        )
+    
     };
 
     localStorage.setItem("contenuSiteJDM", JSON.stringify(contenuSite));

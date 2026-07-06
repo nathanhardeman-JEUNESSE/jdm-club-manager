@@ -1,66 +1,72 @@
 const notificationsAdmin = JSON.parse(localStorage.getItem("notificationsJDM")) || [];
-const absencesAdmin = JSON.parse(localStorage.getItem("absencesJDM")) || [];
-const commandesAdmin = JSON.parse(localStorage.getItem("commandesJDM")) || [];
+const badgeAdmin = document.getElementById("badge-notifications-admin");
 
-function ajouterBadgeSurCarte(titreCarte, nombre) {
-    const titres = document.querySelectorAll(".navigation-content h2");
+const nonLues = notificationsAdmin.filter(notification =>
+    !notification.lue &&
+    !notification.archivee
+);
 
-    titres.forEach(titre => {
-        const texte = titre.textContent.trim().toLowerCase();
+if (badgeAdmin && nonLues.length > 0) {
+    badgeAdmin.textContent = nonLues.length;
+    badgeAdmin.className = "notification-badge";
+} else if (badgeAdmin) {
+    badgeAdmin.textContent = "";
+    badgeAdmin.className = "";
+}
 
-        if (!texte.startsWith(titreCarte.toLowerCase())) return;
+const sectionsAdmin = [
+    "coach",
+    "club",
+    "communication",
+    "technique"
+];
 
-        const ancienBadge = titre.querySelector(".notification-badge");
-        if (ancienBadge) ancienBadge.remove();
+function chargerSectionsAdmin() {
+    sectionsAdmin.forEach(section => {
+        const bloc = document.getElementById("section-" + section);
+        const fleche = document.getElementById("arrow-" + section);
 
-        if (nombre > 0) {
-            const badge = document.createElement("span");
-            badge.className = "notification-badge";
-            badge.textContent = nombre;
-            titre.appendChild(badge);
+        if (!bloc || !fleche) return;
+
+        const etat = localStorage.getItem("admin-section-" + section);
+
+        if (etat === null) {
+            if (section === "coach") {
+                bloc.style.display = "block";
+                fleche.textContent = "▼";
+            } else {
+                bloc.style.display = "none";
+                fleche.textContent = "▶";
+            }
+
+            return;
+        }
+
+        if (etat === "ouverte") {
+            bloc.style.display = "block";
+            fleche.textContent = "▼";
+        } else {
+            bloc.style.display = "none";
+            fleche.textContent = "▶";
         }
     });
 }
 
-function notificationAdminActive(notification) {
-    if (notification.archivee || notification.lue) return false;
+function toggleSection(section) {
+    const bloc = document.getElementById("section-" + section);
+    const fleche = document.getElementById("arrow-" + section);
 
-    return notification.categorie === "tresorier" ||
-           notification.categorie === "parents-groupes" ||
-           notification.categorie === "boutique";
-}
+    if (!bloc || !fleche) return;
 
-function absenceAdminActive(absence) {
-    return !absence.archiveeAdmin &&
-           !absence.lueAdmin &&
-           String(absence.statut || "déclarée").toLowerCase() !== "traitée";
-}
-
-function commandeAdminActive(commande) {
-    const statut = commande.statut || "En cours de préparation";
-
-    return !commande.vueAdmin &&
-           statut !== "Annulée" &&
-           statut !== "Distribuée" &&
-           statut !== "Livrée";
-}
-
-const totalNotifications = notificationsAdmin.filter(notificationAdminActive).length;
-const totalAbsences = absencesAdmin.filter(absenceAdminActive).length;
-const totalCommandes = commandesAdmin.filter(commandeAdminActive).length;
-
-ajouterBadgeSurCarte("Notifications", totalNotifications);
-ajouterBadgeSurCarte("Absences", totalAbsences);
-ajouterBadgeSurCarte("Commandes", totalCommandes);
-
-const badgeAdmin = document.getElementById("badge-notifications-admin");
-
-if (badgeAdmin) {
-    if (totalNotifications > 0) {
-        badgeAdmin.textContent = totalNotifications;
-        badgeAdmin.className = "notification-badge";
+    if (bloc.style.display === "none") {
+        bloc.style.display = "block";
+        fleche.textContent = "▼";
+        localStorage.setItem("admin-section-" + section, "ouverte");
     } else {
-        badgeAdmin.textContent = "";
-        badgeAdmin.className = "";
+        bloc.style.display = "none";
+        fleche.textContent = "▶";
+        localStorage.setItem("admin-section-" + section, "fermee");
     }
 }
+
+chargerSectionsAdmin();
