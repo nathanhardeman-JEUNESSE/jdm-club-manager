@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord - JDM Club Manager</title>
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body>
+<main class="page">
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Tableau de bord du club</h1>
+    </header>
+
+    <section class="card">
+        <h2>📊 Vue générale</h2>
+        <p>Indicateurs principaux du club, sans détail financier.</p>
+    </section>
+
+    <section id="resume-president"></section>
+
+    <section class="card">
+        <h2>📋 Dossiers à contrôler</h2>
+        <p>Licences, cotisations à vérifier et informations incomplètes.</p>
+    </section>
+
+    <section id="liste-dossiers-controle"></section>
+
+    <section class="card">
+        <h2>📈 Répartition par âge</h2>
+        <section id="stats-age"></section>
+    </section>
+
+    <section class="card">
+        <h2>🤸 Répartition par groupe</h2>
+        <section id="stats-groupes"></section>
+    </section>
+</main>
+<script src="../scripts/admin-tableau-bord.js"></script>
+</body>
+</html>

@@ -1,65 +1,18 @@
 :root {
-    --convocation-logo-opacity: 0.08;
-}
-
-.competiteurs-section {
-    margin-top: 20px;
-    padding-top: 10px;
-    border-top: 1px solid rgba(255,255,255,0.15);
-}
-
-.competiteurs-section h3 {
-    margin-bottom: 12px;
-}
-
-.competiteur-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-    box-sizing: border-box;
-    margin: 10px 0;
-    padding: 12px;
-    border-radius: 12px;
-    background: #222;
-    color: var(--white);
-}
-
-.competiteur-row input {
-    width: 20px;
-    height: 20px;
-    flex-shrink: 0;
-}
-
-.competiteur-row span {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.competiteur-row small {
-    opacity: 0.75;
-}
-
-.competiteur-groupe {
-    border-left: 5px solid #2f8f46;
-}
-
-.competition-history-card {
-    border-left: 6px solid #ff9800;
+    --convocation-logo-opacity: 0.1;
 }
 
 .convocation-body {
     margin: 0;
-    background: #dddddd;
+    background: #ddd;
     font-family: Arial, Helvetica, sans-serif;
 }
 
 .convocation-print-button {
     display: block;
     width: 210mm;
-    margin: 12px auto;
-    padding: 12px;
+    margin: 8px auto;
+    padding: 10px;
     border: none;
     border-radius: 10px;
     background: #0057ff;
@@ -71,9 +24,9 @@
 .convocation-page {
     position: relative;
     width: 210mm;
-    min-height: 297mm;
+    height: 297mm;
     margin: 0 auto;
-    padding: 14mm;
+    padding: 10mm 12mm;
     background: white;
     color: black;
     box-sizing: border-box;
@@ -84,7 +37,7 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 155mm;
+    width: 200mm;
     transform: translate(-50%, -50%);
     opacity: var(--convocation-logo-opacity);
     z-index: 0;
@@ -97,38 +50,44 @@
 }
 
 .convocation-header {
-    border-bottom: 3px solid black;
-    padding-bottom: 8mm;
-    margin-bottom: 8mm;
+    border-bottom: 2px solid black;
+    padding-bottom: 4mm;
+    margin-bottom: 4mm;
     text-align: center;
 }
 
 .convocation-header h1 {
     margin: 0;
-    font-size: 30px;
+    font-size: 24px;
     text-transform: uppercase;
 }
 
 .convocation-header h2 {
-    margin: 4mm 0 0 0;
-    font-size: 22px;
+    margin: 2mm 0 0 0;
+    font-size: 18px;
 }
 
 .convocation-block {
     border: 1px solid #222;
-    margin-bottom: 6mm;
-    padding: 5mm;
-    background: rgba(255,255,255,0.88);
+    margin-bottom: 4mm;
+    padding: 3.5mm;
+    background: transparent;
 }
 
 .convocation-block h3 {
-    margin: 0 0 4mm 0;
+    margin: 0 0 2.5mm 0;
     text-transform: uppercase;
-    font-size: 14px;
+    font-size: 12px;
+}
+
+.convocation-block p {
+    margin: 0 0 2.5mm 0;
+    font-size: 13px;
+    line-height: 1.25;
 }
 
 .convocation-warning {
-    border-left: 8px solid #e63946;
+    border-left: 6px solid #e63946;
 }
 
 .convocation-red {
@@ -139,19 +98,20 @@
 .convocation-table {
     width: 100%;
     border-collapse: collapse;
+    font-size: 12px;
 }
 
 .convocation-table th,
 .convocation-table td {
     border: 1px solid #999;
-    padding: 3mm;
+    padding: 2mm;
     text-align: left;
 }
 
 .convocation-footer {
-    margin-top: 12mm;
+    margin-top: 5mm;
     text-align: center;
-    font-size: 11px;
+    font-size: 10px;
     color: #555;
 }
 
@@ -161,6 +121,20 @@
 }
 
 @media print {
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    html,
+    body {
+        width: 210mm;
+        height: 297mm;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
     .convocation-print-button {
         display: none;
     }
@@ -170,7 +144,19 @@
     }
 
     .convocation-page {
+        width: 210mm;
+        height: 297mm;
         margin: 0;
+        padding: 9mm 11mm;
         box-shadow: none;
+        overflow: hidden;
+        page-break-after: avoid;
+        break-after: avoid;
+    }
+
+    .convocation-block {
+        margin-bottom: 3.5mm;
+        padding: 3mm;
+        background: transparent;
     }
 }
