@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compétitions - JDM Club Manager</title>
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/competitions.css">
+</head>
+<body>
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Compétitions</h1>
+    </header>
+
+    <section class="card">
+        <h2>🏆 Gestion des compétitions</h2>
+        <p>Créer, modifier, dupliquer et préparer les convocations.</p>
+    </section>
+
+    <section class="card">
+        <h2>➕ Nouvelle compétition</h2>
+
+        <input class="form-input" id="competition-nom" placeholder="Nom de la compétition">
+
+        <select class="form-input" id="competition-groupe">
+            <option value="">Sélectionner le groupe concerné</option>
+        </select>
+
+        <input class="form-input" id="competition-coachs" placeholder="Coach(s) présent(s) à la compétition">
+
+        <input class="form-input" id="competition-date" type="date">
+        <input class="form-input" id="competition-adresse" placeholder="Adresse de la compétition">
+
+        <textarea class="form-input" id="competition-rendezvous" placeholder="Heure et lieu du rendez-vous"></textarea>
+
+        <select class="form-input" id="competition-transport">
+            <option value="Covoiturage">Covoiturage</option>
+            <option value="Minibus">Minibus</option>
+            <option value="À définir">À définir</option>
+            <option value="Parents directement sur place">Parents directement sur place</option>
+        </select>
+
+        <input class="form-input" id="competition-heure-passage" placeholder="Heure de passage prévue ex : 10h30">
+
+        <select class="form-input" id="competition-agres">
+            <option value="Sol">Sol</option>
+            <option value="Arçon">Arçon</option>
+            <option value="Anneaux">Anneaux</option>
+            <option value="Saut">Saut</option>
+            <option value="Barres parallèles">Barres parallèles</option>
+            <option value="Barre fixe">Barre fixe</option>
+        </select>
+
+        <textarea class="form-input" id="competition-message"></textarea>
+    </section>
+
+    <section class="card">
+        <h2>👥 Gymnastes convoqués</h2>
+        <p>Sélectionnez un groupe : ses gymnastes apparaissent d'abord. Vous pouvez ensuite ajouter d'autres compétiteurs si besoin.</p>
+
+        <input class="form-input" id="recherche-competiteur" placeholder="Rechercher un gymnaste">
+
+        <div id="bloc-competiteurs-groupe"></div>
+        <div id="bloc-competiteurs-autres"></div>
+    </section>
+
+    <section class="card">
+        <button class="primary-button order-button" id="enregistrer-competition">Enregistrer la compétition</button>
+        <button class="secondary-button" id="nouvelle-competition">Vider le formulaire</button>
+    </section>
+
+    <section class="card">
+        <h2>📚 Historique des compétitions</h2>
+        <p>Modifier, dupliquer, notifier les parents ou générer une convocation PDF.</p>
+    </section>
+
+    <section id="historique-competitions"></section>
+
+</main>
+<script src="../scripts/admin-competitions.js"></script>
+</body>
+</html>

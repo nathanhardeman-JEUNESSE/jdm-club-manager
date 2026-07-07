@@ -1,18 +1,53 @@
 const notificationsAdmin = JSON.parse(localStorage.getItem("notificationsJDM")) || [];
-const badgeAdmin = document.getElementById("badge-notifications-admin");
+const absencesAdmin = JSON.parse(localStorage.getItem("absencesJDM")) || [];
+const commandesAdmin = JSON.parse(localStorage.getItem("commandesJDM")) || [];
 
-const nonLues = notificationsAdmin.filter(notification =>
-    !notification.lue &&
-    !notification.archivee
-);
+const badgeNotifications = document.getElementById("badge-notifications-admin");
+const badgeAbsences = document.getElementById("badge-absences-admin");
+const badgeCommandes = document.getElementById("badge-commandes-admin");
 
-if (badgeAdmin && nonLues.length > 0) {
-    badgeAdmin.textContent = nonLues.length;
-    badgeAdmin.className = "notification-badge";
-} else if (badgeAdmin) {
-    badgeAdmin.textContent = "";
-    badgeAdmin.className = "";
+function afficherBadge(element, nombre) {
+    if (!element) return;
+
+    if (nombre > 0) {
+        element.textContent = nombre;
+        element.className = "notification-badge";
+    } else {
+        element.textContent = "";
+        element.className = "";
+    }
 }
+
+function statutCommandeNormalise(statut) {
+    if (statut === "Livrée") return "Distribuée";
+    return statut || "En cours de préparation";
+}
+
+const absencesNonLues = absencesAdmin.filter(absence =>
+    !absence.lueAdmin &&
+    absence.statut !== "traitée"
+).length;
+
+const commandesNonVues = commandesAdmin.filter(commande => {
+    const statut = statutCommandeNormalise(commande.statut);
+
+    return !commande.vueAdmin &&
+        statut !== "Annulée" &&
+        statut !== "Distribuée";
+}).length;
+
+const notificationsNonLues = notificationsAdmin.filter(notification =>
+    !notification.lue &&
+    !notification.archivee &&
+    notification.categorie !== "parent" &&
+    notification.categorie !== "boutique" &&
+    notification.type !== "commande-prete" &&
+    notification.type !== "absence"
+).length;
+
+afficherBadge(badgeAbsences, absencesNonLues);
+afficherBadge(badgeCommandes, commandesNonVues);
+afficherBadge(badgeNotifications, notificationsNonLues);
 
 const sectionsAdmin = [
     "coach",
