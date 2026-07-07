@@ -4,8 +4,8 @@ const numero = params.get("id");
 const adherents = JSON.parse(localStorage.getItem("adherentsJDM")) || [];
 const inscriptions = JSON.parse(localStorage.getItem("inscriptionsJDM")) || [];
 
-const adherent = adherents.find(a => a.numeroAdherent === numero);
-const historique = inscriptions.filter(i => i.numeroAdherent === numero);
+const adherent = adherents.find(a => String(a.numeroAdherent) === String(numero));
+const historique = inscriptions.filter(i => String(i.numeroAdherent) === String(numero));
 const derniereInscription = historique[historique.length - 1];
 const donnees = derniereInscription ? derniereInscription.donneesHelloAsso || {} : {};
 
@@ -19,6 +19,8 @@ function nettoyer(texte) {
 }
 
 function champ(donnees, mots) {
+    if (!donnees) return "";
+
     const cle = Object.keys(donnees).find(cle =>
         mots.every(mot => nettoyer(cle).includes(nettoyer(mot)))
     );
@@ -30,17 +32,69 @@ function valeur(texte) {
     return texte || "";
 }
 
-if (!adherent) {
-    fiche.innerHTML = `<h1>Adhérent introuvable</h1>`;
-} else {
-    fiche.innerHTML = `
-        <section class="fiche-pdf-page">
+function extraireUrlPhoto(valeurChamp) {
+    const texte = String(valeurChamp || "").trim();
 
-            <header class="fiche-pdf-header">
+    if (!texte) return "";
+
+    const match = texte.match(/https?:\/\/[^\s"'<>]+/i);
+    if (match) return match[0];
+
+    if (texte.startsWith("http://") || texte.startsWith("https://")) {
+        return texte;
+    }
+
+    return "";
+}
+
+function photoIdentiteHTML(donnees) {
+    const photoLicence =
+        champ(donnees, ["photo", "identite", "licence"]) ||
+        champ(donnees, ["photo", "identité", "licence"]) ||
+        champ(donnees, ["photo", "licence"]) ||
+        champ(donnees, ["photo"]);
+
+    const urlPhoto = extraireUrlPhoto(photoLicence);
+
+    if (urlPhoto) {
+        return `
+                <div class="fiche-photo-box">
+                    <img src="${urlPhoto}"
+                         class="fiche-photo-identite"
+                         alt="Photo d'identité"
+                         onerror="afficherPhotoManquante(this)">
+                </div>
+        `;
+    }
+
+    return `
                 <div class="fiche-photo-box">
                     <div class="fiche-photo-icon">👤</div>
                     <div class="fiche-photo-label">PHOTO D'IDENTITÉ</div>
                 </div>
+    `;
+}
+
+function afficherPhotoManquante(image) {
+    const parent = image.parentElement;
+    if (!parent) return;
+
+    parent.innerHTML = `
+        <div class="fiche-photo-icon">👤</div>
+        <div class="fiche-photo-label">PHOTO MANQUANTE</div>
+    `;
+}
+
+if (!adherent) {
+    fiche.innerHTML = `<h1>Adhérent introuvable</h1>`;
+} else {
+    const photoHTML = photoIdentiteHTML(donnees);
+
+    fiche.innerHTML = `
+        <section class="fiche-pdf-page">
+
+            <header class="fiche-pdf-header">
+                ${photoHTML}
 
                 <div class="fiche-pdf-title">
                     <h1>FICHE ADHÉRENT</h1>
@@ -121,7 +175,7 @@ if (!adherent) {
                 <h3>DOCUMENTS FOURNIS</h3>
                 <div class="fiche-grid-3">
                     <p><strong>Certificat médical :</strong> ${champ(donnees, ["certificat", "medical"])}</p>
-                    <p><strong>Photo licence :</strong> ${champ(donnees, ["photo", "licence"])}</p>
+                    <p><strong>Photo licence :</strong> ${champ(donnees, ["photo", "identite", "licence"]) || champ(donnees, ["photo", "licence"])}</p>
                     <p><strong>Justificatif domicile :</strong> ${champ(donnees, ["justificatif", "domicile"])}</p>
                 </div>
             </section>
