@@ -5,6 +5,8 @@ const commandesAdmin = JSON.parse(localStorage.getItem("commandesJDM")) || [];
 const badgeNotifications = document.getElementById("badge-notifications-admin");
 const badgeAbsences = document.getElementById("badge-absences-admin");
 const badgeCommandes = document.getElementById("badge-commandes-admin");
+const badgeCotisations = document.getElementById("badge-cotisations-admin");
+const aidesLicenceAdmin = JSON.parse(localStorage.getItem("aidesLicenceLommeJDM")) || [];
 
 function afficherBadge(element, nombre) {
     if (!element) return;
@@ -48,6 +50,10 @@ const notificationsNonLues = notificationsAdmin.filter(notification =>
 afficherBadge(badgeAbsences, absencesNonLues);
 afficherBadge(badgeCommandes, commandesNonVues);
 afficherBadge(badgeNotifications, notificationsNonLues);
+const cotisationsAControler = aidesLicenceAdmin.filter(a =>
+    a.statutCotisation !== "regle" || a.relance === "oui"
+).length;
+afficherBadge(badgeCotisations, cotisationsAControler);
 
 const sectionsAdmin = [
     "coach",

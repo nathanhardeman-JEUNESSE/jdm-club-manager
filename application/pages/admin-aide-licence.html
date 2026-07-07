@@ -3,66 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aide licence Lomme - JDM Club Manager</title>
-
+    <title>Suivi cotisations - JDM Club Manager</title>
     <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="../styles/components.css">
 </head>
-
 <body>
-
 <main class="page">
-
     <header class="page-header">
         <a href="administration.html" class="back-button">←</a>
-        <h1>Aide licence Lomme</h1>
+        <h1>Suivi cotisations</h1>
     </header>
 
     <section class="card">
-        <h2>💶 Aide licence sportive</h2>
-        <p>
-            Suivi des adhérents éligibles, codes mairie, Pass’Sport,
-            remboursements et statistiques.
-        </p>
+        <h2>🧾 Cotisations & aides</h2>
+        <p>Suivi des cotisations, règlements hors CB, aides Ville de Lomme, Pass’Sport et dossiers à relancer.</p>
     </section>
 
     <section class="card">
-        <h2>📊 Statistiques</h2>
-        <div id="stats-aide-licence"></div>
-    </section>
-
-    <section class="card">
-        <h2>📤 Exports</h2>
-
-        <button class="primary-button order-button" id="exporter-bordereau-aide">
-            Exporter le bordereau CSV
-        </button>
-
-        <button class="secondary-button" id="exporter-rapport-aide">
-            Exporter le rapport trésorier CSV
-        </button>
+        <h2>📊 Synthèse</h2>
+        <div id="stats-cotisations"></div>
     </section>
 
     <section class="card">
         <h2>🔎 Filtres</h2>
-
-        <input class="form-input" id="recherche-aide" placeholder="Rechercher nom, prénom, groupe, ville, code">
-
+        <input class="form-input" id="recherche-aide" placeholder="Rechercher nom, prénom, groupe, ville, code, commentaire">
         <select class="form-input" id="filtre-aide-statut">
             <option value="">Tous les statuts</option>
-            <option value="a-traiter">À traiter</option>
-            <option value="code-recu">Code reçu</option>
-            <option value="transmis-ville">Transmis à la Ville</option>
-            <option value="rembourse-ville">Remboursé par la Ville</option>
-            <option value="rembourse-famille">Famille remboursée</option>
+            <option value="a-controler">À contrôler</option>
+            <option value="a-relancer">À relancer</option>
+            <option value="partiel">Partiellement réglé</option>
+            <option value="regle">Réglé</option>
+            <option value="attente-aide">En attente aide</option>
+        </select>
+        <select class="form-input" id="filtre-mode-paiement">
+            <option value="">Tous les modes</option>
+            <option value="cb-helloasso">CB HelloAsso</option>
+            <option value="cheque">Chèque</option>
+            <option value="especes">Espèces</option>
+            <option value="cheque-sport">Chèque sport</option>
+            <option value="aide-lomme">Aide Ville de Lomme</option>
+            <option value="passsport">Pass’Sport</option>
+            <option value="mixte">Paiement mixte</option>
+            <option value="inconnu">Non renseigné</option>
+        </select>
+        <select class="form-input" id="filtre-dossiers">
+            <option value="">Tous les dossiers</option>
+            <option value="alertes">Alertes uniquement</option>
+            <option value="lomme">Résidents Lomme</option>
+            <option value="passsport">Pass’Sport</option>
+            <option value="commentaire">Avec commentaire</option>
         </select>
     </section>
 
-    <section id="liste-aide-licence"></section>
+    <section class="card collapsible-title" onclick="toggleSectionCotisation('alertes')">
+        <h2><span id="arrow-alertes">▼</span> 🚨 Alertes à traiter</h2>
+        <p>Dossiers non réglés, partiels, aides en attente ou à relancer.</p>
+    </section>
+    <section id="section-alertes">
+        <section id="liste-alertes-cotisations"></section>
+    </section>
 
+    <section class="card collapsible-title" onclick="toggleSectionCotisation('liste')">
+        <h2><span id="arrow-liste">▶</span> 👥 Liste complète des adhérents</h2>
+        <p>Ouvrir uniquement si besoin de consulter ou modifier tous les dossiers.</p>
+    </section>
+    <section id="section-liste" style="display:none;">
+        <section id="liste-aide-licence"></section>
+    </section>
+
+    <section class="card collapsible-title" onclick="toggleSectionCotisation('exports')">
+        <h2><span id="arrow-exports">▶</span> 📤 Exports</h2>
+    </section>
+    <section id="section-exports" style="display:none;">
+        <section class="card">
+            <button class="primary-button order-button" id="exporter-bordereau-aide">Exporter le suivi CSV</button>
+            <button class="secondary-button" id="exporter-rapport-aide">Exporter les alertes CSV</button>
+        </section>
+    </section>
 </main>
-
 <script src="../scripts/admin-aide-licence.js"></script>
-
 </body>
 </html>

@@ -21,12 +21,14 @@
 
     <section id="resume-president"></section>
 
-    <section class="card">
-        <h2>📋 Dossiers à contrôler</h2>
+    <section class="card collapsible-title" onclick="toggleDossiersControle()">
+        <h2><span id="arrow-dossiers-controle">▶</span> 📋 Dossiers à contrôler</h2>
         <p>Licences, cotisations à vérifier et informations incomplètes.</p>
     </section>
 
-    <section id="liste-dossiers-controle"></section>
+    <section id="bloc-dossiers-controle" style="display:none;">
+        <section id="liste-dossiers-controle"></section>
+    </section>
 
     <section class="card">
         <h2>📈 Répartition par âge</h2>
