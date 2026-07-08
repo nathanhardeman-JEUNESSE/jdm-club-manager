@@ -275,7 +275,8 @@ function absenceDejaSignalee(groupeId, dateISO) {
     );
 }
 
-function classeStatut(statut, horaire) {
+function classeStatut(statut, horaire, typeException) {
+    if (typeException === "competition" || typeException === "competition-annulation") return "cancel";
     if (statut === "annule") return "cancel";
     if (statut === "pas-cours") return "off";
     if (statut === "evenement") return "ok";
@@ -325,15 +326,21 @@ async function afficherPlanning() {
                         const horaire = exception ? exception.horaire : horaireHabituel;
                         const titre = exception && exception.titre ? exception.titre : "";
                         const messageInfo = exception && exception.message ? exception.message : "";
+                        const typeException = exception && exception.type ? exception.type : "";
                         const absence = absenceDejaSignalee(groupe.id, dateISO);
                         const infoClass = messageInfo || absence ? " has-info" : "";
+                        const texteCase = typeException === "competition"
+                            ? "🏆 Compétition"
+                            : typeException === "competition-annulation"
+                                ? "Cours annulé"
+                                : (horaire || "-");
 
                         return `
                             <div>
                                 ${jour.label}<br>
                                 <small>${date.getDate()}</small>
 
-                                <span class="slot ${classeStatut(statut, horaire)}${infoClass}"
+                                <span class="slot ${classeStatut(statut, horaire, typeException)}${infoClass}"
                                       title="${securiserTexte(titre)}"
                                       onclick="ouvrirSeance(
                                           '${groupe.id}',
@@ -342,9 +349,10 @@ async function afficherPlanning() {
                                           '${jour.nom}',
                                           '${securiserTexte(horaire)}',
                                           '${statut}',
-                                          '${securiserTexte(messageInfo)}'
+                                          '${securiserTexte(messageInfo)}',
+                                          '${typeException}'
                                       )">
-                                    ${horaire || "-"}
+                                    ${texteCase}
                                 </span>
 
                                 ${absence ? `<small>🙋 Absence signalée</small>` : ""}
@@ -357,13 +365,19 @@ async function afficherPlanning() {
     });
 }
 
-function ouvrirSeance(groupeId, groupeNom, dateISO, jourNom, horaire, statut, messageInfo) {
-    if (messageInfo) {
+function ouvrirSeance(groupeId, groupeNom, dateISO, jourNom, horaire, statut, messageInfo, typeException = "") {
+    const estCompetition = typeException === "competition";
+
+    if (messageInfo && !estCompetition) {
         alert(messageInfo);
     }
 
-    if (!horaire || statut === "annule" || statut === "pas-cours") {
+    if (!estCompetition && (!horaire || statut === "annule" || statut === "pas-cours")) {
         return;
+    }
+
+    if (estCompetition) {
+        horaire = horaire || "Compétition";
     }
 
     seanceSelectionnee = {
@@ -378,6 +392,11 @@ function ouvrirSeance(groupeId, groupeNom, dateISO, jourNom, horaire, statut, me
         <strong>Groupe :</strong> ${groupeNom}<br>
         <strong>Date :</strong> ${jourNom} ${dateISO}<br>
         <strong>Horaire :</strong> ${horaire}
+        ${
+            messageInfo
+                ? `<hr><strong>Information :</strong><br>${messageInfo.replace(/\n/g, "<br>")}`
+                : ""
+        }
     `;
 
     motifAbsence.value = "";

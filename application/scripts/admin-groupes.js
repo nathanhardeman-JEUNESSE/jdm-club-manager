@@ -128,7 +128,8 @@ function analyserGroupeDepuisTarif(tarif) {
         coachs: [],
         horaires: {},
         whatsapp: "",
-        notificationsParents: true
+        notificationsParents: true,
+        equipes: []
     };
 }
 
@@ -211,6 +212,128 @@ function afficherHoraires(horaires) {
 
 function adherentsDuGroupe(nomGroupe) {
     return adherents.filter(adherent => trouverGroupeDepuisInscription(adherent) === nomGroupe);
+}
+
+function normaliserEquipesGroupe(groupe) {
+    if (!groupe.equipes) groupe.equipes = [];
+    return groupe.equipes;
+}
+
+function ajouterEquipeGroupe(index) {
+    const groupe = groupes[index];
+    if (!groupe) return;
+
+    normaliserEquipesGroupe(groupe);
+
+    const nomEquipe = prompt("Nom de l'équipe :", `Équipe ${groupe.equipes.length + 1}`);
+    if (!nomEquipe) return;
+
+    groupe.equipes.push({
+        id: Date.now() + Math.floor(Math.random() * 100000),
+        nom: nomEquipe.trim(),
+        adherents: []
+    });
+
+    localStorage.setItem("groupesJDM", JSON.stringify(groupes));
+    afficherGroupes();
+}
+
+function renommerEquipeGroupe(indexGroupe, indexEquipe) {
+    const groupe = groupes[indexGroupe];
+    if (!groupe || !groupe.equipes || !groupe.equipes[indexEquipe]) return;
+
+    const equipe = groupe.equipes[indexEquipe];
+    const nouveauNom = prompt("Nouveau nom de l'équipe :", equipe.nom);
+    if (!nouveauNom) return;
+
+    equipe.nom = nouveauNom.trim();
+
+    localStorage.setItem("groupesJDM", JSON.stringify(groupes));
+    afficherGroupes();
+}
+
+function supprimerEquipeGroupe(indexGroupe, indexEquipe) {
+    const groupe = groupes[indexGroupe];
+    if (!groupe || !groupe.equipes || !groupe.equipes[indexEquipe]) return;
+
+    if (!confirm("Supprimer cette équipe ? Les adhérents resteront dans le groupe.")) return;
+
+    groupe.equipes.splice(indexEquipe, 1);
+
+    localStorage.setItem("groupesJDM", JSON.stringify(groupes));
+    afficherGroupes();
+}
+
+function toggleAdherentEquipe(indexGroupe, indexEquipe, numeroAdherent, coche) {
+    const groupe = groupes[indexGroupe];
+    if (!groupe || !groupe.equipes || !groupe.equipes[indexEquipe]) return;
+
+    const equipe = groupe.equipes[indexEquipe];
+    equipe.adherents = equipe.adherents || [];
+
+    if (coche) {
+        if (!equipe.adherents.includes(numeroAdherent)) {
+            equipe.adherents.push(numeroAdherent);
+        }
+    } else {
+        equipe.adherents = equipe.adherents.filter(numero => String(numero) !== String(numeroAdherent));
+    }
+
+    localStorage.setItem("groupesJDM", JSON.stringify(groupes));
+}
+
+function afficherEquipesGroupe(groupe, indexGroupe) {
+    if (groupe.type !== "Compétition") return "";
+
+    normaliserEquipesGroupe(groupe);
+
+    const membres = adherentsDuGroupe(groupe.nom)
+        .slice()
+        .sort((a, b) => String(a.nom || "").localeCompare(String(b.nom || "")));
+
+    return `
+        <hr>
+        <h3>🏆 Équipes compétition</h3>
+        <p>Créez des sous-équipes pour préparer plus rapidement les convocations.</p>
+
+        <button class="secondary-button" onclick="ajouterEquipeGroupe(${indexGroupe})">
+            Ajouter une équipe
+        </button>
+
+        ${
+            groupe.equipes.length === 0
+                ? `<p>Aucune équipe créée pour ce groupe.</p>`
+                : groupe.equipes.map((equipe, indexEquipe) => `
+                    <section class="card">
+                        <h3>${equipe.nom || "Équipe sans nom"}</h3>
+
+                        <button class="secondary-button" onclick="renommerEquipeGroupe(${indexGroupe}, ${indexEquipe})">
+                            Renommer
+                        </button>
+
+                        <button class="secondary-button" onclick="supprimerEquipeGroupe(${indexGroupe}, ${indexEquipe})">
+                            Supprimer
+                        </button>
+
+                        ${
+                            membres.length === 0
+                                ? `<p>Aucun adhérent dans ce groupe.</p>`
+                                : membres.map(adherent => {
+                                    const coche = (equipe.adherents || []).includes(adherent.numeroAdherent);
+                                    return `
+                                        <label class="checkbox-row">
+                                            <input type="checkbox"
+                                                   ${coche ? "checked" : ""}
+                                                   onchange="toggleAdherentEquipe(${indexGroupe}, ${indexEquipe}, '${adherent.numeroAdherent}', this.checked)">
+                                            ${adherent.prenom || ""} ${adherent.nom || ""}
+                                        </label>
+                                    `;
+                                }).join("")
+                        }
+                    </section>
+                `).join("")
+        }
+    `;
 }
 
 function passerAdherentDansGroupe(numeroAdherent, nouveauGroupe) {
@@ -355,6 +478,8 @@ function afficherGroupes() {
 
                     <h3>👥 Adhérents du groupe</h3>
                     ${afficherListeAdherents(groupe)}
+
+                    ${afficherEquipesGroupe(groupe, index)}
                 </div>
             </section>
         `;
@@ -400,7 +525,10 @@ boutonAjouter.addEventListener("click", () => {
         whatsapp,
         notificationsParents: groupeEnModification !== null
             ? groupes[groupeEnModification].notificationsParents !== false
-            : true
+            : true,
+        equipes: groupeEnModification !== null && groupes[groupeEnModification].equipes
+            ? groupes[groupeEnModification].equipes
+            : []
     };
 
     if (groupeEnModification !== null) {

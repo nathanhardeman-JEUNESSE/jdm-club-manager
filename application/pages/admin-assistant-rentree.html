@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistant rentrée - JDM Club Manager</title>
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body>
+<main class="page">
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Assistant rentrée</h1>
+    </header>
+
+    <section class="card">
+        <h2>🚀 Préparation de saison</h2>
+        <p>Vue de contrôle : adhérents, groupes, dossiers, cotisations, licences et planning.</p>
+    </section>
+
+    <section class="card">
+        <h2>📊 Progression générale</h2>
+        <div id="progression-rentree"></div>
+    </section>
+
+    <section class="card collapsible-title" onclick="toggleAssistantSection('etapes')">
+        <h2><span id="arrow-etapes">▼</span> ✅ Étapes de rentrée</h2>
+    </section>
+    <section id="section-etapes">
+        <section id="liste-etapes-rentree"></section>
+    </section>
+
+    <section class="card collapsible-title" onclick="toggleAssistantSection('alertes')">
+        <h2><span id="arrow-alertes">▼</span> 🚨 Alertes à traiter</h2>
+    </section>
+    <section id="section-alertes">
+        <section id="alertes-rentree"></section>
+    </section>
+
+    <section class="card collapsible-title" onclick="toggleAssistantSection('groupes')">
+        <h2><span id="arrow-groupes">▶</span> 🤸 Répartition par groupe</h2>
+    </section>
+    <section id="section-groupes" style="display:none;">
+        <section id="stats-groupes-rentree"></section>
+    </section>
+</main>
+<script src="../scripts/admin-assistant-rentree.js"></script>
+</body>
+</html>

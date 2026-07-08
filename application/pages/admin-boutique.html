@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin boutique - JDM Club Manager</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Boutique admin</h1>
+    </header>
+
+    <section class="card">
+        <h2>🛍️ Articles configurables</h2>
+        <p>
+            Ajoutez des articles sans modifier le code : nom, description, prix,
+            visuel et options libres comme taille, couleur ou modèle.
+        </p>
+    </section>
+
+    <section class="card">
+        <h2>➕ Ajouter / modifier un article</h2>
+
+        <input class="form-input" id="article-nom" placeholder="Nom de l'article">
+        <textarea class="form-input" id="article-description" placeholder="Description"></textarea>
+        <input class="form-input" id="article-prix" type="number" step="0.01" placeholder="Prix">
+        <input class="form-input" id="article-image" placeholder="URL de l'image / visuel">
+
+        <label>
+            <input type="checkbox" id="article-actif" checked>
+            Article visible dans Boutique Accessoires
+        </label>
+
+        <hr>
+
+        <h3>Options de l'article</h3>
+        <p>Exemple : Taille → 6 ans, 8 ans, 10 ans, S, M, L</p>
+
+        <input class="form-input" id="option-nom" placeholder="Nom de l'option ex : Taille">
+        <input class="form-input" id="option-valeurs" placeholder="Valeurs séparées par des virgules ex : S, M, L">
+
+        <button class="secondary-button" id="ajouter-option-article">
+            Ajouter l'option
+        </button>
+
+        <section id="options-article-formulaire"></section>
+
+        <button class="primary-button order-button" id="enregistrer-article">
+            Enregistrer l'article
+        </button>
+
+        <button class="secondary-button" id="vider-article">
+            Vider le formulaire
+        </button>
+    </section>
+
+    <section class="card">
+        <h2>📦 Articles existants</h2>
+        <p>Modifier, masquer ou supprimer les articles ajoutés côté admin.</p>
+    </section>
+
+    <section id="liste-articles-boutique-admin"></section>
+
+</main>
+
+<script src="../scripts/admin-boutique.js"></script>
+
+</body>
+</html>

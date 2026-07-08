@@ -7,6 +7,7 @@ let planningExceptions = JSON.parse(localStorage.getItem("planningExceptionsJDM"
 
 const champNom = document.getElementById("competition-nom");
 const champGroupe = document.getElementById("competition-groupe");
+const champEquipe = document.getElementById("competition-equipe");
 const champCoachs = document.getElementById("competition-coachs");
 const champDate = document.getElementById("competition-date");
 const champAdresse = document.getElementById("competition-adresse");
@@ -73,6 +74,43 @@ function remplirGroupes() {
     groupes.forEach(groupe => {
         champGroupe.innerHTML += `<option value="${groupe.nom}">${groupe.nom}</option>`;
     });
+}
+
+function groupeSelectionne() {
+    return groupes.find(groupe => nettoyer(groupe.nom) === nettoyer(champGroupe.value));
+}
+
+function remplirEquipes() {
+    if (!champEquipe) return;
+
+    const valeurActuelle = champEquipe.value;
+    const groupe = groupeSelectionne();
+
+    champEquipe.innerHTML = `<option value="">Toutes les équipes / groupe complet</option>`;
+
+    if (groupe && groupe.equipes && groupe.equipes.length > 0) {
+        groupe.equipes.forEach(equipe => {
+            champEquipe.innerHTML += `<option value="${equipe.id}">${equipe.nom}</option>`;
+        });
+    }
+
+    champEquipe.value = valeurActuelle;
+}
+
+function equipeSelectionnee() {
+    if (!champEquipe || !champEquipe.value) return null;
+
+    const groupe = groupeSelectionne();
+    if (!groupe || !groupe.equipes) return null;
+
+    return groupe.equipes.find(equipe => String(equipe.id) === String(champEquipe.value)) || null;
+}
+
+function appliquerSelectionEquipe() {
+    const equipe = equipeSelectionnee();
+    if (!equipe) return;
+
+    convoquesSelectionnes = (equipe.adherents || []).slice();
 }
 
 
@@ -217,6 +255,7 @@ function ligneCompetiteur(adherent, autoGroupe = false) {
 
 function afficherCompetiteurs() {
     const groupeChoisi = champGroupe.value;
+    const equipe = equipeSelectionnee();
 
     const tous = adherents
         .filter(adherentCorrespondRecherche)
@@ -225,7 +264,13 @@ function afficherCompetiteurs() {
     const duGroupe = tous.filter(adherent => groupeAdherent(adherent) === groupeChoisi);
     const autres = tous.filter(adherent => groupeAdherent(adherent) !== groupeChoisi);
 
-    if (groupeChoisi) {
+    if (equipe) {
+        (equipe.adherents || []).forEach(numeroAdherent => {
+            if (!convoquesSelectionnes.includes(numeroAdherent)) {
+                convoquesSelectionnes.push(numeroAdherent);
+            }
+        });
+    } else if (groupeChoisi) {
         duGroupe.forEach(adherent => {
             if (!convoquesSelectionnes.includes(adherent.numeroAdherent)) {
                 convoquesSelectionnes.push(adherent.numeroAdherent);
@@ -235,7 +280,7 @@ function afficherCompetiteurs() {
 
     blocCompetiteursGroupe.innerHTML = `
         <section class="competiteurs-section">
-            <h3>Gymnastes du groupe sélectionné</h3>
+            <h3>${equipe ? "Gymnastes de l’équipe sélectionnée" : "Gymnastes du groupe sélectionné"}</h3>
             ${
                 !groupeChoisi
                     ? `<p>Sélectionnez un groupe pour afficher ses gymnastes.</p>`
@@ -275,6 +320,7 @@ function viderFormulaire() {
 
     champNom.value = "";
     champGroupe.value = "";
+    if (champEquipe) champEquipe.innerHTML = `<option value="">Toutes les équipes / groupe complet</option>`;
     champCoachs.value = "";
     champDate.value = "";
     champAdresse.value = "";
@@ -295,6 +341,8 @@ function lireFormulaire() {
         id: competitionEnEdition || Date.now(),
         nom: champNom.value.trim(),
         groupe: champGroupe.value,
+        equipeId: champEquipe ? champEquipe.value : "",
+        equipeNom: equipeSelectionnee() ? equipeSelectionnee().nom : "",
         coachs: champCoachs.value.trim(),
         date: champDate.value,
         adresse: champAdresse.value.trim(),
@@ -314,7 +362,7 @@ function lireFormulaire() {
 function messagePlanningCompetition(competition) {
     return `🏆 ${competition.nom}
 
-📍 ${competition.adresse || "Adresse non renseignée"}
+${competition.equipeNom ? "👥 Équipe : " + competition.equipeNom + "\n" : ""}📍 ${competition.adresse || "Adresse non renseignée"}
 👨‍🏫 Coach(s) : ${competition.coachs || "Non renseigné"}
 🕒 Passage prévu : ${competition.heurePassage || "XXhXX"}
 🤸 Premier agrès : ${competition.agres || "Non renseigné"}
@@ -417,6 +465,8 @@ function chargerCompetition(id) {
 
     champNom.value = competition.nom || "";
     champGroupe.value = competition.groupe || "";
+    remplirEquipes();
+    if (champEquipe) champEquipe.value = competition.equipeId || "";
     champCoachs.value = competition.coachs || "";
     champDate.value = competition.date || "";
     champAdresse.value = competition.adresse || "";
@@ -443,6 +493,8 @@ function dupliquerCompetition(id) {
 
     champNom.value = `${competition.nom || ""} - copie`;
     champGroupe.value = competition.groupe || "";
+    remplirEquipes();
+    if (champEquipe) champEquipe.value = competition.equipeId || "";
     champCoachs.value = competition.coachs || "";
     champDate.value = "";
     champAdresse.value = competition.adresse || "";
@@ -540,6 +592,7 @@ function afficherHistorique() {
                     <h2>🏆 ${competition.nom}</h2>
                     <p><strong>Date :</strong> ${formatDateFR(competition.date)}</p>
                     <p><strong>Groupe :</strong> ${competition.groupe}</p>
+                    ${competition.equipeNom ? `<p><strong>Équipe :</strong> ${competition.equipeNom}</p>` : ""}
                     <p><strong>Coach(s) :</strong> ${competition.coachs || "Non renseigné"}</p>
                     <p><strong>Adresse :</strong> ${competition.adresse || "Non renseignée"}</p>
                     <p><strong>Convoqués :</strong> ${(competition.convoques || []).length}</p>
@@ -572,8 +625,17 @@ function afficherHistorique() {
 
 champGroupe.addEventListener("change", () => {
     convoquesSelectionnes = [];
+    remplirEquipes();
     afficherCompetiteurs();
 });
+
+if (champEquipe) {
+    champEquipe.addEventListener("change", () => {
+        convoquesSelectionnes = [];
+        appliquerSelectionEquipe();
+        afficherCompetiteurs();
+    });
+}
 
 champCoachs.addEventListener("input", () => {
     groupesAnnulesSelectionnes = [];
@@ -590,5 +652,6 @@ document.getElementById("enregistrer-competition").addEventListener("click", enr
 document.getElementById("nouvelle-competition").addEventListener("click", viderFormulaire);
 
 remplirGroupes();
+remplirEquipes();
 viderFormulaire();
 afficherHistorique();
