@@ -1,0 +1,82 @@
+.connexion-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+}
+
+.connexion-card {
+    width: 100%;
+    max-width: 460px;
+    background: #111;
+    color: #fff;
+    border-radius: 18px;
+    padding: 28px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.connexion-logo {
+    width: 250px;
+    margin-bottom: 12px;
+}
+
+.connexion-card h1 {
+    margin: 8px 0 4px 0;
+}
+
+.connexion-subtitle {
+    margin-top: 0;
+    opacity: 0.8;
+}
+
+.connexion-input {
+    width: 100%;
+    box-sizing: border-box;
+    margin-top: 12px;
+}
+
+.connexion-main-button,
+.connexion-secondary-button {
+    width: 100%;
+    margin-top: 12px;
+    min-height: 44px;
+    font-weight: 700;
+}
+
+.connexion-secondary-button {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.35);
+}
+
+.connexion-secondary-button:hover {
+    border-color: #fff;
+}
+
+#connexion-message {
+    min-height: 22px;
+    margin-top: 16px;
+    font-weight: 700;
+}
+
+#connexion-message.error {
+    color: #ff6b6b;
+}
+
+#connexion-message.success {
+    color: #4caf50;
+}
+
+#connexion-message.info {
+    color: #90caf9;
+}
+
+.connexion-note {
+    font-size: 13px;
+    opacity: 0.75;
+    margin-top: 18px;
+}

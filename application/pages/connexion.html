@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - JDM Club Manager</title>
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/connexion.css">
+</head>
+<body>
+<main class="connexion-page">
+    <section class="connexion-card">
+        <img src="../images/logo-jdm.png" class="connexion-logo" alt="Logo JDM">
+        <h1>JDM Club Manager</h1>
+        <p class="connexion-subtitle">Connexion sécurisée</p>
+
+        <input class="form-input connexion-input" id="connexion-email" type="email" placeholder="Adresse email">
+        <input class="form-input connexion-input" id="connexion-password" type="password" placeholder="Mot de passe">
+
+        <button class="primary-button order-button connexion-main-button" id="connexion-button">Se connecter</button>
+        <button class="secondary-button connexion-secondary-button" id="creation-button">Première connexion / créer mon compte</button>
+        <button class="secondary-button connexion-secondary-button" id="reset-password-button">Mot de passe oublié</button>
+
+        <p id="connexion-message"></p>
+        <p class="connexion-note">Contactez l'administrateur : nathan hardeman</p>
+    </section>
+</main>
+<script type="module" src="../scripts/connexion.js"></script>
+</body>
+</html>

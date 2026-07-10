@@ -21,15 +21,9 @@
 
     <section class="card">
         <h2>👤 Bienvenue</h2>
-
-        <p>
-            Cet espace permettra aux familles d'accéder aux informations liées à leur inscription,
-            leur groupe, leur planning, leurs résultats et leurs documents.
-        </p>
-
-        <p>
-            La connexion sécurisée sera ajoutée dans une prochaine étape.
-        </p>
+        <section id="profil-membre-connecte">
+            <p>Chargement de votre profil...</p>
+        </section>
     </section>
 
     <a href="planning-membre.html" class="navigation-link">
@@ -70,6 +64,7 @@
         <div class="navigation-content">
             <h2>Mes documents</h2>
             <p>Licences, attestations, documents utiles et archives.</p>
+            <section id="documents-membre"></section>
         </div>
         <div class="navigation-arrow">➜</div>
     </section>
@@ -94,18 +89,20 @@
         <div class="navigation-arrow">➜</div>
     </section>
 
-    <section class="navigation-card">
+    <section class="navigation-card" id="deconnexion-button" style="cursor:pointer;">
         <div class="navigation-icon">🚪</div>
         <div class="navigation-content">
             <h2>Déconnexion</h2>
-            <p>Cette fonction sera disponible avec la connexion sécurisée.</p>
+            <p>Quitter mon espace sécurisé.</p>
         </div>
         <div class="navigation-arrow">➜</div>
     </section>
 
 </main>
 
-<script src="../scripts/espace-membre.js"></script>
+<script type="module" src="../scripts/auth-guard.js" data-roles="membre,coach,admin,super_admin" data-page="espace-membre"></script>
+<script type="module" src="../scripts/deconnexion.js"></script>
+<script type="module" src="../scripts/espace-membre.js"></script>
 
 </body>
 

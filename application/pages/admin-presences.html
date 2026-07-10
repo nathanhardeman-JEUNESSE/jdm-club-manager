@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Présences - JDM Club Manager</title>
+
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+
+    <style>
+        .presence-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+        }
+
+        .presence-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+        }
+
+        .presence-stat-card {
+            text-align: center;
+        }
+
+        .presence-stat-card strong {
+            font-size: 26px;
+        }
+
+        .presence-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .presence-table th,
+        .presence-table td {
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+            padding: 10px;
+            text-align: left;
+        }
+
+        .presence-table th:not(:first-child),
+        .presence-table td:not(:first-child) {
+            text-align: center;
+        }
+
+        .presence-good {
+            color: #2f8f46;
+            font-weight: 900;
+        }
+
+        .presence-medium {
+            color: #ff9800;
+            font-weight: 900;
+        }
+
+        .presence-low {
+            color: #e63946;
+            font-weight: 900;
+        }
+
+        .presence-small {
+            opacity: 0.75;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+
+<main class="page">
+
+    <header class="page-header">
+        <a href="administration.html" class="back-button">←</a>
+        <h1>Présences</h1>
+    </header>
+
+    <section class="card">
+        <h2>📊 Récapitulatif des pointages</h2>
+        <p>
+            Analyse des appels réalisés : présents, absents, non pointés et taux de présence.
+        </p>
+    </section>
+
+    <section class="card presence-filters">
+        <select class="form-input" id="filtre-groupe">
+            <option value="">Tous les groupes</option>
+        </select>
+
+        <select class="form-input" id="filtre-periode">
+            <option value="semaine">Vue semaine</option>
+            <option value="mois">Vue mois</option>
+        </select>
+
+        <input class="form-input" id="filtre-date" type="date">
+
+        <button class="primary-button order-button" id="actualiser-presences">
+            Actualiser
+        </button>
+    </section>
+
+    <section id="resume-presences"></section>
+
+    <section class="card">
+        <h2>👥 Détail par adhérent</h2>
+        <section id="detail-presences"></section>
+    </section>
+
+</main>
+
+<script type="module" src="../scripts/auth-guard.js" data-roles="admin,super_admin" data-page="admin-presences"></script>
+<script src="../scripts/admin-presences.js"></script>
+
+</body>
+</html>

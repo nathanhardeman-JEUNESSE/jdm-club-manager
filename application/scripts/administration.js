@@ -59,6 +59,7 @@ const sectionsAdmin = [
     "coach",
     "club",
     "communication",
+    "securite",
     "technique"
 ];
 

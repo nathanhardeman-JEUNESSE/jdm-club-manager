@@ -3,78 +3,260 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Développement - JDM</title>
+    <title>Console Dev - JDM Club Manager</title>
 
     <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="../styles/components.css">
+
+    <style>
+        .dev-danger { border-left: 6px solid #e63946; }
+        .dev-warning { border-left: 6px solid #ff9800; }
+        .dev-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+        .dev-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+        .dev-red-button { background: #e63946; color: white; border: none; }
+        .dev-small { opacity: 0.75; font-size: 13px; }
+        .dev-log { max-height: 260px; overflow: auto; }
+        .dev-log-entry { border-bottom: 1px solid rgba(255,255,255,0.12); padding: 8px 0; }
+    </style>
 </head>
+
 <body>
 
 <main class="page">
 
     <header class="page-header">
         <a href="administration.html" class="back-button">←</a>
-        <h1>Dev</h1>
+        <h1>Console Dev</h1>
     </header>
 
-    <section class="card">
-        <h2>🧹 Réinitialisation</h2>
+    <section class="card dev-warning">
+        <h2>🔐 Super Admin uniquement</h2>
+        <p>Console de maintenance avancée. Les actions de cette page peuvent modifier ou remettre à zéro des données importantes du club.</p>
+    </section>
 
-        <button class="secondary-button" onclick="viderAdherents()">
-            Vider adhérents + inscriptions
-        </button>
-
-        <button class="secondary-button" onclick="viderBoutique()">
-            Vider commandes boutique
-        </button>
+    <section class="card dev-danger">
+        <h2>📅 Nouvelle saison</h2>
+        <p>Prépare automatiquement la saison suivante : groupes, planning, pointages, absences, compétitions et accès membres.</p>
+        <section id="bloc-saison-actuelle"></section>
+        <div class="dev-actions">
+            <button class="primary-button order-button dev-red-button" id="bouton-nouvelle-saison">Préparer la nouvelle saison</button>
+        </div>
+        <p class="dev-small">Les historiques importants ne sont pas supprimés : ils sont archivés quand c'est possible.</p>
     </section>
 
     <section class="card">
-        <h2>🧪 Données de démonstration</h2>
-
-        <button class="primary-button order-button" onclick="creerDonneesDemo()">
-            Créer les données de démo
-        </button>
-
-        <button class="secondary-button" onclick="supprimerDonneesDemo()">
-            Supprimer les données de démo
-        </button>
+        <h2>📊 Statistiques techniques locales</h2>
+        <section class="dev-grid" id="stats-techniques"></section>
     </section>
+
+    <section class="card dev-warning">
+        <h2>🧹 Maintenance locale</h2>
+        <p>Actions ciblées sur les données stockées localement dans le navigateur.</p>
+        <div class="dev-actions">
+            <button class="secondary-button" id="vider-pointages">Vider pointages</button>
+            <button class="secondary-button" id="vider-planning">Vider planning</button>
+            <button class="secondary-button" id="vider-competitions">Vider compétitions</button>
+            <button class="secondary-button" id="vider-notifications">Vider notifications</button>
+            <button class="secondary-button" id="vider-boutique">Vider commandes boutique</button>
+            <button class="secondary-button" id="vider-adherents">Vider adhérents + inscriptions</button>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>🔄 HelloAsso</h2>
+        <p>Préparation de la future synchronisation API.</p>
+        <div class="dev-actions">
+            <button class="secondary-button" id="test-helloasso" disabled>Vérifier API HelloAsso</button>
+            <button class="secondary-button" id="sync-helloasso" disabled>Synchroniser HelloAsso</button>
+        </div>
+        <p class="dev-small">Module en attente de connexion API sécurisée. L'import Excel reste le mode de secours.</p>
+    </section>
+
+    <section class="card">
+        <h2>💾 Sauvegardes</h2>
+        <p>Export local de secours des données du navigateur.</p>
+        <div class="dev-actions">
+            <button class="primary-button order-button" id="export-local">Exporter sauvegarde locale</button>
+            <input type="file" id="fichier-import-local" accept="application/json" style="display:none;">
+            <button class="secondary-button" id="import-local">Importer une sauvegarde locale</button>
+        </div>
+    </section>
+
+
+    <section class="card">
+        <h2>🔄 HelloAsso - Préparation API</h2>
+        <p>Paramètres nécessaires pour la future synchronisation sécurisée HelloAsso.</p>
+
+        <input class="form-input" id="helloasso-client-id" placeholder="Client ID">
+        <input class="form-input" id="helloasso-client-secret" type="password" placeholder="Client Secret">
+        <input class="form-input" id="helloasso-organization-slug" placeholder="Slug organisation HelloAsso">
+
+        <div class="dev-actions">
+            <button class="primary-button order-button" id="enregistrer-helloasso">
+                Enregistrer les paramètres
+            </button>
+
+            <button class="secondary-button" id="tester-helloasso">
+                Tester la connexion HelloAsso
+            </button>
+        </div>
+
+        <p class="dev-small" id="etat-helloasso">
+            Aucun paramètre HelloAsso enregistré.
+        </p>
+    </section>
+
+
+    <section class="card">
+        <h2>🩺 Diagnostic système</h2>
+        <section class="dev-grid" id="diagnostic-systeme">
+            <section class="card">
+                <h3>Firebase</h3>
+                <p id="diag-firebase">⏳ Vérification...</p>
+            </section>
+            <section class="card">
+                <h3>Connexion</h3>
+                <p id="diag-connexion">⏳ Vérification...</p>
+            </section>
+            <section class="card">
+                <h3>HelloAsso</h3>
+                <p id="diag-helloasso">⚪ En attente API</p>
+            </section>
+            <section class="card">
+                <h3>Saison</h3>
+                <p id="diag-saison">--</p>
+            </section>
+            <section class="card">
+                <h3>Version</h3>
+                <p>Beta 0.9.x</p>
+            </section>
+        </section>
+    </section>
+
+
+    <section class="card">
+        <h2>📋 Formulaires HelloAsso</h2>
+        <p>Lecture seule : affiche les formulaires disponibles pour l'organisation configurée.</p>
+
+        <div class="dev-actions">
+            <button class="primary-button order-button" id="charger-formulaires-helloasso">
+                Charger les formulaires HelloAsso
+            </button>
+        </div>
+
+        <section id="liste-formulaires-helloasso"></section>
+    </section>
+
+
+    <section class="card">
+        <h2>🧾 Commandes HelloAsso</h2>
+        <p>Lecture seule : sélectionne un formulaire HelloAsso puis charge les commandes/inscriptions liées.</p>
+
+        <select class="form-input" id="helloasso-formulaire-select">
+            <option value="">Choisir un formulaire chargé</option>
+        </select>
+
+        <div class="dev-actions">
+            <button class="primary-button order-button" id="charger-commandes-helloasso">
+                Charger les commandes du formulaire
+            </button>
+        </div>
+
+        <section id="liste-commandes-helloasso"></section>
+    </section>
+
+    <section class="card">
+        <h2>👥 Import HelloAsso vers JDM</h2>
+        <p>Prévisualise puis importe localement les adhérents détectés dans les commandes HelloAsso.</p>
+        <div class="dev-actions">
+            <button class="primary-button order-button" id="previsualiser-import-helloasso">Prévisualiser l'import</button>
+            <button class="secondary-button" id="importer-helloasso-local">Importer dans JDM local</button>
+        </div>
+        <section id="preview-import-helloasso"></section>
+    </section>
+
+
+    <section class="card">
+        <h2>🔐 Comptes Firebase depuis HelloAsso</h2>
+        <p>Prépare les accès membres Firebase à partir des adhérents importés localement depuis HelloAsso.</p>
+
+        <div class="dev-actions">
+            <button class="primary-button order-button" id="preparer-comptes-helloasso">
+                Préparer les comptes membres
+            </button>
+        </div>
+
+        <section id="rapport-comptes-helloasso"></section>
+    </section>
+
+
+    <section class="card">
+        <h2>☁️ Synchronisation HelloAsso vers Firebase</h2>
+        <p>Envoie les adhérents et inscriptions HelloAsso déjà importés localement vers Firestore.</p>
+
+        <div class="dev-actions">
+            <button class="primary-button order-button" id="synchroniser-helloasso-firebase">
+                Synchroniser HelloAsso vers Firebase
+            </button>
+        </div>
+
+        <section id="rapport-sync-helloasso-firebase"></section>
+    </section>
+
+
+    <section class="card">
+        <h2>✅ Vérification Firebase HelloAsso</h2>
+        <p>Contrôle que les adhérents et inscriptions HelloAsso sont bien présents dans Firebase.</p>
+
+        <div class="dev-actions">
+            <button class="primary-button order-button" id="verifier-helloasso-firebase">
+                Vérifier la synchronisation Firebase
+            </button>
+        </div>
+
+        <section id="rapport-verif-helloasso-firebase"></section>
+    </section>
+
+
+    <section class="card">
+        <h2>🚀 Synchronisation complète HelloAsso</h2>
+        <p>Enchaîne les étapes principales : formulaires, commandes, prévisualisation, import local, comptes membres, synchronisation Firebase et vérification.</p>
+
+        <div class="dev-actions">
+            <button class="primary-button order-button" id="sync-complete-helloasso">
+                Lancer la synchronisation complète
+            </button>
+        </div>
+
+        <section id="rapport-sync-complete-helloasso"></section>
+    </section>
+
+
+    <section class="card">
+        <h2>📌 État HelloAsso</h2>
+        <p>Résumé rapide des dernières données HelloAsso chargées et synchronisées.</p>
+
+        <div class="dev-actions">
+            <button class="primary-button order-button" id="actualiser-etat-helloasso">
+                Actualiser l'état HelloAsso
+            </button>
+
+            <button class="secondary-button" id="exporter-donnees-helloasso">
+                Exporter données HelloAsso brutes
+            </button>
+        </div>
+
+        <section id="etat-detaille-helloasso"></section>
+    </section>
+
+    <section class="card">
+        <h2>🧾 Journal système</h2>
+        <section class="dev-log" id="journal-systeme"></section>
+    </section>
+
 </main>
 
-
-<script>function demanderCodeSecurite() {
-    const code = prompt("Code de sécurité administrateur principal :");
-
-    if (code !== CODE_SECURITE_DEV) {
-        alert("Code incorrect. Action annulée.");
-        return false;
-    }
-
-    return true;
-}
-
-function viderAdherents() {
-    if (!demanderCodeSecurite()) return;
-
-    localStorage.removeItem("adherentsJDM");
-    localStorage.removeItem("inscriptionsJDM");
-
-    alert("Adhérents et inscriptions vidés ✅");
-}
-
-function viderBoutique() {
-    if (!demanderCodeSecurite()) return;
-
-    localStorage.removeItem("commandesJDM");
-    localStorage.removeItem("notificationsTresorierJDM");
-    localStorage.removeItem("panierJDM");
-
-    alert("Données boutique vidées ✅");
-}
-</script>
-
-<script src="../scripts/dev.js"></script>
+<script type="module" src="../scripts/dev.js"></script>
 
 </body>
 </html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HelloAsso - JDM Club Manager</title>
+  <link rel="stylesheet" href="../styles/theme.css">
+  <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body>
+<main class="page">
+  <header class="page-header">
+    <a href="administration.html" class="back-button">←</a>
+    <h1>HelloAsso</h1>
+  </header>
+
+  <section class="card">
+    <h2>🔄 Synchronisation HelloAsso</h2>
+    <p>Synchronisation automatique chaque nuit et lancement manuel depuis GitHub.</p>
+    <a class="primary-button order-button"
+       href="https://github.com/nathanhardeman-JEUNESSE/jdm-club-manager/actions/workflows/helloasso-sync.yml"
+       target="_blank" rel="noopener noreferrer">
+      Synchroniser maintenant
+    </a>
+  </section>
+
+  <section class="card">
+    <h2>État de la synchronisation</h2>
+    <div id="helloasso-sync-status"><p>Chargement...</p></div>
+  </section>
+
+  <section class="card">
+    <h2>Résumé Firebase</h2>
+    <div id="helloasso-sync-stats"></div>
+  </section>
+</main>
+
+<script type="module" src="../scripts/auth-guard.js" data-roles="admin,super_admin" data-page="admin-helloasso"></script>
+<script type="module" src="../scripts/admin-helloasso.js"></script>
+</body>
+</html>

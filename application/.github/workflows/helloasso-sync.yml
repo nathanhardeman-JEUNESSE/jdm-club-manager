@@ -1,0 +1,47 @@
+name: Synchronisation HelloAsso
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Type de synchronisation
+        required: true
+        default: incremental
+        type: choice
+        options:
+          - incremental
+          - complete
+  schedule:
+    - cron: '15 4 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helloasso-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: tools/helloasso-sync
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tools/helloasso-sync/package-lock.json
+      - run: npm ci
+      - name: Synchroniser HelloAsso vers Firestore
+        env:
+          HELLOASSO_CLIENT_ID: ${{ secrets.HELLOASSO_CLIENT_ID }}
+          HELLOASSO_CLIENT_SECRET: ${{ secrets.HELLOASSO_CLIENT_SECRET }}
+          HELLOASSO_ORGANIZATION_SLUG: ${{ secrets.HELLOASSO_ORGANIZATION_SLUG }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          JDM_SEASON: ${{ vars.JDM_SEASON }}
+          SYNC_MODE: ${{ github.event.inputs.mode || 'incremental' }}
+        run: npm run sync
