@@ -27,7 +27,7 @@ jobs:
     timeout-minutes: 15
     defaults:
       run:
-        working-directory: tools/helloasso-sync
+        working-directory: application/tools/helloasso-sync
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
