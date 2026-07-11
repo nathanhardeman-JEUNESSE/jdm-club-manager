@@ -34,7 +34,7 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: tools/helloasso-sync/package-lock.json
+          cache-dependency-path: application/tools/helloasso-sync/package-lock.json
       - run: npm ci
       - name: Synchroniser HelloAsso vers Firestore
         env:
