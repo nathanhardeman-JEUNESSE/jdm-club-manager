@@ -1,23 +1,16 @@
 import {
+    connexionEmail,
+    creerCompteEmail,
+    envoyerVerificationEmail,
+    envoyerResetMotDePasse
+} from "../firebase/firebase-auth.js";
+
+import {
     ensureUserProfile,
     updateUserPresence
 } from "../firebase/firebase-db.js";
 
-import { ensureUserProfile, initAppSettings, updateUserPresence } from "../firebase/firebase-db.js";
 import { routeForRole } from "./session.js";
-
-const emailInput = document.getElementById("connexion-email");
-const passwordInput = document.getElementById("connexion-password");
-const boutonConnexion = document.getElementById("connexion-button");
-const boutonCreation = document.getElementById("creation-button");
-const boutonReset = document.getElementById("reset-password-button");
-const messageZone = document.getElementById("connexion-message");
-
-function message(texte, type = "") {
-    if (!messageZone) return;
-    messageZone.textContent = texte;
-    messageZone.className = type;
-}
 
 function messageErreurFirebase(error) {
     const code = error && error.code ? error.code : "";
@@ -39,6 +32,20 @@ function messageErreurFirebase(error) {
     }
 
     return "Erreur : " + (error.message || "action impossible");
+}
+
+const emailInput = document.getElementById("connexion-email");
+const passwordInput = document.getElementById("connexion-password");
+const boutonConnexion = document.getElementById("connexion-button");
+const boutonCreation = document.getElementById("creation-button");
+const boutonReset = document.getElementById("reset-password-button");
+const messageZone = document.getElementById("connexion-message");
+
+function message(texte, type = "") {
+    if (!messageZone) return;
+
+    messageZone.textContent = texte;
+    messageZone.className = type;
 }
 
 async function entrerDansApplication(user) {
