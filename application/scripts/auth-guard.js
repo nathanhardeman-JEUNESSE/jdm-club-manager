@@ -1,29 +1,43 @@
-import { observerConnexion } from "../firebase/firebase-auth.js";
-import { ensureUserProfile } from "../firebase/firebase-db.js";
-import { canAccess } from "./session.js";
+import { watchSession, canAccess, hasPageAccess } from "./session.js";
 
-const pageRoles = document.currentScript.dataset.roles
-    ? document.currentScript.dataset.roles.split(",").map(r => r.trim())
-    : [];
+const script = document.currentScript;
 
-const pageKey = document.currentScript.dataset.page || "";
+const allowedRoles = (script?.dataset.roles || "")
+    .split(",")
+    .map(role => role.trim())
+    .filter(Boolean);
 
-observerConnexion(async (user) => {
-    if (!user) {
-        window.location.href = "connexion.html";
-        return;
-    }
+const pageKey = script?.dataset.page || "";
 
-    const profile = await ensureUserProfile(user);
+watchSession(async (user, profile) => {
 
-    if (!profile || profile.actif === false) {
-        alert("Compte désactivé.");
-        window.location.href = "connexion.html";
-        return;
-    }
+    if (!profile) return;
 
-    if (!canAccess(profile, pageRoles, pageKey)) {
-        alert("Accès non autorisé.");
+    if (!canAccess(profile, allowedRoles, pageKey)) {
+
+        alert("Vous n'avez pas l'autorisation d'accéder à cette page.");
+
         window.location.href = "accueil.html";
+
+        return;
     }
+
+    if (!hasPageAccess(profile, pageKey, "ecriture")) {
+
+        document
+            .querySelectorAll("input, select, textarea, button")
+
+            .forEach(element => {
+
+                if (
+                    element.classList.contains("back-button") ||
+                    element.dataset.noLock === "true"
+                ) {
+                    return;
+                }
+
+                element.disabled = true;
+            });
+    }
+
 });
