@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protection des données - JDM Club Manager</title>
+    <link rel="stylesheet" href="../styles/theme.css">
+    <link rel="stylesheet" href="../styles/components.css">
+</head>
+<body>
+<main class="page">
+    <header class="page-header">
+        <h1>Protection de vos données</h1>
+    </header>
+
+    <section class="card">
+        <h2>🛡️ Première connexion</h2>
+
+        <p>
+            La Jeunesse du Marais utilise certaines données personnelles
+            pour gérer les adhésions, les groupes, les activités,
+            les convocations et les communications nécessaires au club.
+        </p>
+
+        <p>
+            Vous pouvez demander l'accès, la correction ou la suppression
+            de vos données, sous réserve des obligations légales du club.
+        </p>
+
+        <label>
+            <input type="checkbox" id="accept-information">
+            J'ai lu et compris les informations relatives au traitement
+            de mes données personnelles.
+        </label>
+
+        <br><br>
+
+        <label>
+            <input type="checkbox" id="accept-utilisation">
+            Je confirme l'utilisation de mes données dans le cadre
+            de la gestion de mon adhésion et des activités du club.
+        </label>
+
+        <br><br>
+
+        <label for="signature-nom">
+            <strong>Signature électronique — nom et prénom</strong>
+        </label>
+
+        <input
+            type="text"
+            id="signature-nom"
+            class="form-input"
+            autocomplete="name"
+            placeholder="Nom et prénom"
+        >
+
+        <button class="primary-button order-button" id="valider-consentement">
+            Valider et accéder à l'application
+        </button>
+
+        <p id="consentement-message"></p>
+    </section>
+</main>
+
+<script type="module" src="../scripts/premiere-connexion.js"></script>
+</body>
+</html>

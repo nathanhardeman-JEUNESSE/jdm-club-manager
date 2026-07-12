@@ -1,5 +1,10 @@
 import { observerConnexion, deconnexion } from "../firebase/firebase-auth.js";
-import { ensureUserProfile, updateUserLastSeen } from "../firebase/firebase-db.js";
+
+import {
+    ensureUserProfile,
+    updateUserLastSeen,
+    JDM_RGPD_VERSION
+} from "../firebase/firebase-db.js";
 
 export function routeForRole(role) {
     if (role === "super_admin") return "administration.html";
@@ -13,22 +18,32 @@ export function roleCanAccess(role, allowedRoles) {
     return allowedRoles.includes(role);
 }
 
-export function hasPageAccess(profile, pageKey) {
+export function hasPageAccess(profile, pageKey, type = "lecture") {
     if (!profile) return false;
     if (profile.role === "super_admin") return true;
-    if (profile.role === "admin") return true;
 
-    const accesPages = profile.accesPages || {};
-    return accesPages[pageKey] === true;
+    const acces = (profile.accesPages || {})[pageKey];
+    if (acces === true) return true;
+
+    return acces?.[type] === true;
 }
 
 export function canAccess(profile, allowedRoles, pageKey) {
-    if (!profile) return false;
+    if (!profile || profile.actif === false) return false;
     if (profile.role === "super_admin") return true;
 
-    if (pageKey && hasPageAccess(profile, pageKey)) return true;
+    if (pageKey && hasPageAccess(profile, pageKey, "lecture")) return true;
 
     return roleCanAccess(profile.role, allowedRoles);
+}
+
+function consentementValide(profile) {
+    return profile?.consentementRGPD === true
+        && profile?.versionConditions === JDM_RGPD_VERSION;
+}
+
+function pageActuelle() {
+    return window.location.pathname.split("/").pop() || "";
 }
 
 let lastSeenIntervalJDM = null;
@@ -45,15 +60,34 @@ export function watchSession(callback) {
             return;
         }
 
-        const profile = await ensureUserProfile(user);
+        try {
+            const profile = await ensureUserProfile(user);
 
-        if (!lastSeenIntervalJDM) {
-            lastSeenIntervalJDM = setInterval(() => {
-                updateUserLastSeen(user.uid).catch(error => console.warn("lastSeen non mis à jour", error));
-            }, 60000);
+            if (profile.actif === false) {
+                await deconnexion();
+                window.location.href = "connexion.html";
+                return;
+            }
+
+            if (!consentementValide(profile) && pageActuelle() !== "premiere-connexion.html") {
+                window.location.href = "premiere-connexion.html";
+                return;
+            }
+
+            if (!lastSeenIntervalJDM) {
+                lastSeenIntervalJDM = setInterval(() => {
+                    updateUserLastSeen(user.uid).catch(error => {
+                        console.warn("Dernière activité non mise à jour", error);
+                    });
+                }, 60000);
+            }
+
+            callback(user, profile);
+        } catch (error) {
+            console.error("Erreur de session JDM", error);
+            await deconnexion().catch(() => {});
+            window.location.href = "connexion.html";
         }
-
-        callback(user, profile);
     });
 }
 

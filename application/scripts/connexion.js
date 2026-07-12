@@ -1,9 +1,7 @@
 import {
-    connexionEmail,
-    envoyerResetMotDePasse,
-    creerCompteEmail,
-    envoyerVerificationEmail
-} from "../firebase/firebase-auth.js";
+    ensureUserProfile,
+    updateUserPresence
+} from "../firebase/firebase-db.js";
 
 import { ensureUserProfile, initAppSettings, updateUserPresence } from "../firebase/firebase-db.js";
 import { routeForRole } from "./session.js";
@@ -45,8 +43,10 @@ function messageErreurFirebase(error) {
 
 async function entrerDansApplication(user) {
     const profile = await ensureUserProfile(user);
+    if (!profile.actif) {
+    throw new Error("Compte désactivé.");
+    }
     await updateUserPresence(user.uid, true);
-    await initAppSettings();
     window.location.href = routeForRole(profile.role);
 }
 

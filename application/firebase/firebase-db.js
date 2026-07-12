@@ -3,12 +3,15 @@ import {
     getDoc,
     setDoc,
     updateDoc,
+    deleteDoc,
     collection,
     getDocs,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import { db, JDM_CONFIG } from "./firebase.js";
+
+export const JDM_RGPD_VERSION = "JDM-RGPD-2026-01";
 
 function emailId(email) {
     return String(email || "").trim().toLowerCase();
@@ -22,75 +25,108 @@ export async function getUserProfile(uid) {
 
 export async function createOrUpdateUser(uid, data) {
     const ref = doc(db, "users", uid);
-    await setDoc(ref, { ...data, clubId: data.clubId || JDM_CONFIG.clubId, updatedAt: serverTimestamp() }, { merge: true });
+    await setDoc(ref, {
+        ...data,
+        uid,
+        clubId: data.clubId || JDM_CONFIG.clubId,
+        updatedAt: serverTimestamp()
+    }, { merge: true });
 }
 
 export async function getPendingUserByEmail(email) {
     const id = emailId(email);
     if (!id) return null;
-
     const ref = doc(db, "pendingUsers", id);
     const snap = await getDoc(ref);
-
     return snap.exists() ? { uid: snap.id, ...snap.data() } : null;
+}
+
+export async function deletePendingUser(email) {
+    const id = emailId(email);
+    if (!id) return;
+    await deleteDoc(doc(db, "pendingUsers", id));
 }
 
 export async function ensureUserProfile(user) {
     if (!user) return null;
+
     const existing = await getUserProfile(user.uid);
-    if (existing) return existing;
+    if (existing) {
+        return { uid: user.uid, ...existing };
+    }
 
     const email = emailId(user.email);
     const pending = await getPendingUserByEmail(email);
 
-    const role = pending && pending.role
-        ? pending.role
-        : email === JDM_CONFIG.superAdminEmail.toLowerCase()
-            ? JDM_CONFIG.roles.SUPER_ADMIN
-            : JDM_CONFIG.roles.MEMBRE;
+    if (!pending) {
+        const error = new Error("Aucun accès préparé n'a été trouvé pour cette adresse email.");
+        error.code = "jdm/no-pending-access";
+        throw error;
+    }
+
+    if (pending.actif === false) {
+        const error = new Error("Cet accès a été désactivé par le club.");
+        error.code = "jdm/account-disabled";
+        throw error;
+    }
 
     const profile = {
-        email: user.email,
-        role,
-        actif: pending ? pending.actif !== false : true,
+        email,
+        role: pending.role || JDM_CONFIG.roles.MEMBRE,
+        actif: true,
         clubId: JDM_CONFIG.clubId,
-        accesPages: pending ? pending.accesPages || {} : {},
-        numeroAdherent: pending ? pending.numeroAdherent || "" : "",
-        nom: pending ? pending.nom || "" : "",
-        prenom: pending ? pending.prenom || "" : "",
+        accesPages: pending.accesPages || {},
+        numeroAdherent: pending.numeroAdherent || "",
+        nom: pending.nom || "",
+        prenom: pending.prenom || "",
+        source: pending.source || "invitation",
+        compteCreeAt: serverTimestamp(),
+        derniereConnexionAt: serverTimestamp(),
+        derniereActiviteAt: serverTimestamp(),
+        consentementRGPD: false,
+        consentementDate: null,
+        versionConditions: null,
+        signatureNom: null,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
     };
 
     await createOrUpdateUser(user.uid, profile);
-    return profile;
+    await deletePendingUser(email);
+
+    return { uid: user.uid, ...profile };
+}
+
+export async function enregistrerConsentementRGPD(uid, signatureNom) {
+    const signature = String(signatureNom || "").trim();
+
+    if (!uid) throw new Error("UID utilisateur manquant.");
+    if (signature.length < 3) throw new Error("Le nom de signature est obligatoire.");
+
+    await updateDoc(doc(db, "users", uid), {
+        consentementRGPD: true,
+        consentementDate: serverTimestamp(),
+        versionConditions: JDM_RGPD_VERSION,
+        signatureNom: signature,
+        updatedAt: serverTimestamp()
+    });
 }
 
 export async function listUsers() {
-    const ref = collection(db, "users");
-    const snap = await getDocs(ref);
-    return snap.docs.map(docSnap => ({ uid: docSnap.id, ...docSnap.data() }));
+    const snap = await getDocs(collection(db, "users"));
+    return snap.docs.map(item => ({ uid: item.id, ...item.data() }));
 }
 
-
 export async function listPendingUsers() {
-    const ref = collection(db, "pendingUsers");
-    const snap = await getDocs(ref);
-
-    return snap.docs.map(docSnap => ({
-        uid: docSnap.id,
-        ...docSnap.data(),
-        pending: true
-    }));
+    const snap = await getDocs(collection(db, "pendingUsers"));
+    return snap.docs.map(item => ({ uid: item.id, ...item.data(), pending: true }));
 }
 
 export async function createPendingUser(data) {
     const id = emailId(data.email);
     if (!id) throw new Error("Email obligatoire.");
 
-    const ref = doc(db, "pendingUsers", id);
-
-    await setDoc(ref, {
+    await setDoc(doc(db, "pendingUsers", id), {
         ...data,
         email: id,
         clubId: data.clubId || JDM_CONFIG.clubId,
@@ -101,9 +137,7 @@ export async function createPendingUser(data) {
 }
 
 export async function updatePendingUser(uid, data) {
-    const ref = doc(db, "pendingUsers", uid);
-
-    await setDoc(ref, {
+    await setDoc(doc(db, "pendingUsers", uid), {
         ...data,
         clubId: data.clubId || JDM_CONFIG.clubId,
         updatedAt: serverTimestamp()
@@ -111,54 +145,51 @@ export async function updatePendingUser(uid, data) {
 }
 
 export async function updateUserRole(uid, role) {
-    const ref = doc(db, "users", uid);
-    await updateDoc(ref, { role, updatedAt: serverTimestamp() });
+    await updateDoc(doc(db, "users", uid), { role, updatedAt: serverTimestamp() });
 }
 
 export async function updateUserActif(uid, actif) {
-    const ref = doc(db, "users", uid);
-    await updateDoc(ref, { actif, updatedAt: serverTimestamp() });
+    await updateDoc(doc(db, "users", uid), { actif, updatedAt: serverTimestamp() });
 }
 
 export async function updateUserAccesPages(uid, accesPages) {
-    const ref = doc(db, "users", uid);
-    await updateDoc(ref, { accesPages: accesPages || {}, updatedAt: serverTimestamp() });
+    await updateDoc(doc(db, "users", uid), {
+        accesPages: accesPages || {},
+        updatedAt: serverTimestamp()
+    });
 }
-
 
 export async function updateUserPresence(uid, online = true) {
     if (!uid) return;
 
-    const ref = doc(db, "users", uid);
     const data = {
         online,
         lastSeenAt: serverTimestamp(),
+        derniereActiviteAt: serverTimestamp(),
         updatedAt: serverTimestamp()
     };
 
     if (online) {
         data.lastLoginAt = serverTimestamp();
+        data.derniereConnexionAt = serverTimestamp();
     }
 
-    await updateDoc(ref, data);
+    await updateDoc(doc(db, "users", uid), data);
 }
 
 export async function updateUserLastSeen(uid) {
     if (!uid) return;
 
-    const ref = doc(db, "users", uid);
-
-    await updateDoc(ref, {
+    await updateDoc(doc(db, "users", uid), {
         lastSeenAt: serverTimestamp(),
+        derniereActiviteAt: serverTimestamp(),
         updatedAt: serverTimestamp()
     });
 }
 
-
 export async function initAppSettings() {
     const ref = doc(db, "settings", "application");
     const snap = await getDoc(ref);
-
     if (snap.exists()) return snap.data();
 
     const settings = {
@@ -173,26 +204,18 @@ export async function initAppSettings() {
     return settings;
 }
 
-
 export async function findAdherentByEmail(email) {
-    const cible = String(email || "").trim().toLowerCase();
+    const cible = emailId(email);
     if (!cible) return null;
 
-    const ref = collection(db, "adherents");
-    const snap = await getDocs(ref);
+    const snap = await getDocs(collection(db, "adherents"));
 
-    const match = snap.docs
-        .map(docSnap => ({ id: docSnap.id, ...docSnap.data() }))
-        .find(adherent => {
-            const emails = [
-                adherent.email,
-                adherent.emailAdherent,
-                adherent.emailParent1,
-                adherent.emailParent2
-            ].map(value => String(value || "").trim().toLowerCase());
-
-            return emails.includes(cible);
-        });
-
-    return match || null;
+    return snap.docs
+        .map(item => ({ id: item.id, ...item.data() }))
+        .find(adherent => [
+            adherent.email,
+            adherent.emailAdherent,
+            adherent.emailParent1,
+            adherent.emailParent2
+        ].map(emailId).includes(cible)) || null;
 }
