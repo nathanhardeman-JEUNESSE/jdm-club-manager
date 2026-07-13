@@ -100,10 +100,14 @@
 
 </main>
 
-<script type="module" src="../scripts/auth-guard.js" data-roles="membre,coach,admin,super_admin" data-page="espace-membre"></script>
-<script type="module" src="../scripts/deconnexion.js"></script>
+<script type="module"
+        src="../scripts/auth-guard.js"
+        data-page="espace-membre">
+</script>
+
+<script type="module" src="../scripts/menu-access-guard.js"></script>
+
 <script type="module" src="../scripts/espace-membre.js"></script>
 
 </body>
-
 </html>

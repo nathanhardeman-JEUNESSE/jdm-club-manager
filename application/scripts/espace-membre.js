@@ -1,4 +1,7 @@
-import { watchSession } from "./session.js";
+import {
+    watchSession,
+    logoutAndRedirect
+} from "./session.js";
 import { findAdherentByEmail } from "../firebase/firebase-db.js";
 
 const notifications = JSON.parse(localStorage.getItem("notificationsJDM")) || [];
@@ -96,3 +99,10 @@ watchSession(async (user, profile) => {
     afficherProfil(profile, adherent);
     afficherDocuments(adherent);
 });
+const boutonDeconnexion = document.getElementById("deconnexion-button");
+
+if (boutonDeconnexion) {
+    boutonDeconnexion.addEventListener("click", async () => {
+        await logoutAndRedirect();
+    });
+}

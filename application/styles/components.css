@@ -2077,3 +2077,14 @@
     object-fit: contain;
     display: block;
 }
+/* ================================================= */
+/* UI GUARD */
+/* ================================================= */
+
+.page-loading{
+    visibility:hidden;
+}
+
+.page-ready{
+    visibility:visible;
+}

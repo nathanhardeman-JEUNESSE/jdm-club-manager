@@ -401,12 +401,27 @@ function appliquerProfil(uid, typeProfil) {
     }
 
     if (typeProfil === "coach") {
-        user.accesPages = profilMembre();
-        ["admin-appel","admin-absences","admin-planning","admin-groupes","admin-adherents","admin-competitions","competition-convocation","admin-tableau-bord"].forEach(key => {
-            user.accesPages[key] = { lecture: true, ecriture: true };
-        });
-        user.role = "coach";
-    }
+    user.accesPages = profilMembre();
+
+    [
+        "administration",
+        "admin-appel",
+        "admin-absences",
+        "admin-planning",
+        "admin-groupes",
+        "admin-adherents",
+        "admin-competitions",
+        "competition-convocation",
+        "admin-tableau-bord"
+    ].forEach(key => {
+        user.accesPages[key] = {
+            lecture: true,
+            ecriture: true
+        };
+    });
+
+    user.role = "coach";
+}
 
     if (typeProfil === "admin") {
         user.accesPages = {};
@@ -439,7 +454,17 @@ async function creerAccesManuel() {
         : role === "coach"
             ? (() => {
                 const acces = profilMembre();
-                ["admin-appel","admin-absences","admin-planning","admin-groupes","admin-adherents","admin-competitions","competition-convocation","admin-tableau-bord"].forEach(key => {
+                [
+    "administration",
+    "admin-appel",
+    "admin-absences",
+    "admin-planning",
+    "admin-groupes",
+    "admin-adherents",
+    "admin-competitions",
+    "competition-convocation",
+    "admin-tableau-bord"
+]
                     acces[key] = { lecture: true, ecriture: true };
                 });
                 return acces;

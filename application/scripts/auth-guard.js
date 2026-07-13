@@ -4,7 +4,9 @@ import {
     hasPageAccess
 } from "./session.js";
 
-const baliseGuard = [...document.querySelectorAll('script[src*="auth-guard.js"]')].pop();
+const baliseGuard = document.querySelector(
+    'script[src*="auth-guard.js"][data-page]'
+);
 
 const pageKey = baliseGuard?.dataset.page || "";
 
@@ -13,47 +15,21 @@ const allowedRoles = (baliseGuard?.dataset.roles || "")
     .map(role => role.trim())
     .filter(Boolean);
 
-/* ================================================= */
-/* RESTAURATION DE LA POSITION DANS LA PAGE */
-/* ================================================= */
-
-const clePosition = `jdm-scroll-${window.location.pathname}`;
-
-window.addEventListener("pagehide", () => {
-    sessionStorage.setItem(clePosition, String(window.scrollY));
-});
-
-window.addEventListener("pageshow", () => {
-    const position = Number(sessionStorage.getItem(clePosition) || 0);
-
-    requestAnimationFrame(() => {
-        window.scrollTo(0, position);
-    });
-});
-
-/* ================================================= */
-/* CONTRÔLE DES ACCÈS */
-/* ================================================= */
-
-watchSession(async (user, profile) => {
-
+watchSession((user, profile) => {
+    /* Pas connecté : portail de connexion */
     if (!user || !profile) {
-        window.location.href = "connexion.html";
+        window.location.replace("connexion.html");
         return;
     }
 
+    /* Pas de droit Lecture : retour accueil */
     if (!canAccess(profile, allowedRoles, pageKey)) {
-        alert("Vous n'avez pas l'autorisation d'accéder à cette page.");
-        window.location.href = "accueil.html";
+        window.location.replace("accueil.html");
         return;
     }
 
-    const droitEcriture = hasPageAccess(profile, pageKey, "ecriture");
-
-    document.documentElement.dataset.jdmEcriture =
-        droitEcriture ? "true" : "false";
-
-    if (!droitEcriture) {
+    /* Lecture autorisée mais pas écriture */
+    if (!hasPageAccess(profile, pageKey, "ecriture")) {
         document
             .querySelectorAll(
                 "input, select, textarea, button, [contenteditable='true']"
