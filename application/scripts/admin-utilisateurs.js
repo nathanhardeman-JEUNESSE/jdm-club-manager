@@ -450,26 +450,39 @@ async function creerAccesManuel() {
     }
 
     const accesPages = role === "admin"
-        ? Object.fromEntries(toutesLesPages().map(page => [page.key, { lecture: true, ecriture: true }]))
-        : role === "coach"
-            ? (() => {
-                const acces = profilMembre();
-                [
-    "administration",
-    "admin-appel",
-    "admin-absences",
-    "admin-planning",
-    "admin-groupes",
-    "admin-adherents",
-    "admin-competitions",
-    "competition-convocation",
-    "admin-tableau-bord"
-]
-                    acces[key] = { lecture: true, ecriture: true };
-                });
-                return acces;
-            })()
-            : profilMembre();
+    ? Object.fromEntries(
+        toutesLesPages().map(page => [
+            page.key,
+            {
+                lecture: true,
+                ecriture: true
+            }
+        ])
+    )
+    : role === "coach"
+        ? (() => {
+            const acces = profilMembre();
+
+            [
+                "administration",
+                "admin-appel",
+                "admin-absences",
+                "admin-planning",
+                "admin-groupes",
+                "admin-adherents",
+                "admin-competitions",
+                "competition-convocation",
+                "admin-tableau-bord"
+            ].forEach(key => {
+                acces[key] = {
+                    lecture: true,
+                    ecriture: true
+                };
+            });
+
+            return acces;
+        })()
+        : profilMembre();
 
     await createPendingUser({
         email,
