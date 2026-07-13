@@ -48,5 +48,10 @@ function masquerSectionsVides() {
         if (titre) {
             titre.remove();
         }
+        const page = document.getElementById("admin-page");
+
+if (page) {
+    page.style.display = "block";
+}
     });
 }
