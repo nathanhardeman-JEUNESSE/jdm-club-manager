@@ -2093,38 +2093,95 @@
 /* ================================================= */
 
 :root {
-    --jdm-card-animation-duration: 1.4s;
+    --jdm-card-animation-duration: 2s;
     --jdm-card-animation-delay: 120ms;
     --jdm-card-glow-opacity: 0.22;
 }
 
 .jdm-card-reveal {
     opacity: 0;
-    transform: translateY(14px) scale(0.985);
-    filter: brightness(0.75);
+    transform: translateY(12px) scale(0.98);
+    filter: blur(2px);
 }
 
 .jdm-card-reveal.jdm-card-visible {
     animation:
         jdmCardReveal var(--jdm-card-animation-duration) ease forwards,
         jdmCardGlow var(--jdm-card-animation-duration) ease forwards;
+        position: relative;
+overflow: hidden;
+.jdm-card-reveal.jdm-card-visible::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+
+    background: linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 0),
+        rgba(255, 0, 0, 0.14),
+        rgba(255, 140, 0, 0.14),
+        rgba(255, 255, 0, 0.12),
+        rgba(0, 255, 120, 0.12),
+        rgba(0, 180, 255, 0.14),
+        rgba(80, 80, 255, 0.14),
+        rgba(180, 0, 255, 0.14),
+        rgba(255, 0, 180, 0.12),
+        rgba(255, 0, 0, 0)
+    );
+
+    transform: translateX(-110%);
+    animation: jdmRainbowSweep var(--jdm-card-animation-duration) ease-out forwards;
 }
 
-@keyframes jdmCardReveal {
+@keyframes jdmRainbowSweep {
     0% {
+        transform: translateX(-110%);
         opacity: 0;
-        transform: translateY(14px) scale(0.985);
     }
 
-    35% {
+    15% {
         opacity: 1;
-        transform: translateY(0) scale(1.01);
+    }
+
+    85% {
+        opacity: 1;
     }
 
     100% {
-        opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateX(110%);
+        opacity: 0;
     }
+}
+}
+
+@keyframes jdmCardReveal {
+
+    0%{
+        opacity:0;
+        transform:translateY(12px) scale(0.98);
+        filter:blur(2px);
+    }
+
+    40%{
+        opacity:.65;
+        transform:translateY(3px) scale(1.01);
+        filter:blur(.8px);
+    }
+
+    70%{
+        opacity:.95;
+        transform:translateY(0) scale(1);
+        filter:blur(.2px);
+    }
+
+    100%{
+        opacity:1;
+        transform:translateY(0) scale(1);
+        filter:blur(0);
+    }
+
 }
 
 @keyframes jdmCardGlow {
