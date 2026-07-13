@@ -7,9 +7,6 @@ import {
 } from "../firebase/firebase-db.js";
 
 export function routeForRole(role) {
-    if (role === "super_admin") return "administration.html";
-    if (role === "admin") return "administration.html";
-    if (role === "coach") return "administration.html";
     return "accueil.html";
 }
 
@@ -95,5 +92,5 @@ export function watchSession(callback) {
 
 export async function logoutAndRedirect() {
     await deconnexion();
-    window.location.href = "connexion.html";
+    window.location.href = "accueil.html";
 }
