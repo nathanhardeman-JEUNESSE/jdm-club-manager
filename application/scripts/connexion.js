@@ -122,7 +122,10 @@ if (boutonReset) {
 
         try {
             await envoyerResetMotDePasse(email);
-            message("Email de réinitialisation envoyé.", "success");
+            message(
+    "Email de réinitialisation envoyé.\nVérifiez également votre dossier Spam / Courrier indésirable (objet : « Reset your password for jdm-club-manager »).",
+    "success"
+);
         } catch (error) {
             console.error(error);
             message(messageErreurFirebase(error), "error");
