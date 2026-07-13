@@ -32,7 +32,9 @@ export function canAccess(profile, allowedRoles, pageKey) {
     if (!profile || profile.actif === false) return false;
     if (profile.role === "super_admin") return true;
 
-    if (pageKey && hasPageAccess(profile, pageKey, "lecture")) return true;
+    if (pageKey) {
+        return hasPageAccess(profile, pageKey, "lecture");
+    }
 
     return roleCanAccess(profile.role, allowedRoles);
 }

@@ -21,6 +21,11 @@ const roles = ["membre", "coach", "admin", "super_admin"];
 
 const pagesAcces = [
     { categorie: "Espace membre", pages: [
+        {
+            key: "administration",
+            titre: "Administration",
+            url: "administration.html"
+        },
         { key: "accueil", titre: "Accueil", url: "accueil.html", defautLecture: true },
         { key: "espace-membre", titre: "Espace membre", url: "espace-membre.html", defautLecture: true },
         { key: "planning-membre", titre: "Planning membre", url: "planning-membre.html", defautLecture: true },
