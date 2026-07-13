@@ -53,6 +53,23 @@ watchSession((user, profile) => {
     });
 
     if (page) {
+        const cartes = [
+    ...document.querySelectorAll(
+        ".navigation-card, .news-card, .card"
+    )
+].filter(carte => {
+    const parentLien = carte.closest("a");
+
+    return !parentLien || parentLien.style.display !== "none";
+});
+
+cartes.forEach((carte, index) => {
+    carte.classList.add("jdm-card-reveal");
+
+    setTimeout(() => {
+        carte.classList.add("jdm-card-visible");
+    }, index * 120);
+});
         page.classList.remove("page-loading");
         page.classList.add("page-ready");
     }

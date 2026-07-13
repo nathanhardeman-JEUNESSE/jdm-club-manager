@@ -2088,3 +2088,96 @@
 .page-ready{
     visibility:visible;
 }
+/* ================================================= */
+/* APPARITION PROGRESSIVE DES CARTES */
+/* ================================================= */
+
+:root {
+    --jdm-card-animation-duration: 1.4s;
+    --jdm-card-animation-delay: 120ms;
+    --jdm-card-glow-opacity: 0.22;
+}
+
+.jdm-card-reveal {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+    filter: brightness(0.75);
+}
+
+.jdm-card-reveal.jdm-card-visible {
+    animation:
+        jdmCardReveal var(--jdm-card-animation-duration) ease forwards,
+        jdmCardGlow var(--jdm-card-animation-duration) ease forwards;
+}
+
+@keyframes jdmCardReveal {
+    0% {
+        opacity: 0;
+        transform: translateY(14px) scale(0.985);
+    }
+
+    35% {
+        opacity: 1;
+        transform: translateY(0) scale(1.01);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes jdmCardGlow {
+    0% {
+        box-shadow: var(--shadow);
+        filter: brightness(0.8);
+        background-position: 0% 50%;
+    }
+
+    15% {
+        box-shadow:
+            -18px 0 22px rgba(255, 0, 0, 0.18),
+            -8px 0 18px rgba(255, 140, 0, 0.16);
+        filter: brightness(1.04);
+    }
+
+    30% {
+        box-shadow:
+            -10px 0 20px rgba(255, 255, 0, 0.16),
+            0 0 22px rgba(0, 255, 120, 0.16);
+    }
+
+    45% {
+        box-shadow:
+            0 0 22px rgba(0, 200, 255, 0.18),
+            10px 0 20px rgba(0, 90, 255, 0.16);
+    }
+
+    60% {
+        box-shadow:
+            8px 0 20px rgba(120, 0, 255, 0.17),
+            18px 0 22px rgba(255, 0, 180, 0.16);
+        filter: brightness(1.08);
+    }
+
+    80% {
+        box-shadow:
+            14px 0 18px rgba(255, 80, 120, 0.12);
+        filter: brightness(1.03);
+    }
+
+    100% {
+        box-shadow: var(--shadow);
+        filter: brightness(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .jdm-card-reveal,
+    .jdm-card-reveal.jdm-card-visible {
+        animation: none;
+        opacity: 1;
+        transform: none;
+        filter: none;
+    }
+}
