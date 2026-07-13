@@ -1,17 +1,22 @@
-import { watchSession, hasPageAccess } from "./session.js";
+import {
+    watchSession,
+    hasPageAccess
+} from "./session.js";
 
 watchSession((user, profile) => {
     if (!user || !profile) return;
 
-    document.querySelectorAll("a.navigation-link[href]").forEach((lien) => {
-        const url = lien.getAttribute("href") || "";
+    const liens = document.querySelectorAll("a.navigation-link[href]");
 
-        const pageKey = url
+    liens.forEach(lien => {
+        const href = lien.getAttribute("href") || "";
+
+        const pageKey = href
             .split("/")
             .pop()
             .split("?")[0]
             .split("#")[0]
-            .replace(".html", "");
+            .replace(/\.html$/i, "");
 
         if (!pageKey) return;
 
@@ -26,20 +31,22 @@ watchSession((user, profile) => {
 });
 
 function masquerSectionsVides() {
-    document.querySelectorAll('[id^="section-"]').forEach((section) => {
-        const liensVisibles = section.querySelectorAll("a.navigation-link");
+    document.querySelectorAll('[id^="section-"]').forEach(section => {
+        const liensRestants =
+            section.querySelectorAll("a.navigation-link[href]");
 
-        if (liensVisibles.length === 0) {
-            section.style.display = "none";
+        if (liensRestants.length > 0) return;
 
-            const nomSection = section.id.replace("section-", "");
-            const titreSection = document.querySelector(
-                `[onclick="toggleSection('${nomSection}')"]`
-            );
+        section.remove();
 
-            if (titreSection) {
-                titreSection.style.display = "none";
-            }
+        const nomSection = section.id.replace("section-", "");
+
+        const titre = document.querySelector(
+            `[onclick="toggleSection('${nomSection}')"]`
+        );
+
+        if (titre) {
+            titre.remove();
         }
     });
 }
