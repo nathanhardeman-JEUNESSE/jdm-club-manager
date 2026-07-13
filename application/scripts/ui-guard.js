@@ -32,30 +32,28 @@ watchSession((user, profile) => {
 
         let visible = false;
 
-        let visible = false;
-
-    /* Administration : contrôle strict */
-    if (pageKey === "administration") {
-        visible =
+/* Administration : contrôle strict */
+if (pageKey === "administration") {
+    visible =
         profile?.role === "super_admin" ||
         profile?.accesPages?.administration?.lecture === true;
 
-    /* Pages publiques */
-    } else if (pagesPubliques.has(pageKey)) {
-        visible = true;
+/* Pages publiques */
+} else if (pagesPubliques.has(pageKey)) {
+    visible = true;
 
-    /* Portail membre visible pour permettre la connexion */
-    } else if (pageKey === "espace-membre") {
-        visible = true;
+/* Portail membre visible pour permettre la connexion */
+} else if (pageKey === "espace-membre") {
+    visible = true;
 
-    /* Super-admin : tous les autres accès */
-    } else if (profile?.role === "super_admin") {
-        visible = true;
+/* Super-admin : tous les autres accès */
+} else if (profile?.role === "super_admin") {
+    visible = true;
 
-    /* Autres comptes : autorisation individuelle */
-    } else if (user && profile) {
-        visible = hasPageAccess(profile, pageKey, "lecture");
-    }
+/* Autres comptes : autorisation individuelle */
+} else if (user && profile) {
+    visible = hasPageAccess(profile, pageKey, "lecture");
+}
 
         lien.style.display = visible ? "" : "none";
     });
