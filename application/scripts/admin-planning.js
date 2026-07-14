@@ -357,6 +357,9 @@ function ouvrirEdition(groupeId, groupeNom, jourCle, jourNom, dateISO) {
     zoneEdition.scrollIntoView({ behavior: "smooth" });
 }
 
+/* Rendre la fonction accessible depuis le HTML */
+window.ouvrirEdition = ouvrirEdition;
+
 function mettreAJourCaseNotifier() {
     if (!notifierParentsCase) return;
 
