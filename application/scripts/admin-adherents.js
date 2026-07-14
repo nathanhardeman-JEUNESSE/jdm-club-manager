@@ -1,7 +1,16 @@
-const adherents = JSON.parse(localStorage.getItem("adherentsJDM")) || [];
-const inscriptions = JSON.parse(localStorage.getItem("inscriptionsJDM")) || [];
-const aidesLicence = JSON.parse(localStorage.getItem("aidesLicenceLommeJDM")) || [];
-const validationsDossiers = JSON.parse(localStorage.getItem("validationsDossiersJDM")) || [];
+import {
+    listAdherents,
+    listInscriptions
+} from "../firebase/firebase-db.js";
+
+let adherents = [];
+let inscriptions = [];
+
+const aidesLicence =
+    JSON.parse(localStorage.getItem("aidesLicenceLommeJDM")) || [];
+
+const validationsDossiers =
+    JSON.parse(localStorage.getItem("validationsDossiersJDM")) || [];
 
 const liste = document.getElementById("liste-adherents");
 const zoneStats = document.getElementById("stats-dossiers-adherents");
@@ -304,5 +313,12 @@ function afficherAdherents() {
         });
 }
 
-afficherStats();
-afficherAdherents();
+(async () => {
+
+    adherents = await listAdherents();
+    inscriptions = await listInscriptions();
+
+    afficherStats();
+    afficherAdherents();
+
+})();
