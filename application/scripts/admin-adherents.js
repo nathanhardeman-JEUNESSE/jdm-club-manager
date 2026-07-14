@@ -126,7 +126,7 @@ function estLomme(donnees) {
 function dossierAdministratif(adherent) {
     const validation = validationPour(adherent.numeroAdherent);
 
-    if (validation && validation.valideManuellement === true) {
+    if (validation?.valideManuellement === true) {
         return {
             complet: true,
             manuel: true,
@@ -135,23 +135,55 @@ function dossierAdministratif(adherent) {
     }
 
     const inscription = derniereInscription(adherent.numeroAdherent);
-    const donnees = inscription ? inscription.donneesHelloAsso || {} : {};
-    const texte = nettoyer(JSON.stringify(donnees));
+
+    const donnees =
+        inscription?.donneesHelloAsso ||
+        inscription?.donnees ||
+        {};
+
     const aide = aidePour(adherent.numeroAdherent);
-    const age = calculerAge(adherent.dateNaissance || champ(donnees, ["date", "naissance"]) || champ(donnees, ["naissance"]));
-    const competition = estCompetition(adherent);
+
+    const dateNaissance =
+        adherent.dateNaissance ||
+        champ(donnees, ["date", "naissance"]) ||
+        champ(donnees, ["naissance"]);
+
+    const age = calculerAge(dateNaissance);
+
+    const groupe =
+        adherent.groupe ||
+        adherent.groupeNom ||
+        inscription?.groupe ||
+        inscription?.donneesHelloAsso?.name ||
+        donnees?.name ||
+        "Non renseigné";
 
     const manquants = [];
 
-    if (!emailAdherent(adherent)) {
+    const email =
+        adherent.email ||
+        adherent.emailAdherent ||
+        adherent.emailParent1 ||
+        champ(donnees, ["email", "adherent"]) ||
+        champ(donnees, ["email"]);
+
+    if (!email) {
         manquants.push("Email");
     }
 
-    if (!telephoneAdherent(adherent)) {
+    const telephone =
+        adherent.telephone ||
+        adherent.telephoneUrgence ||
+        champ(donnees, ["numero", "telephone", "contact", "urgence"]) ||
+        champ(donnees, ["telephone", "contact", "urgence"]) ||
+        champ(donnees, ["telephone", "urgence"]) ||
+        champ(donnees, ["téléphone"]);
+
+    if (!telephone) {
         manquants.push("Téléphone");
     }
 
-    if (!groupeAdherent(adherent) || groupeAdherent(adherent) === "Non renseigné") {
+    if (!groupe || groupe === "Non renseigné") {
         manquants.push("Groupe");
     }
 
@@ -160,29 +192,47 @@ function dossierAdministratif(adherent) {
     }
 
     if (age !== null && age < 18) {
-        const parent1 = champ(donnees, ["parent", "1"]) || champ(donnees, ["representant"]) || champ(donnees, ["représentant"]);
+        const parent1 =
+            champ(donnees, ["parent", "1"]) ||
+            champ(donnees, ["representant", "legal"]) ||
+            champ(donnees, ["représentant", "légal"]) ||
+            champ(donnees, ["representant"]) ||
+            champ(donnees, ["représentant"]);
+
         if (!parent1) {
             manquants.push("Représentant légal");
         }
     }
 
+    const statutPaiement = nettoyer(
+        inscription?.statutPaiement ||
+        adherent?.statutPaiement ||
+        ""
+    );
+
     const paiementOK =
-        aide && aide.statutCotisation === "regle" ||
-        texte.includes("cb") ||
-        texte.includes("carte bancaire") ||
-        texte.includes("regle") ||
-        texte.includes("réglé") ||
-        texte.includes("paye") ||
-        texte.includes("payé");
+        adherent.cotisationAJour === true ||
+        inscription?.cotisationAJour === true ||
+        statutPaiement === "paye" ||
+        statutPaiement === "payee" ||
+        statutPaiement === "processed" ||
+        donnees?.state === "Processed" ||
+        aide?.statutCotisation === "regle";
 
     if (!paiementOK) {
         manquants.push("Cotisation");
     }
 
+    const texte = nettoyer(JSON.stringify(donnees));
+    const groupeNormalise = nettoyer(groupe);
+
+    const competition =
+        groupeNormalise.includes("compet") ||
+        groupeNormalise.includes("compét");
+
     if (competition) {
         const photoOK =
             texte.includes("photo d'identite") ||
-            texte.includes("photo d’identité") ||
             texte.includes("photo identite") ||
             texte.includes("photo licence");
 
@@ -190,28 +240,34 @@ function dossierAdministratif(adherent) {
             manquants.push("Photo licence");
         }
 
-        const certificatCompetitionOK =
+        const certificatOK =
             texte.includes("certificat medical") ||
-            texte.includes("certificat médical") ||
-            texte.includes("competition") ||
-            texte.includes("compétition");
+            texte.includes("competition");
 
-        if (!certificatCompetitionOK) {
+        if (!certificatOK) {
             manquants.push("Certificat compétition");
         }
     } else {
-        const certificatLoisirOK =
+        const santeOK =
             texte.includes("questionnaire de sante") ||
-            texte.includes("questionnaire de santé") ||
-            texte.includes("certificat medical") ||
-            texte.includes("certificat médical");
+            texte.includes("attestation de reponse negative") ||
+            texte.includes("certificat medical");
 
-        if (!certificatLoisirOK) {
+        if (!santeOK) {
             manquants.push("Questionnaire santé / certificat");
         }
     }
 
-    if (estLomme(donnees)) {
+    const ville = nettoyer(champ(donnees, ["ville"]));
+    const codePostal = String(
+        champ(donnees, ["code", "postal"]) || ""
+    ).trim();
+
+    const estLomme =
+        ville.includes("lomme") ||
+        codePostal === "59160";
+
+    if (estLomme) {
         const justificatifOK =
             texte.includes("justificatif domicile") ||
             texte.includes("justificatif de domicile");
