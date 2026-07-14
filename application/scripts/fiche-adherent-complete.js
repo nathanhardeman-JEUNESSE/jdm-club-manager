@@ -1,13 +1,18 @@
+import {
+    listAdherents,
+    listInscriptions
+} from "../firebase/firebase-db.js";
+
 const params = new URLSearchParams(window.location.search);
 const numero = params.get("id");
 
-const adherents = JSON.parse(localStorage.getItem("adherentsJDM")) || [];
-const inscriptions = JSON.parse(localStorage.getItem("inscriptionsJDM")) || [];
+let adherents = [];
+let inscriptions = [];
 
-const adherent = adherents.find(a => String(a.numeroAdherent) === String(numero));
-const historique = inscriptions.filter(i => String(i.numeroAdherent) === String(numero));
-const derniereInscription = historique[historique.length - 1];
-const donnees = derniereInscription ? derniereInscription.donneesHelloAsso || {} : {};
+let adherent = null;
+let historique = [];
+let derniereInscription = null;
+let donnees = {};
 
 const fiche = document.getElementById("fiche-pdf");
 
@@ -85,6 +90,7 @@ function afficherPhotoManquante(image) {
     `;
 }
 
+function afficherFicheComplete() {
 if (!adherent) {
     fiche.innerHTML = `<h1>Adhérent introuvable</h1>`;
 } else {
@@ -214,4 +220,39 @@ if (!adherent) {
 
         </section>
     `;
+}}
+async function initialiserFicheComplete() {
+    try {
+        [adherents, inscriptions] = await Promise.all([
+            listAdherents(),
+            listInscriptions()
+        ]);
+
+        adherent = adherents.find(item =>
+            String(item.numeroAdherent) === String(numero) ||
+            String(item.id) === String(numero)
+        ) || null;
+
+        historique = inscriptions.filter(item =>
+            String(item.numeroAdherent) === String(numero)
+        );
+
+        derniereInscription = historique[historique.length - 1] || null;
+
+        donnees =
+            derniereInscription?.donneesHelloAsso ||
+            derniereInscription?.donnees ||
+            {};
+
+        afficherFicheComplete();
+    } catch (error) {
+        console.error("Impossible de charger la fiche complète :", error);
+        fiche.innerHTML = `<h1>Impossible de charger la fiche.</h1>`;
+    }
 }
+
+window.afficherPhotoManquante = afficherPhotoManquante;
+
+initialiserFicheComplete();
+
+<script type="module" src="../scripts/fiche-adherent-complete.js"></script>
