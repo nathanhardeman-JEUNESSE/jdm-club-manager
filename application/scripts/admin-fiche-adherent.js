@@ -262,10 +262,12 @@ function dossierAdministratif(donnees) {
     }
 
     const telephone =
-        adherent.telephone ||
-        champBrut(donnees, ["telephone", "urgence"]) ||
-        champBrut(donnees, ["numero", "telephone"]) ||
-        champBrut(donnees, ["téléphone"]);
+    adherent.telephone ||
+    adherent.telephoneUrgence ||
+    champBrut(donnees, ["numero", "telephone", "contact", "urgence"]) ||
+    champBrut(donnees, ["telephone", "contact", "urgence"]) ||
+    champBrut(donnees, ["telephone", "urgence"]) ||
+    champBrut(donnees, ["téléphone"]);
 
     if (!telephone) {
         manquants.push("Téléphone");
@@ -284,21 +286,31 @@ function dossierAdministratif(donnees) {
 
     if (age !== null && age < 18) {
         const parent1 =
-            champBrut(donnees, ["parent", "1"]) ||
-            champBrut(donnees, ["representant"]) ||
-            champBrut(donnees, ["représentant"]);
+    champBrut(donnees, ["parent", "1"]) ||
+    champBrut(donnees, ["representant", "legal"]) ||
+    champBrut(donnees, ["représentant", "légal"]) ||
+    champBrut(donnees, ["representant"]) ||
+    champBrut(donnees, ["représentant"]);
 
         if (!parent1) {
             manquants.push("Représentant légal");
         }
     }
 
-    const paiementOK =
-        adherent.cotisationAJour === true ||
-        inscription?.cotisationAJour === true ||
-        inscription?.statutPaiement === "payé" ||
-        inscription?.statutPaiement === "paye" ||
-        aide?.statutCotisation === "regle";
+    const statutPaiement = nettoyer(
+    inscription?.statutPaiement ||
+    adherent?.statutPaiement ||
+    ""
+);
+
+const paiementOK =
+    adherent.cotisationAJour === true ||
+    inscription?.cotisationAJour === true ||
+    statutPaiement === "paye" ||
+    statutPaiement === "payee" ||
+    statutPaiement === "processed" ||
+    donnees?.state === "Processed" ||
+    aide?.statutCotisation === "regle";
 
     if (!paiementOK) {
         manquants.push("Cotisation");
@@ -582,7 +594,11 @@ function afficherFiche() {
 
             <p>
                 <strong>Téléphone urgence :</strong>
-                ${champ(donnees, ["telephone", "urgence"])}
+                ${
+    adherent.telephone ||
+    champ(donnees, ["numero", "telephone", "contact", "urgence"]) ||
+    champ(donnees, ["telephone", "urgence"])
+}
             </p>
         </section>
 
