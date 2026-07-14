@@ -274,3 +274,22 @@ export async function savePlanningExceptionFirestore(exception) {
 
     return id;
 }
+/* =========================================================
+   ADHERENTS & INSCRIPTIONS
+   ========================================================= */
+
+export async function listAdherents() {
+    const snap = await getDocs(collection(db, "adherents"));
+    return snap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
+}
+
+export async function listInscriptions() {
+    const snap = await getDocs(collection(db, "inscriptions"));
+    return snap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+    }));
+}
