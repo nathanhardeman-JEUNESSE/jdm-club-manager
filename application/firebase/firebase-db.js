@@ -293,3 +293,109 @@ export async function listInscriptions() {
         ...doc.data()
     }));
 }
+/* =========================================================
+   NOTIFICATIONS
+   ========================================================= */
+
+export async function listNotificationsFirestore() {
+    const snap = await getDocs(collection(db, "notifications"));
+
+    return snap.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+    }));
+}
+
+export async function saveNotificationFirestore(notification) {
+    if (!notification) {
+        throw new Error("Notification invalide.");
+    }
+
+    const id = identifiantDocument(
+        notification.id ||
+        `${notification.type || "notification"}_${Date.now()}`
+    );
+
+    await setDoc(doc(db, "notifications", id), {
+        ...notification,
+        id,
+        clubId: notification.clubId || JDM_CONFIG.clubId,
+        updatedAt: serverTimestamp(),
+        createdAt: notification.createdAt || serverTimestamp()
+    }, { merge: true });
+
+    return id;
+}
+
+export async function updateNotificationFirestore(id, modifications) {
+    if (!id) {
+        throw new Error("ID notification manquant.");
+    }
+
+    await updateDoc(doc(db, "notifications", String(id)), {
+        ...modifications,
+        updatedAt: serverTimestamp()
+    });
+}
+
+export async function deleteNotificationFirestore(id) {
+    if (!id) return;
+
+    await deleteDoc(
+        doc(db, "notifications", String(id))
+    );
+}
+
+
+/* =========================================================
+   ABSENCES
+   ========================================================= */
+
+export async function listAbsencesFirestore() {
+    const snap = await getDocs(collection(db, "absences"));
+
+    return snap.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+    }));
+}
+
+export async function saveAbsenceFirestore(absence) {
+    if (!absence) {
+        throw new Error("Absence invalide.");
+    }
+
+    const id = identifiantDocument(
+        absence.id ||
+        `${absence.numeroAdherent || "adherent"}_${absence.date || Date.now()}`
+    );
+
+    await setDoc(doc(db, "absences", id), {
+        ...absence,
+        id,
+        clubId: absence.clubId || JDM_CONFIG.clubId,
+        updatedAt: serverTimestamp(),
+        createdAt: absence.createdAt || serverTimestamp()
+    }, { merge: true });
+
+    return id;
+}
+
+export async function updateAbsenceFirestore(id, modifications) {
+    if (!id) {
+        throw new Error("ID absence manquant.");
+    }
+
+    await updateDoc(doc(db, "absences", String(id)), {
+        ...modifications,
+        updatedAt: serverTimestamp()
+    });
+}
+
+export async function deleteAbsenceFirestore(id) {
+    if (!id) return;
+
+    await deleteDoc(
+        doc(db, "absences", String(id))
+    );
+}

@@ -1,10 +1,16 @@
 import { watchSession } from "./session.js";
-import { findAdherentByEmail } from "../firebase/firebase-db.js";
 
-const groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
+import {
+    findAdherentByEmail,
+    listGroupesFirestore,
+    listAbsencesFirestore,
+    saveAbsenceFirestore,
+    saveNotificationFirestore
+} from "../firebase/firebase-db.js";
+
+let groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
 const adherents = JSON.parse(localStorage.getItem("adherentsJDM")) || [];
 let absences = JSON.parse(localStorage.getItem("absencesJDM")) || [];
-let notifications = JSON.parse(localStorage.getItem("notificationsJDM")) || [];
 
 const champNom = document.getElementById("absence-nom");
 const champPrenom = document.getElementById("absence-prenom");
@@ -17,6 +23,28 @@ const listeAbsences = document.getElementById("liste-absences-parent");
 
 let profilConnecte = null;
 let adherentConnecte = null;
+
+async function chargerDonneesPartagees() {
+    try {
+        const [groupesFirestore, absencesFirestore] = await Promise.all([
+            listGroupesFirestore(),
+            listAbsencesFirestore()
+        ]);
+
+        if (groupesFirestore.length > 0) {
+            groupes = groupesFirestore;
+            localStorage.setItem("groupesJDM", JSON.stringify(groupes));
+        }
+
+        absences = absencesFirestore;
+        localStorage.setItem("absencesJDM", JSON.stringify(absences));
+    } catch (error) {
+        console.warn(
+            "Données Firestore indisponibles, utilisation du cache local.",
+            error
+        );
+    }
+}
 
 function normaliser(texte) {
     return String(texte || "")
@@ -159,28 +187,43 @@ function absenceDejaSignalee(numeroAdherent, groupe, date) {
     });
 }
 
-boutonEnvoyer.addEventListener("click", () => {
-    const nom = adherentConnecte ? adherentConnecte.nom : champNom.value.trim();
-    const prenom = adherentConnecte ? adherentConnecte.prenom : champPrenom.value.trim();
-    const groupe = groupeAdherent(adherentConnecte) || selectGroupe.value;
+boutonEnvoyer.addEventListener("click", async () => {
+    const nom = adherentConnecte
+        ? adherentConnecte.nom
+        : champNom.value.trim();
+
+    const prenom = adherentConnecte
+        ? adherentConnecte.prenom
+        : champPrenom.value.trim();
+
+    const groupe =
+        groupeAdherent(adherentConnecte) ||
+        selectGroupe.value;
+
     const date = champDate.value;
     const motif = selectMotif.value;
     const message = champMessage.value.trim();
 
     if (!nom || !prenom || !groupe || !date || !motif) {
-        alert("Merci de compléter le nom, prénom, groupe, date et motif.");
+        alert(
+            "Merci de compléter le nom, prénom, groupe, date et motif."
+        );
         return;
     }
 
-    const numeroAdherent = adherentConnecte ? adherentConnecte.numeroAdherent : "";
+    const numeroAdherent = adherentConnecte
+        ? adherentConnecte.numeroAdherent
+        : "";
 
     if (absenceDejaSignalee(numeroAdherent, groupe, date)) {
         alert("Une absence est déjà signalée pour cette date.");
         return;
     }
 
+    const id = String(Date.now());
+
     const absence = {
-        id: Date.now(),
+        id,
         numeroAdherent,
         nom,
         prenom,
@@ -195,10 +238,8 @@ boutonEnvoyer.addEventListener("click", () => {
         traiteeAdmin: false
     };
 
-    absences.push(absence);
-
-    notifications.push({
-        id: Date.now() + 1,
+    const notification = {
+        id: `${id}-notification`,
         categorie: "parents-groupes",
         type: "absence",
         titre: "Absence signalée",
@@ -212,10 +253,29 @@ boutonEnvoyer.addEventListener("click", () => {
         auteur: "parent",
         destinataire: "admin",
         dateCreation: new Date().toISOString()
-    });
+    };
 
-    localStorage.setItem("absencesJDM", JSON.stringify(absences));
-    localStorage.setItem("notificationsJDM", JSON.stringify(notifications));
+    try {
+        await saveAbsenceFirestore(absence);
+        await saveNotificationFirestore(notification);
+    } catch (error) {
+        console.error(
+            "Erreur d'enregistrement de l'absence :",
+            error
+        );
+
+        alert(
+            "Impossible d'enregistrer l'absence sur le serveur."
+        );
+
+        return;
+    }
+
+    absences.push(absence);
+    localStorage.setItem(
+        "absencesJDM",
+        JSON.stringify(absences)
+    );
 
     alert("Absence signalée ✅");
 
@@ -247,5 +307,7 @@ watchSession(async (user, profile) => {
     afficherAbsences();
 });
 
-remplirGroupes();
-afficherAbsences();
+chargerDonneesPartagees().then(() => {
+    remplirGroupes();
+    afficherAbsences();
+});
