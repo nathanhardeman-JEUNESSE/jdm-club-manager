@@ -1,5 +1,10 @@
-const groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
-const exceptions = JSON.parse(localStorage.getItem("planningExceptionsJDM")) || [];
+import {
+    listGroupesFirestore,
+    listPlanningExceptionsFirestore
+} from "../firebase/firebase-db.js";
+
+let groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
+let exceptions = JSON.parse(localStorage.getItem("planningExceptionsJDM")) || [];
 const utilisateurConnecte = JSON.parse(localStorage.getItem("utilisateurConnecteJDM")) || null;
 const adherents = JSON.parse(localStorage.getItem("adherentsJDM")) || [];
 
@@ -19,6 +24,25 @@ const boutonEnvoyerAbsence = document.getElementById("envoyer-absence");
 
 let dateReference = new Date();
 let seanceSelectionnee = null;
+
+async function chargerDonneesPartagees() {
+    try {
+        const [groupesDistants, exceptionsDistantes] = await Promise.all([
+            listGroupesFirestore(),
+            listPlanningExceptionsFirestore()
+        ]);
+
+        if (groupesDistants.length > 0) {
+            groupes = groupesDistants;
+            localStorage.setItem("groupesJDM", JSON.stringify(groupes));
+        }
+
+        exceptions = exceptionsDistantes;
+        localStorage.setItem("planningExceptionsJDM", JSON.stringify(exceptions));
+    } catch (error) {
+        console.warn("Planning Firestore indisponible, utilisation du cache local.", error);
+    }
+}
 
 const jours = [
     { cle: "lundi", label: "Lun", nom: "Lundi" },
@@ -489,4 +513,4 @@ boutonSuivant.addEventListener("click", () => {
     afficherPlanning();
 });
 
-afficherPlanning();
+chargerDonneesPartagees().then(afficherPlanning);

@@ -219,3 +219,58 @@ export async function findAdherentByEmail(email) {
             adherent.emailParent2
         ].map(emailId).includes(cible)) || null;
 }
+
+
+/* =========================================================
+   GROUPES & PLANNING PARTAGES
+   ========================================================= */
+
+function identifiantDocument(valeur) {
+    return String(valeur || "")
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
+export async function listGroupesFirestore() {
+    const snap = await getDocs(collection(db, "groupes"));
+    return snap.docs.map(item => ({ id: item.id, ...item.data() }));
+}
+
+export async function saveGroupesFirestore(groupes) {
+    const liste = Array.isArray(groupes) ? groupes : [];
+
+    await Promise.all(
+        liste.map((groupe, index) => {
+            const id = identifiantDocument(groupe.id || groupe.nom || `groupe-${index + 1}`);
+
+            return setDoc(doc(db, "groupes", id), {
+                ...groupe,
+                id,
+                clubId: groupe.clubId || JDM_CONFIG.clubId,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+        })
+    );
+}
+
+export async function listPlanningExceptionsFirestore() {
+    const snap = await getDocs(collection(db, "planningExceptions"));
+    return snap.docs.map(item => ({ id: item.id, ...item.data() }));
+}
+
+export async function savePlanningExceptionFirestore(exception) {
+    if (!exception || !exception.groupeId || !exception.date) {
+        throw new Error("Exception de planning invalide.");
+    }
+
+    const id = identifiantDocument(`${exception.groupeId}_${exception.date}`);
+
+    await setDoc(doc(db, "planningExceptions", id), {
+        ...exception,
+        id,
+        clubId: exception.clubId || JDM_CONFIG.clubId,
+        updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    return id;
+}

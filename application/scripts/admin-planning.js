@@ -1,4 +1,11 @@
-const groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
+import {
+    listGroupesFirestore,
+    saveGroupesFirestore,
+    listPlanningExceptionsFirestore,
+    savePlanningExceptionFirestore
+} from "../firebase/firebase-db.js";
+
+let groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
 let exceptions = JSON.parse(localStorage.getItem("planningExceptionsJDM")) || [];
 
 const zonePlanning = document.getElementById("planning-admin");
@@ -18,6 +25,32 @@ const boutonAnnuler = document.getElementById("annuler-edition");
 
 let dateReference = new Date();
 let selection = null;
+
+async function chargerDonneesPartagees() {
+    const groupesLocaux = JSON.parse(localStorage.getItem("groupesJDM")) || [];
+    const exceptionsLocales = JSON.parse(localStorage.getItem("planningExceptionsJDM")) || [];
+
+    try {
+        let groupesDistants = await listGroupesFirestore();
+
+        if (groupesDistants.length === 0 && groupesLocaux.length > 0) {
+            await saveGroupesFirestore(groupesLocaux);
+            groupesDistants = await listGroupesFirestore();
+        }
+
+        groupes = groupesDistants.length > 0 ? groupesDistants : groupesLocaux;
+
+        const exceptionsDistantes = await listPlanningExceptionsFirestore();
+        exceptions = exceptionsDistantes.length > 0 ? exceptionsDistantes : exceptionsLocales;
+
+        localStorage.setItem("groupesJDM", JSON.stringify(groupes));
+        localStorage.setItem("planningExceptionsJDM", JSON.stringify(exceptions));
+    } catch (error) {
+        console.warn("Planning Firestore indisponible, utilisation du cache local.", error);
+        groupes = groupesLocaux;
+        exceptions = exceptionsLocales;
+    }
+}
 
 const jours = [
     { cle: "lundi", label: "Lun", nom: "Lundi" },
@@ -389,7 +422,7 @@ function creerNotificationPlanning(exception) {
     localStorage.setItem("notificationsJDM", JSON.stringify(notifications));
 }
 
-boutonEnregistrer.addEventListener("click", () => {
+boutonEnregistrer.addEventListener("click", async () => {
     if (!selection) return;
 
     exceptions = exceptions.filter(item =>
@@ -406,6 +439,14 @@ boutonEnregistrer.addEventListener("click", () => {
         message: messageCase.value.trim()
     };
 
+    try {
+        await savePlanningExceptionFirestore(nouvelleException);
+    } catch (error) {
+        console.error("Erreur d'enregistrement Firestore :", error);
+        alert("Impossible d'enregistrer sur le serveur. Verifiez la connexion.");
+        return;
+    }
+
     exceptions.push(nouvelleException);
     localStorage.setItem("planningExceptionsJDM", JSON.stringify(exceptions));
 
@@ -414,7 +455,7 @@ boutonEnregistrer.addEventListener("click", () => {
     zoneEdition.style.display = "none";
     selection = null;
 
-    afficherPlanning();
+    await afficherPlanning();
 });
 
 boutonAnnuler.addEventListener("click", () => {
@@ -436,4 +477,4 @@ boutonSuivant.addEventListener("click", () => {
     afficherPlanning();
 });
 
-afficherPlanning();
+chargerDonneesPartagees().then(afficherPlanning);
