@@ -202,10 +202,10 @@ function buildAdherent(order, item, index) {
     "";
 
   const group =
-    item?.tierName ||
-    item?.priceCategory ||
     item?.name ||
+    item?.tierName ||
     item?.title ||
+    item?.priceCategory ||
     "";
 
   const orderId = order.id ?? order.orderId;
@@ -220,7 +220,11 @@ function buildAdherent(order, item, index) {
     dateNaissance: birthDate,
     email,
     emailParent1: payer.email || email,
-    telephone: payer.phone || "",
+    telephone:
+    customField(fields, ["telephone", "urgence"]) ||
+    customField(fields, ["numéro", "téléphone"]) ||
+    payer.phone ||
+    "",
     groupe: group,
     saison: season,
     actif: true,
