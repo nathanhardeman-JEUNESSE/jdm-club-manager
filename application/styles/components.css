@@ -760,25 +760,26 @@
 .card-content {
     position: relative;
     z-index: 2;
-    padding: 55px;
+    padding: 30px 45px 40px;
 }
 
 .card-content h1 {
-    font-size: 38px;
+    font-size: 20px;
     margin: 0;
 }
 
 .card-content h2 {
-    font-size: 24px;
-    letter-spacing: 8px;
+    font-size: 15px;
+    letter-spacing: 5px;
     font-weight: normal;
-    margin-top: 8px;
+    margin-top: 4px;
 }
 
 .member-name {
-    margin-top: 48px;
-    font-size: 42px;
-    line-height: 1.1;
+    margin-top: 25px;
+    margin-bottom: 8px;   /* <-- espace avant le numéro adhérent */
+    font-size: 28px;
+    line-height: 1.08;
 }
 
 .member-name span {
@@ -792,16 +793,34 @@
 }
 
 .card-label {
-    margin-top: 38px;
-    font-size: 20px;
-    letter-spacing: 4px;
+    margin-top: 14px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    letter-spacing: 3px;
 }
 
 .card-number,
 .card-season {
-    font-size: 36px;
+    font-size: 20px;
     font-weight: bold;
-    margin-top: 5px;
+    line-height: 1.15;
+    margin: 4;
+}
+
+.card-content p {
+    margin: 0;
+}
+
+/* Valeur du groupe */
+.card-label + .card-season {
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+/* Valeur du numéro adhérent */
+.card-label + .card-number {
+    margin-top: 4px;
+    margin-bottom: 8px;
 }
 
 
@@ -824,13 +843,14 @@
 }
 
 .back-right {
-    position: absolute;
-    right: 60px;
-    bottom: 55px;
+    position: absolute !important;
+    right: 20px !important;
+    top: 40px !important;
+    bottom: auto !important;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 22px;
+    gap: 12px;
     z-index: 3;
 }
 
@@ -856,10 +876,10 @@
 
 .card-watermark {
     position: absolute;
-    right: 55px;
-    top: 65px;
-    width: 430px;
-    opacity: 0.4;
+    right: 40px;
+    top: 20px;
+    width: 360px;
+    opacity: 0.18;
 }
 
 .back-logo {
