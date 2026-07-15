@@ -171,13 +171,34 @@ function getPayer(order) {
   return order.payer || order.payerInfo || order.user || {};
 }
 
+function fieldAnswer(fields, groups) {
+  const liste = Array.isArray(fields) ? fields : [];
+
+  for (const mots of groups) {
+    const termes = mots.map(normalize);
+    const trouve = liste.find(item => {
+      const nom = normalize(item?.name || "");
+      return termes.every(terme => nom.includes(terme));
+    });
+
+    const valeur = trouve?.answer;
+    if (valeur !== undefined && valeur !== null && String(valeur).trim() !== "") {
+      return valeur;
+    }
+  }
+
+  return "";
+}
+
 function buildAdherent(order, item, index) {
   const payer = getPayer(order);
+  const itemUser = item?.user || {};
   const fields = item?.customFields || item?.fields || item?.answers || [];
 
   const nom =
     item?.lastName ||
     item?.lastname ||
+    itemUser?.lastName ||
     customField(fields, ["nom"]) ||
     payer.lastName ||
     "";
@@ -185,6 +206,7 @@ function buildAdherent(order, item, index) {
   const prenom =
     item?.firstName ||
     item?.firstname ||
+    itemUser?.firstName ||
     customField(fields, ["prenom"]) ||
     customField(fields, ["prénom"]) ||
     payer.firstName ||
@@ -192,6 +214,7 @@ function buildAdherent(order, item, index) {
 
   const email =
     item?.email ||
+    itemUser?.email ||
     customField(fields, ["email"]) ||
     payer.email ||
     "";
@@ -209,19 +232,23 @@ function buildAdherent(order, item, index) {
     "";
 
   const telephone =
-    customField(fields, ["telephone", "contact", "urgence"]) ||
-    customField(fields, ["telephone", "appeler", "urgence"]) ||
-    customField(fields, ["numero", "telephone"]) ||
+    fieldAnswer(fields, [
+      ["numero", "telephone", "contact", "urgence"],
+      ["numero", "telephone", "appeler", "urgence"],
+      ["telephone", "contact", "urgence"],
+      ["telephone", "urgence"]
+    ]) ||
     payer.phone ||
     "";
 
-  const parent1 =
-    customField(fields, ["parent", "1"]) ||
-    customField(fields, ["representant", "legal"]) ||
-    "";
+  const parent1 = fieldAnswer(fields, [
+    ["parent", "1"],
+    ["representant", "legal"],
+    ["representant"]
+  ]);
 
-  const parent2 = customField(fields, ["parent", "2"]) || "";
-  const emailParent2 = customField(fields, ["email", "parent", "2"]) || "";
+  const parent2 = fieldAnswer(fields, [["parent", "2"]]);
+  const emailParent2 = fieldAnswer(fields, [["email", "parent", "2"]]);
 
   const orderId = order.id ?? order.orderId;
   const itemId = item?.id ?? `${orderId}-${index + 1}`;
