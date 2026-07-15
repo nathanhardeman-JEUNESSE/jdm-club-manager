@@ -171,12 +171,50 @@ function getPayer(order) {
   return order.payer || order.payerInfo || order.user || {};
 }
 
+function splitFullName(fullName) {
+  const parts = String(fullName || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length < 2) {
+    return {
+      nom: parts[0] || "",
+      prenom: ""
+    };
+  }
+
+  return {
+    nom: parts[0],
+    prenom: parts.slice(1).join(" ")
+  };
+}
+
+function normalizeAdherentIdentity(nomValue, prenomValue) {
+  let nom = String(nomValue || "").trim();
+  let prenom = String(prenomValue || "").trim();
+
+  if (nom && prenom && normalize(nom) === normalize(prenom)) {
+    return splitFullName(nom);
+  }
+
+  if (!nom && prenom) {
+    return splitFullName(prenom);
+  }
+
+  if (nom && !prenom) {
+    return splitFullName(nom);
+  }
+
+  return { nom, prenom };
+}
+
 function buildAdherent(order, item, index) {
   const payer = getPayer(order);
   const user = item?.user || {};
   const fields = item?.customFields || item?.fields || item?.answers || [];
 
-  const nom =
+  const nomBrut =
     user.lastName ||
     item?.lastName ||
     item?.lastname ||
@@ -188,7 +226,7 @@ function buildAdherent(order, item, index) {
     ) ||
     "";
 
-  const prenom =
+  const prenomBrut =
     user.firstName ||
     item?.firstName ||
     item?.firstname ||
@@ -204,6 +242,11 @@ function buildAdherent(order, item, index) {
       ["parent", "representant", "email", "urgence"]
     ) ||
     "";
+
+  const { nom, prenom } = normalizeAdherentIdentity(
+    nomBrut,
+    prenomBrut
+  );
 
   const email =
     item?.email ||
