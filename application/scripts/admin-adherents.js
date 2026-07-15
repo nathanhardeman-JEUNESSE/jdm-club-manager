@@ -5,8 +5,12 @@ import {
 
 let adherents = [];
 let inscriptions = [];
-const aidesLicence = JSON.parse(localStorage.getItem("aidesLicenceLommeJDM")) || [];
-const validationsDossiers = JSON.parse(localStorage.getItem("validationsDossiersJDM")) || [];
+
+const aidesLicence =
+    JSON.parse(localStorage.getItem("aidesLicenceLommeJDM")) || [];
+
+const validationsDossiers =
+    JSON.parse(localStorage.getItem("validationsDossiersJDM")) || [];
 
 const liste = document.getElementById("liste-adherents");
 const zoneStats = document.getElementById("stats-dossiers-adherents");
@@ -56,22 +60,11 @@ function derniereInscription(numeroAdherent) {
 function champ(donnees, mots) {
     if (!donnees) return "";
 
-    const motsNormalises = mots.map(nettoyer);
-    const cleDirecte = Object.keys(donnees).find(cle =>
-        motsNormalises.every(mot => nettoyer(cle).includes(mot))
+    const cle = Object.keys(donnees).find(cle =>
+        mots.every(mot => nettoyer(cle).includes(nettoyer(mot)))
     );
 
-    if (cleDirecte && donnees[cleDirecte] !== undefined && donnees[cleDirecte] !== null) {
-        return donnees[cleDirecte];
-    }
-
-    const customFields = Array.isArray(donnees.customFields) ? donnees.customFields : [];
-    const trouve = customFields.find(item => {
-        const nom = nettoyer(item?.name);
-        return motsNormalises.every(mot => nom.includes(mot));
-    });
-
-    return trouve?.answer ?? "";
+    return cle ? donnees[cle] : "";
 }
 
 function aidePour(numeroAdherent) {
@@ -93,7 +86,12 @@ function groupeAdherent(adherent) {
         inscription?.donneesHelloAsso?.name ||
         inscription?.groupe ||
         adherent.groupeNom ||
-        (adherent.groupe && adherent.groupe !== "Fixed" ? adherent.groupe : "") ||
+        (
+            adherent.groupe &&
+            adherent.groupe !== "Fixed"
+                ? adherent.groupe
+                : ""
+        ) ||
         "Non renseigné"
     );
 }
@@ -135,66 +133,161 @@ function estLomme(donnees) {
 
 function dossierAdministratif(adherent) {
     const validation = validationPour(adherent.numeroAdherent);
+
     if (validation?.valideManuellement === true) {
-        return { complet: true, manuel: true, manquants: [] };
+        return {
+            complet: true,
+            manuel: true,
+            manquants: []
+        };
     }
 
     const inscription = derniereInscription(adherent.numeroAdherent);
-    const donnees = inscription?.donneesHelloAsso || inscription?.donnees || {};
+
+    const donnees =
+        inscription?.donneesHelloAsso ||
+        inscription?.donnees ||
+        {};
+
     const aide = aidePour(adherent.numeroAdherent);
-    const groupe = groupeAdherent(adherent);
-    const dateNaissance = adherent.dateNaissance || champ(donnees, ["date", "naissance"]);
+
+    const dateNaissance =
+        adherent.dateNaissance ||
+        champ(donnees, ["date", "naissance"]) ||
+        champ(donnees, ["naissance"]);
+
     const age = calculerAge(dateNaissance);
+
+    const groupe =
+        adherent.groupe ||
+        adherent.groupeNom ||
+        inscription?.groupe ||
+        inscription?.donneesHelloAsso?.name ||
+        donnees?.name ||
+        "Non renseigné";
+
     const manquants = [];
 
-    const email = adherent.email || adherent.emailAdherent || adherent.emailParent1 || champ(donnees, ["email"]);
-    if (!email) manquants.push("Email");
+    const email =
+        adherent.email ||
+        adherent.emailAdherent ||
+        adherent.emailParent1 ||
+        champ(donnees, ["email", "adherent"]) ||
+        champ(donnees, ["email"]);
 
-    const telephone =
-        adherent.telephone ||
-        adherent.telephoneUrgence ||
-        champ(donnees, ["telephone", "contact", "urgence"]) ||
-        champ(donnees, ["telephone", "appeler", "urgence"]) ||
-        champ(donnees, ["numero", "telephone"]);
-    if (!telephone) manquants.push("Téléphone");
-
-    if (!groupe || groupe === "Non renseigné" || groupe === "Fixed") manquants.push("Groupe");
-    if (age === null) manquants.push("Date de naissance");
-
-    if (age !== null && age < 18) {
-        const parent1 = adherent.parent1 || champ(donnees, ["parent", "1"]) || champ(donnees, ["representant", "legal"]);
-        if (!parent1) manquants.push("Représentant légal");
+    if (!email) {
+        manquants.push("Email");
     }
 
-    const statutPaiement = nettoyer(inscription?.statutPaiement || adherent?.statutPaiement || "");
+    const telephone =
+    adherent.telephone ||
+    adherent.telephoneUrgence ||
+    champ(donnees, ["numero", "telephone", "contact", "urgence"]) ||
+    champ(donnees, ["numero", "telephone", "appeler", "urgence"]) ||
+    champ(donnees, ["telephone", "contact", "urgence"]) ||
+    champ(donnees, ["telephone", "urgence"]);
+
+    if (!telephone) {
+        manquants.push("Téléphone");
+    }
+
+    if (!groupe || groupe === "Non renseigné") {
+        manquants.push("Groupe");
+    }
+
+    if (age === null) {
+        manquants.push("Date de naissance");
+    }
+
+    if (age !== null && age < 18) {
+    const parent1 =
+        champBrut(donnees, ["parent", "1"]) ||
+        champBrut(donnees, ["representant", "legal"]) ||
+        champBrut(donnees, ["représentant", "légal"]);
+
+    if (!parent1) {
+        manquants.push("Représentant légal");
+    }
+}
+
+    const statutPaiement = nettoyer(
+        inscription?.statutPaiement ||
+        adherent?.statutPaiement ||
+        ""
+    );
+
     const paiementOK =
         adherent.cotisationAJour === true ||
         inscription?.cotisationAJour === true ||
-        ["paye", "payee", "processed"].includes(statutPaiement) ||
+        statutPaiement === "paye" ||
+        statutPaiement === "payee" ||
+        statutPaiement === "processed" ||
         donnees?.state === "Processed" ||
         aide?.statutCotisation === "regle";
-    if (!paiementOK) manquants.push("Cotisation");
+
+    if (!paiementOK) {
+        manquants.push("Cotisation");
+    }
 
     const texte = nettoyer(JSON.stringify(donnees));
-    const competition = nettoyer(groupe).includes("compet");
+    const groupeNormalise = nettoyer(groupe);
+
+    const competition =
+        groupeNormalise.includes("compet") ||
+        groupeNormalise.includes("compét");
+
     if (competition) {
-        if (!(texte.includes("photo d'identite") || texte.includes("photo identite") || texte.includes("photo licence"))) {
+        const photoOK =
+            texte.includes("photo d'identite") ||
+            texte.includes("photo identite") ||
+            texte.includes("photo licence");
+
+        if (!photoOK) {
             manquants.push("Photo licence");
         }
-        if (!(texte.includes("certificat medical") || texte.includes("competition"))) {
+
+        const certificatOK =
+            texte.includes("certificat medical") ||
+            texte.includes("competition");
+
+        if (!certificatOK) {
             manquants.push("Certificat compétition");
         }
-    } else if (!(texte.includes("questionnaire de sante") || texte.includes("attestation de reponse negative") || texte.includes("certificat medical"))) {
-        manquants.push("Questionnaire santé / certificat");
+    } else {
+        const santeOK =
+            texte.includes("questionnaire de sante") ||
+            texte.includes("attestation de reponse negative") ||
+            texte.includes("certificat medical");
+
+        if (!santeOK) {
+            manquants.push("Questionnaire santé / certificat");
+        }
     }
 
     const ville = nettoyer(champ(donnees, ["ville"]));
-    const cp = String(champ(donnees, ["code", "postal"]) || "").trim();
-    if ((ville.includes("lomme") || cp === "59160") && !(texte.includes("justificatif domicile") || texte.includes("justificatif de domicile"))) {
-        manquants.push("Justificatif domicile");
+    const codePostal = String(
+        champ(donnees, ["code", "postal"]) || ""
+    ).trim();
+
+    const estLomme =
+        ville.includes("lomme") ||
+        codePostal === "59160";
+
+    if (estLomme) {
+        const justificatifOK =
+            texte.includes("justificatif domicile") ||
+            texte.includes("justificatif de domicile");
+
+        if (!justificatifOK) {
+            manquants.push("Justificatif domicile");
+        }
     }
 
-    return { complet: manquants.length === 0, manuel: false, manquants };
+    return {
+        complet: manquants.length === 0,
+        manuel: false,
+        manquants
+    };
 }
 
 function afficherStats() {
@@ -282,18 +375,12 @@ function afficherAdherents() {
         });
 }
 
-async function initialiserAdherents() {
-    try {
-        [adherents, inscriptions] = await Promise.all([
-            listAdherents(),
-            listInscriptions()
-        ]);
-        afficherStats();
-        afficherAdherents();
-    } catch (error) {
-        console.error("Impossible de charger les adhérents :", error);
-        liste.innerHTML = `<section class="card"><h2>Erreur</h2><p>Impossible de charger les adhérents.</p></section>`;
-    }
-}
+(async () => {
 
-initialiserAdherents();
+    adherents = await listAdherents();
+    inscriptions = await listInscriptions();
+
+    afficherStats();
+    afficherAdherents();
+
+})();
