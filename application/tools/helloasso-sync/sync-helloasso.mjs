@@ -171,53 +171,28 @@ function getPayer(order) {
   return order.payer || order.payerInfo || order.user || {};
 }
 
-function splitFullName(fullName) {
-  const parts = String(fullName || "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
-
-  if (parts.length < 2) {
-    return { nom: parts[0] || "", prenom: "" };
-  }
-
-  return {
-    nom: parts[0],
-    prenom: parts.slice(1).join(" ")
-  };
-}
-
-function normalizeAdherentIdentity(nomValue, prenomValue) {
-  let nom = String(nomValue || "").trim();
-  let prenom = String(prenomValue || "").trim();
-
-  if (nom && prenom && normalize(nom) === normalize(prenom)) {
-    const split = splitFullName(nom);
-    nom = split.nom;
-    prenom = split.prenom;
-  }
-
-  return { nom, prenom };
-}
-
 function buildAdherent(order, item, index) {
   const payer = getPayer(order);
+  const user = item?.user || {};
   const fields = item?.customFields || item?.fields || item?.answers || [];
 
-  const nomBrut =
+  const nom =
+    user.lastName ||
     item?.lastName ||
     item?.lastname ||
+    payer.lastName ||
     customField(
       fields,
       ["nom"],
       ["parent", "representant", "email", "urgence"]
     ) ||
-    payer.lastName ||
     "";
 
-  const prenomBrut =
+  const prenom =
+    user.firstName ||
     item?.firstName ||
     item?.firstname ||
+    payer.firstName ||
     customField(
       fields,
       ["prenom"],
@@ -228,10 +203,7 @@ function buildAdherent(order, item, index) {
       ["prénom"],
       ["parent", "representant", "email", "urgence"]
     ) ||
-    payer.firstName ||
     "";
-
-  const { nom, prenom } = normalizeAdherentIdentity(nomBrut, prenomBrut);
 
   const email =
     item?.email ||
@@ -394,8 +366,18 @@ async function writeOrder(order) {
     stats.paymentsWritten += 1;
   }
 
-  const items =
-    Array.isArray(order.items) && order.items.length ? order.items : [{}];
+  const items = Array.isArray(order.items)
+    ? order.items.filter(
+        (item) => String(item?.type || "").trim().toLowerCase() === "membership"
+      )
+    : [];
+
+  if (items.length === 0) {
+    console.log(
+      "Commande ignorée pour les adhérents : aucune adhésion Membership",
+      order.id ?? order.orderId ?? ""
+    );
+  }
 
   for (let index = 0; index < items.length; index += 1) {
     const item = items[index];
