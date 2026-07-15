@@ -1,40 +1,97 @@
+import {
+    listAdherents,
+    listInscriptions
+} from "../firebase/firebase-db.js";
+
 const params = new URLSearchParams(window.location.search);
 const numero = params.get("id");
-
-const adherents = JSON.parse(localStorage.getItem("adherentsJDM")) || [];
-const inscriptions = JSON.parse(localStorage.getItem("inscriptionsJDM")) || [];
-
-const adherent = adherents.find(a => a.numeroAdherent === numero);
-const inscription = inscriptions.find(i => i.numeroAdherent === numero);
 
 const front = document.getElementById("card-front");
 const back = document.getElementById("card-back");
 
-const saison = inscription ? inscription.saison : "Saison non renseignée";
+function nettoyer(texte) {
+    return String(texte || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+}
 
-const qrData = encodeURIComponent(
-    window.location.origin + "/application/pages/admin-fiche-adherent.html?id=" + numero
-);
+function donneesInscription(inscription) {
+    return inscription?.donneesHelloAsso || inscription?.donnees || {};
+}
 
-const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${qrData}`;
+function trouverDerniereInscription(inscriptions, numeroAdherent) {
+    return inscriptions
+        .filter(item =>
+            String(item.numeroAdherent) === String(numeroAdherent)
+        )
+        .sort((a, b) =>
+            String(a.dateInscription || "")
+                .localeCompare(String(b.dateInscription || ""))
+        )
+        .at(-1) || null;
+}
 
-if (!adherent) {
-    front.innerHTML = `<h2>Adhérent introuvable</h2>`;
-} else {
+function groupeAdherent(adherent, inscription) {
+    const donnees = donneesInscription(inscription);
+    const groupeFirestore = String(adherent?.groupe || "").trim();
+
+    return (
+        donnees?.name ||
+        inscription?.groupe ||
+        adherent?.groupeNom ||
+        (
+            groupeFirestore &&
+            nettoyer(groupeFirestore) !== "fixed"
+                ? groupeFirestore
+                : ""
+        ) ||
+        "Non renseigné"
+    );
+}
+
+function afficherErreur(message) {
+    if (front) {
+        front.innerHTML = `
+            <div class="card-content">
+                <h2>${message}</h2>
+            </div>
+        `;
+    }
+
+    if (back) {
+        back.innerHTML = "";
+    }
+}
+
+function afficherCarte(adherent, inscription) {
+    const saison =
+        inscription?.saison ||
+        adherent?.saison ||
+        "Saison non renseignée";
+
+    const groupe = groupeAdherent(adherent, inscription);
+
     front.innerHTML = `
-        <img src="../images/logo-jdm.png" class="card-watermark">
+        <img src="../images/logo-jdm.png"
+             class="card-watermark"
+             alt="Logo La Jeunesse du Marais">
 
         <div class="card-content">
             <h1>LA JEUNESSE DU MARAIS</h1>
             <h2>CLUB DE GYMNASTIQUE</h2>
 
             <div class="member-name">
-                <span>${adherent.prenom}</span>
-                <strong>${adherent.nom}</strong>
+                <span>${adherent.prenom || ""}</span>
+                <strong>${adherent.nom || ""}</strong>
             </div>
 
             <p class="card-label">N° ADHÉRENT</p>
-            <p class="card-number">${adherent.numeroAdherent}</p>
+            <p class="card-number">${adherent.numeroAdherent || numero || ""}</p>
+
+            <p class="card-label">GROUPE</p>
+            <p class="card-season">${groupe}</p>
 
             <p class="card-label">SAISON</p>
             <p class="card-season">${saison}</p>
@@ -42,7 +99,9 @@ if (!adherent) {
     `;
 
     back.innerHTML = `
-        <img src="../images/logo-jdm.png" class="card-watermark back-logo">
+        <img src="../images/logo-jdm.png"
+             class="card-watermark back-logo"
+             alt="Logo La Jeunesse du Marais">
 
         <div class="back-info">
             <h2>Carte personnelle</h2>
@@ -64,8 +123,49 @@ if (!adherent) {
         </div>
 
         <div class="back-right">
-            <img src="${qrUrl}" class="card-qr">
-            <img src="../images/logo.lomme.jpg" class="lomme-logo">
+            <img src="../images/QRC.png"
+                 class="card-qr"
+                 alt="QR Code du club">
+
+            <img src="../images/logo.lomme.jpg"
+                 class="lomme-logo"
+                 alt="Logo Ville de Lomme">
         </div>
     `;
 }
+
+async function initialiserCarte() {
+    if (!numero) {
+        afficherErreur("Numéro adhérent manquant");
+        return;
+    }
+
+    try {
+        const [adherents, inscriptions] = await Promise.all([
+            listAdherents(),
+            listInscriptions()
+        ]);
+
+        const adherent = adherents.find(item =>
+            String(item.numeroAdherent) === String(numero) ||
+            String(item.id) === String(numero)
+        );
+
+        if (!adherent) {
+            afficherErreur("Adhérent introuvable");
+            return;
+        }
+
+        const inscription = trouverDerniereInscription(
+            inscriptions,
+            adherent.numeroAdherent || numero
+        );
+
+        afficherCarte(adherent, inscription);
+    } catch (error) {
+        console.error("Impossible de charger la carte adhérent :", error);
+        afficherErreur("Impossible de charger la carte");
+    }
+}
+
+initialiserCarte();
