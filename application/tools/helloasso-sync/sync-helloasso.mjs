@@ -171,24 +171,67 @@ function getPayer(order) {
   return order.payer || order.payerInfo || order.user || {};
 }
 
+function splitFullName(fullName) {
+  const parts = String(fullName || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (parts.length < 2) {
+    return { nom: parts[0] || "", prenom: "" };
+  }
+
+  return {
+    nom: parts[0],
+    prenom: parts.slice(1).join(" ")
+  };
+}
+
+function normalizeAdherentIdentity(nomValue, prenomValue) {
+  let nom = String(nomValue || "").trim();
+  let prenom = String(prenomValue || "").trim();
+
+  if (nom && prenom && normalize(nom) === normalize(prenom)) {
+    const split = splitFullName(nom);
+    nom = split.nom;
+    prenom = split.prenom;
+  }
+
+  return { nom, prenom };
+}
+
 function buildAdherent(order, item, index) {
   const payer = getPayer(order);
   const fields = item?.customFields || item?.fields || item?.answers || [];
 
-  const nom =
+  const nomBrut =
     item?.lastName ||
     item?.lastname ||
-    customField(fields, ["nom"]) ||
+    customField(
+      fields,
+      ["nom"],
+      ["parent", "representant", "email", "urgence"]
+    ) ||
     payer.lastName ||
     "";
 
-  const prenom =
+  const prenomBrut =
     item?.firstName ||
     item?.firstname ||
-    customField(fields, ["prenom"]) ||
-    customField(fields, ["prénom"]) ||
+    customField(
+      fields,
+      ["prenom"],
+      ["parent", "representant", "email", "urgence"]
+    ) ||
+    customField(
+      fields,
+      ["prénom"],
+      ["parent", "representant", "email", "urgence"]
+    ) ||
     payer.firstName ||
     "";
+
+  const { nom, prenom } = normalizeAdherentIdentity(nomBrut, prenomBrut);
 
   const email =
     item?.email ||
@@ -208,6 +251,21 @@ function buildAdherent(order, item, index) {
     item?.priceCategory ||
     "";
 
+  const telephone =
+    customField(fields, ["telephone", "contact", "urgence"]) ||
+    customField(fields, ["telephone", "appeler", "urgence"]) ||
+    customField(fields, ["numero", "telephone"]) ||
+    payer.phone ||
+    "";
+
+  const parent1 =
+    customField(fields, ["parent", "1"], ["email"]) ||
+    customField(fields, ["representant", "legal"], ["email"]) ||
+    "";
+
+  const parent2 = customField(fields, ["parent", "2"], ["email"]) || "";
+  const emailParent2 = customField(fields, ["email", "parent", "2"]) || "";
+
   const orderId = order.id ?? order.orderId;
   const itemId = item?.id ?? `${orderId}-${index + 1}`;
   const numeroAdherent = `HA-${itemId}`;
@@ -220,11 +278,11 @@ function buildAdherent(order, item, index) {
     dateNaissance: birthDate,
     email,
     emailParent1: payer.email || email,
-    telephone:
-    customField(fields, ["telephone", "urgence"]) ||
-    customField(fields, ["numéro", "téléphone"]) ||
-    payer.phone ||
-    "",
+    emailParent2,
+    parent1,
+    parent2,
+    telephone,
+    telephoneUrgence: telephone,
     groupe: group,
     saison: season,
     actif: true,

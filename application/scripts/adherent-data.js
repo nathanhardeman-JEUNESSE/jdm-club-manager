@@ -6,14 +6,22 @@ export function nettoyer(texte) {
         .replace(/[\u0300-\u036f]/g, "");
 }
 
-export function champ(donnees, mots, valeurParDefaut = "") {
+export function champ(donnees, mots, valeurParDefaut = "", motsExclus = []) {
     if (!donnees) return valeurParDefaut;
 
     const termes = (Array.isArray(mots) ? mots : [mots]).map(nettoyer);
+    const exclusions = (Array.isArray(motsExclus) ? motsExclus : [motsExclus])
+        .map(nettoyer)
+        .filter(Boolean);
 
     const cleDirecte = Object.keys(donnees).find(cle => {
         const cleNormalisee = nettoyer(cle);
-        return termes.every(terme => cleNormalisee.includes(terme));
+        const contientTermes = termes.every(terme => cleNormalisee.includes(terme));
+        const contientExclusion = exclusions.some(exclusion =>
+            cleNormalisee.includes(exclusion)
+        );
+
+        return contientTermes && !contientExclusion;
     });
 
     if (cleDirecte) {
@@ -26,7 +34,12 @@ export function champ(donnees, mots, valeurParDefaut = "") {
     const champs = Array.isArray(donnees.customFields) ? donnees.customFields : [];
     const trouve = champs.find(item => {
         const nom = nettoyer(item?.name);
-        return termes.every(terme => nom.includes(terme));
+        const contientTermes = termes.every(terme => nom.includes(terme));
+        const contientExclusion = exclusions.some(exclusion =>
+            nom.includes(exclusion)
+        );
+
+        return contientTermes && !contientExclusion;
     });
 
     const reponse = trouve?.answer;
@@ -121,9 +134,9 @@ export function parent1Adherent(adherent, inscription) {
 
     return premiereValeur(
         adherent?.parent1,
-        champ(donnees, ["parent", "1"]),
-        champ(donnees, ["representant", "legal"]),
-        champ(donnees, ["representant"])
+        champ(donnees, ["parent", "1"], "", ["email"]),
+        champ(donnees, ["representant", "legal"], "", ["email"]),
+        champ(donnees, ["representant"], "", ["email"])
     );
 }
 
@@ -132,7 +145,7 @@ export function parent2Adherent(adherent, inscription) {
 
     return premiereValeur(
         adherent?.parent2,
-        champ(donnees, ["parent", "2"])
+        champ(donnees, ["parent", "2"], "", ["email"])
     );
 }
 

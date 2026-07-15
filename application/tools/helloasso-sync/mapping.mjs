@@ -29,12 +29,24 @@ export function firestoreId(value) {
     .replace(/^-|-$/g, "");
 }
 
-export function customField(fields, words) {
+export function customField(fields, words, excludedWords = []) {
   if (!Array.isArray(fields)) return "";
-  const wanted = words.map(normalize);
+
+  const wanted = (Array.isArray(words) ? words : [words]).map(normalize);
+  const excluded = (Array.isArray(excludedWords) ? excludedWords : [excludedWords])
+    .map(normalize)
+    .filter(Boolean);
+
   const found = fields.find((field) => {
-    const label = normalize(field?.name ?? field?.label ?? field?.fieldName ?? field?.title);
-    return wanted.every((word) => label.includes(word));
+    const label = normalize(
+      field?.name ?? field?.label ?? field?.fieldName ?? field?.title
+    );
+
+    const containsWanted = wanted.every((word) => label.includes(word));
+    const containsExcluded = excluded.some((word) => label.includes(word));
+
+    return containsWanted && !containsExcluded;
   });
+
   return found?.answer ?? found?.value ?? found?.displayValue ?? found?.text ?? "";
 }
