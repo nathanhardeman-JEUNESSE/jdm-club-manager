@@ -190,3 +190,17 @@
   }
   .treasury-toolbar .secondary-button { width:100%; }
 }
+
+
+/* Paiement importé automatiquement depuis HelloAsso */
+.treasury-payment-imported { border-left:5px solid #2f9f57; padding-left:9px; }
+.treasury-payment-imported .form-input:disabled,
+.treasury-payment-imported .admin-select:disabled {
+  opacity:1; color:#d9f8e2; border-color:rgba(47,159,87,.45);
+  background:rgba(47,159,87,.10); cursor:not-allowed;
+}
+.treasury-imported-badge {
+  display:inline-flex; align-items:center; justify-content:center; min-height:34px;
+  padding:0 9px; border-radius:999px; background:rgba(47,159,87,.20);
+  color:#78dc98; font-size:11px; font-weight:900; text-align:center;
+}

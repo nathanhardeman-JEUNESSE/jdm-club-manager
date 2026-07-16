@@ -1,483 +1,1093 @@
-import { createHash } from "node:crypto";
 import { cert, initializeApp } from "firebase-admin/app";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
-import { CONFIG, customField, firestoreId, normalize } from "./mapping.mjs";
+import {
+  CONFIG,
+  customField,
+  firestoreId,
+  normalize
+} from "./mapping.mjs";
 
-for (const name of ["HELLOASSO_CLIENT_ID","HELLOASSO_CLIENT_SECRET","HELLOASSO_ORGANIZATION_SLUG","FIREBASE_SERVICE_ACCOUNT"]) {
-  if (!process.env[name]) throw new Error(`Secret GitHub manquant : ${name}`);
+const REQUIRED_SECRETS = [
+  "HELLOASSO_CLIENT_ID",
+  "HELLOASSO_CLIENT_SECRET",
+  "HELLOASSO_ORGANIZATION_SLUG",
+  "FIREBASE_SERVICE_ACCOUNT"
+];
+
+for (const name of REQUIRED_SECRETS) {
+  if (!process.env[name]) {
+    throw new Error(`Secret GitHub manquant : ${name}`);
+  }
 }
 
-initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
+initializeApp({
+  credential: cert(
+    JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+  )
+});
+
 const db = getFirestore();
-const season = process.env.JDM_SEASON || CONFIG.defaultSeason;
-const mode = process.env.SYNC_MODE === "complete" ? "complete" : "incremental";
-const FAMILIES = CONFIG.collections?.families || "families";
-const TIMEOUT = 30000;
-const MAX_PAGES = 50;
+
+const season =
+  process.env.JDM_SEASON ||
+  CONFIG.defaultSeason;
+
+const mode =
+  process.env.SYNC_MODE === "complete"
+    ? "complete"
+    : "incremental";
+
+const REQUEST_TIMEOUT_MS = 30000;
+const MAXIMUM_PAGES = 50;
 
 const stats = {
-  ordersRead: 0, ordersWritten: 0, paymentsWritten: 0,
-  adherentsWritten: 0, registrationsWritten: 0,
-  pendingUsersWritten: 0, familiesWritten: 0,
-  productsIgnored: 0, membershipsMerged: 0, skipped: 0, errors: 0
+  ordersRead: 0,
+  ordersWritten: 0,
+  paymentsWritten: 0,
+  productsIgnored: 0,
+  adherentsWritten: 0,
+  registrationsWritten: 0,
+  pendingUsersWritten: 0,
+  skipped: 0,
+  errors: 0
 };
 
-const clean = (v) => String(v ?? "").trim();
-const unique = (values) => [...new Set(values.filter(Boolean))];
-const safeMessage = (e) => e instanceof Error ? e.message : String(e);
-
-function compactName(value) {
-  return normalize(value).replace(/[^a-z0-9]/g, "").slice(0, 12).toUpperCase();
+function safeMessage(error) {
+  return error instanceof Error
+    ? error.message
+    : String(error);
 }
 
-function shortHash(value) {
-  return createHash("sha256").update(String(value)).digest("hex").slice(0, 6).toUpperCase();
-}
-
-function readableNumber(prenom, identityKey) {
-  return `HA-${compactName(prenom) || "MEMBRE"}-${shortHash(identityKey)}`;
-}
-
-async function getAccessToken() {
-  const body = new URLSearchParams({
-    grant_type: "client_credentials",
-    client_id: process.env.HELLOASSO_CLIENT_ID,
-    client_secret: process.env.HELLOASSO_CLIENT_SECRET
-  });
-
-  const response = await fetch(`${CONFIG.apiBase}/oauth2/token`, {
-    method: "POST",
-    headers: { accept: "application/json", "content-type": "application/x-www-form-urlencoded" },
-    body,
-    signal: AbortSignal.timeout(TIMEOUT)
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok || !data.access_token) {
-    throw new Error(`OAuth HelloAsso refuse (${response.status}) : ${JSON.stringify(data)}`);
-  }
-  return data.access_token;
-}
-
-async function apiGet(path, token, query = {}) {
-  const url = new URL(`${CONFIG.apiBase}${path}`);
-  for (const [key, value] of Object.entries(query)) {
-    if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
-  }
-
-  const response = await fetch(url, {
-    method: "GET",
-    headers: { accept: "application/json", authorization: `Bearer ${token}` },
-    signal: AbortSignal.timeout(TIMEOUT)
-  });
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(`API HelloAsso refusee (${response.status}) : ${JSON.stringify(data)}`);
-  return data;
-}
-
-async function getLastSuccessfulSync() {
-  if (mode === "complete") return null;
-  const snapshot = await db.collection(CONFIG.collections.syncStatus).doc("helloasso").get();
-  return snapshot.exists ? snapshot.data()?.lastSuccessAt?.toDate?.() ?? null : null;
-}
-
-async function fetchOrders(token, lastSyncAt) {
-  const slug = encodeURIComponent(process.env.HELLOASSO_ORGANIZATION_SLUG);
-  const orders = [];
-  let pageIndex = 1;
-  let totalPages = 1;
-
-  do {
-    const result = await apiGet(`/v5/organizations/${slug}/orders`, token, {
-      pageIndex, pageSize: CONFIG.pageSize || 100, sortOrder: "Desc",
-      withDetails: true, from: lastSyncAt ? lastSyncAt.toISOString() : undefined
-    });
-
-    const pageOrders = Array.isArray(result.data) ? result.data : [];
-    const pagination = result.pagination || {};
-    orders.push(...pageOrders);
-    totalPages = Math.max(1, Number(
-      pagination.totalPages || pagination.totalNumberOfPages ||
-      pagination.pageCount || 1
-    ));
-    if (pageOrders.length === 0) break;
-    pageIndex += 1;
-  } while (pageIndex <= totalPages && pageIndex <= MAX_PAGES);
-
-  return orders;
-}
-
-function getPayer(order) {
-  return order.payer || order.payerInfo || order.user || {};
-}
-
-function splitFullName(value) {
-  const parts = clean(value).split(/\s+/).filter(Boolean);
-  return parts.length < 2
-    ? { nom: parts[0] || "", prenom: "" }
-    : { nom: parts[0], prenom: parts.slice(1).join(" ") };
-}
-
-function normalizeIdentity(nomValue, prenomValue) {
-  const nom = clean(nomValue);
-  const prenom = clean(prenomValue);
-  if (nom && prenom && normalize(nom) === normalize(prenom)) return splitFullName(nom);
-  if (!nom && prenom) return splitFullName(prenom);
-  if (nom && !prenom) return splitFullName(nom);
-  return { nom, prenom };
+function clean(value) {
+  return String(value ?? "").trim();
 }
 
 function isMembership(item) {
   return normalize(item?.type) === "membership";
 }
 
-function buildCandidate(order, item, index) {
-  const payer = getPayer(order);
-  const user = item?.user || {};
-  const fields = item?.customFields || item?.fields || item?.answers || [];
+function totalPaidCents(item) {
+  const payments = Array.isArray(item?.payments)
+    ? item.payments
+    : [];
 
-  const identity = normalizeIdentity(
-    user.lastName || item?.lastName || item?.lastname || payer.lastName ||
-      customField(fields, ["nom"], ["parent","representant","email","urgence"]) || "",
-    user.firstName || item?.firstName || item?.firstname || payer.firstName ||
-      customField(fields, ["prenom"], ["parent","representant","email","urgence"]) ||
-      customField(fields, ["prénom"], ["parent","representant","email","urgence"]) || ""
+  return payments.reduce(
+    (total, payment) =>
+      total +
+      Number(
+        payment?.shareAmount ??
+        payment?.amount ??
+        0
+      ),
+    0
+  );
+}
+
+async function getAccessToken() {
+  const body = new URLSearchParams({
+    grant_type: "client_credentials",
+    client_id:
+      process.env.HELLOASSO_CLIENT_ID,
+    client_secret:
+      process.env.HELLOASSO_CLIENT_SECRET
+  });
+
+  const response = await fetch(
+    `${CONFIG.apiBase}/oauth2/token`,
+    {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type":
+          "application/x-www-form-urlencoded"
+      },
+      body,
+      signal:
+        AbortSignal.timeout(
+          REQUEST_TIMEOUT_MS
+        )
+    }
   );
 
-  const email = item?.email || customField(fields, ["email"]) || payer.email || "";
-  const birthDate = item?.birthDate || customField(fields, ["naissance"]) || "";
-  const telephone =
-    customField(fields, ["telephone","contact","urgence"]) ||
-    customField(fields, ["telephone","appeler","urgence"]) ||
-    customField(fields, ["numero","telephone"]) || payer.phone || "";
+  const data =
+    await response.json().catch(() => ({}));
 
-  const orderId = String(order.id ?? order.orderId ?? "");
-  const itemId = String(item?.id ?? `${orderId}-${index + 1}`);
-  const strictKey = [normalize(identity.nom), normalize(identity.prenom), normalize(birthDate)].join("-");
-  const fallbackKey = [normalize(identity.nom), normalize(identity.prenom), normalize(email)].join("-");
+  if (!response.ok || !data.access_token) {
+    throw new Error(
+      `OAuth HelloAsso refusé (${response.status}) : ` +
+      JSON.stringify(data)
+    );
+  }
 
-  return {
-    order, item, orderId, itemId,
-    nom: identity.nom, prenom: identity.prenom,
-    email, birthDate, telephone,
-    parent1: customField(fields, ["parent","1"], ["email"]) ||
-      customField(fields, ["representant","legal"], ["email"]) || "",
-    parent2: customField(fields, ["parent","2"], ["email"]) || "",
-    emailParent2: customField(fields, ["email","parent","2"]) || "",
-    group: item?.name || item?.tierName || item?.title || "",
-    identityKey: birthDate ? strictKey : fallbackKey
-  };
+  return data.access_token;
 }
 
-async function findExistingAdherent(candidate) {
-  const ref = db.collection(CONFIG.collections.adherents);
+async function apiGet(
+  path,
+  accessToken,
+  query = {}
+) {
+  const url =
+    new URL(`${CONFIG.apiBase}${path}`);
 
-  if (candidate.identityKey) {
-    const byIdentity = await ref.where("identityKey", "==", candidate.identityKey).limit(1).get();
-    if (!byIdentity.empty) return byIdentity.docs[0];
+  for (const [key, value] of
+    Object.entries(query)) {
+    if (
+      value !== undefined &&
+      value !== null &&
+      value !== ""
+    ) {
+      url.searchParams.set(
+        key,
+        String(value)
+      );
+    }
   }
 
-  if (candidate.birthDate) {
-    const legacyKey = [normalize(candidate.nom), normalize(candidate.prenom), normalize(candidate.birthDate)].join("-");
-    const byLegacy = await ref.where("cle", "==", legacyKey).limit(1).get();
-    if (!byLegacy.empty) return byLegacy.docs[0];
+  console.log(
+    `Appel HelloAsso : ` +
+    `${url.pathname}${url.search}`
+  );
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      accept: "application/json",
+      authorization:
+        `Bearer ${accessToken}`
+    },
+    signal:
+      AbortSignal.timeout(
+        REQUEST_TIMEOUT_MS
+      )
+  });
+
+  const data =
+    await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      `API HelloAsso refusée ` +
+      `(${response.status}) : ` +
+      JSON.stringify(data)
+    );
   }
 
-  if (candidate.email) {
-    const byEmail = await ref.where("email", "==", candidate.email).get();
-    const exact = byEmail.docs.find((docSnap) => {
-      const d = docSnap.data();
-      return normalize(d.nom) === normalize(candidate.nom) &&
-        normalize(d.prenom) === normalize(candidate.prenom);
-    });
-    if (exact) return exact;
-  }
-
-  return null;
+  return data;
 }
 
-async function upsertAdherent(candidate) {
-  const existing = await findExistingAdherent(candidate);
-  const current = existing?.data() || {};
-  const numeroAdherent = current.numeroAdherent || `HA-${candidate.itemId}`;
-  const numeroMembre = current.numeroMembre || readableNumber(candidate.prenom, candidate.identityKey);
+async function getLastSuccessfulSync() {
+  if (mode === "complete") {
+    return null;
+  }
 
-  const groupes = unique([
-    ...(Array.isArray(current.groupes) ? current.groupes : []),
-    current.groupe, candidate.group
-  ]).filter((value) => normalize(value) !== "fixed");
+  const snapshot = await db
+    .collection(
+      CONFIG.collections.syncStatus
+    )
+    .doc("helloasso")
+    .get();
 
-  const helloAssoItemIds = unique([
-    ...(Array.isArray(current.helloAssoItemIds) ? current.helloAssoItemIds : []),
-    current.helloAssoItemId, candidate.itemId
-  ]);
+  if (!snapshot.exists) {
+    return null;
+  }
 
-  const previousSource = current.sourceHelloAsso || {};
-  const profil = current.profil || {};
-  const modified = current.champsModifiesParMembre || {};
+  return (
+    snapshot
+      .data()
+      ?.lastSuccessAt
+      ?.toDate?.() ??
+    null
+  );
+}
 
-  const sourceHelloAsso = {
-    nom: candidate.nom || previousSource.nom || current.nom || "",
-    prenom: candidate.prenom || previousSource.prenom || current.prenom || "",
-    dateNaissance:
-      candidate.birthDate ||
-      previousSource.dateNaissance ||
-      current.dateNaissance ||
-      "",
-    email: candidate.email || previousSource.email || current.email || "",
-    emailParent1:
-      candidate.email ||
-      previousSource.emailParent1 ||
-      current.emailParent1 ||
-      current.email ||
-      "",
-    emailParent2:
-      candidate.emailParent2 ||
-      previousSource.emailParent2 ||
-      current.emailParent2 ||
-      "",
-    parent1:
-      candidate.parent1 ||
-      previousSource.parent1 ||
-      current.parent1 ||
-      "",
-    parent2:
-      candidate.parent2 ||
-      previousSource.parent2 ||
-      current.parent2 ||
-      "",
-    telephone:
-      candidate.telephone ||
-      previousSource.telephone ||
-      current.telephone ||
-      "",
-    telephoneUrgence:
-      candidate.telephone ||
-      previousSource.telephoneUrgence ||
-      current.telephoneUrgence ||
-      current.telephone ||
-      "",
-    groupe:
-      candidate.group ||
-      previousSource.groupe ||
-      current.groupe ||
-      "",
-    groupes,
-    helloAssoOrderId: candidate.orderId,
-    helloAssoItemId: candidate.itemId,
-    helloAssoItemIds,
-    synchroniseAt: FieldValue.serverTimestamp()
-  };
+async function fetchOrders(
+  accessToken,
+  lastSyncAt
+) {
+  const organizationSlug =
+    encodeURIComponent(
+      process.env
+        .HELLOASSO_ORGANIZATION_SLUG
+    );
 
-  function effectiveValue(field) {
-    if (modified[field] === true) {
-      return Object.prototype.hasOwnProperty.call(profil, field)
-        ? profil[field]
-        : current[field] ?? "";
+  const allOrders = [];
+
+  let pageIndex = 1;
+  let totalPages = 1;
+
+  do {
+    console.log(
+      `Lecture HelloAsso : ` +
+      `page ${pageIndex}/${totalPages}`
+    );
+
+    const result = await apiGet(
+      `/v5/organizations/` +
+      `${organizationSlug}/orders`,
+      accessToken,
+      {
+        pageIndex,
+        pageSize:
+          CONFIG.pageSize || 100,
+        sortOrder: "Desc",
+        withDetails: true,
+        from: lastSyncAt
+          ? lastSyncAt.toISOString()
+          : undefined
+      }
+    );
+
+    const pageOrders =
+      Array.isArray(result.data)
+        ? result.data
+        : [];
+
+    const pagination =
+      result.pagination || {};
+
+    allOrders.push(...pageOrders);
+
+    totalPages = Math.max(
+      1,
+      Number(
+        pagination.totalPages ||
+        pagination
+          .totalNumberOfPages ||
+        pagination.pageCount ||
+        1
+      )
+    );
+
+    console.log(
+      `Page ${pageIndex} reçue : ` +
+      `${pageOrders.length} commande(s)`
+    );
+
+    if (pageOrders.length === 0) {
+      break;
     }
 
-    return sourceHelloAsso[field] ?? current[field] ?? "";
+    pageIndex += 1;
+  } while (
+    pageIndex <= totalPages &&
+    pageIndex <= MAXIMUM_PAGES
+  );
+
+  if (pageIndex > MAXIMUM_PAGES) {
+    console.warn(
+      `Arrêt de sécurité après ` +
+      `${MAXIMUM_PAGES} pages.`
+    );
   }
 
-  const adherent = {
+  console.log(
+    `Total commandes récupérées : ` +
+    `${allOrders.length}`
+  );
+
+  return allOrders;
+}
+
+function getPayer(order) {
+  return (
+    order.payer ||
+    order.payerInfo ||
+    order.user ||
+    {}
+  );
+}
+
+function fieldAnswer(fields, groups) {
+  const list =
+    Array.isArray(fields)
+      ? fields
+      : [];
+
+  for (const words of groups) {
+    const expected =
+      words.map(normalize);
+
+    const found = list.find(item => {
+      const name =
+        normalize(item?.name || "");
+
+      return expected.every(word =>
+        name.includes(word)
+      );
+    });
+
+    const answer = found?.answer;
+
+    if (
+      answer !== undefined &&
+      answer !== null &&
+      clean(answer) !== ""
+    ) {
+      return answer;
+    }
+  }
+
+  return "";
+}
+
+function buildAdherent(
+  order,
+  item,
+  index
+) {
+  const payer = getPayer(order);
+  const itemUser = item?.user || {};
+
+  const fields =
+    item?.customFields ||
+    item?.fields ||
+    item?.answers ||
+    [];
+
+  /*
+   * Pour l'adhérent pratiquant :
+   * HelloAsso item.user est prioritaire.
+   * Le payeur ne sert qu'en dernier recours.
+   */
+  const nom =
+    itemUser.lastName ||
+    item?.lastName ||
+    item?.lastname ||
+    customField(
+      fields,
+      ["nom"],
+      [
+        "parent",
+        "representant",
+        "email",
+        "urgence"
+      ]
+    ) ||
+    payer.lastName ||
+    "";
+
+  const prenom =
+    itemUser.firstName ||
+    item?.firstName ||
+    item?.firstname ||
+    customField(
+      fields,
+      ["prenom"],
+      [
+        "parent",
+        "representant",
+        "email",
+        "urgence"
+      ]
+    ) ||
+    customField(
+      fields,
+      ["prénom"],
+      [
+        "parent",
+        "representant",
+        "email",
+        "urgence"
+      ]
+    ) ||
+    payer.firstName ||
+    "";
+
+  const email =
+    item?.email ||
+    itemUser.email ||
+    customField(fields, ["email"]) ||
+    payer.email ||
+    "";
+
+  const birthDate =
+    item?.birthDate ||
+    customField(
+      fields,
+      ["naissance"]
+    ) ||
+    "";
+
+  const group =
+    item?.name ||
+    item?.tierName ||
+    item?.title ||
+    "";
+
+  const telephone =
+    fieldAnswer(fields, [
+      [
+        "numero",
+        "telephone",
+        "contact",
+        "urgence"
+      ],
+      [
+        "numero",
+        "telephone",
+        "appeler",
+        "urgence"
+      ],
+      [
+        "telephone",
+        "contact",
+        "urgence"
+      ],
+      [
+        "telephone",
+        "urgence"
+      ]
+    ]) ||
+    payer.phone ||
+    "";
+
+  const parent1 =
+    fieldAnswer(fields, [
+      ["parent", "1"],
+      ["representant", "legal"],
+      ["representant"]
+    ]);
+
+  const parent2 =
+    fieldAnswer(
+      fields,
+      [["parent", "2"]]
+    );
+
+  const emailParent2 =
+    fieldAnswer(
+      fields,
+      [["email", "parent", "2"]]
+    );
+
+  const orderId =
+    order.id ?? order.orderId;
+
+  const itemId =
+    item?.id ??
+    `${orderId}-${index + 1}`;
+
+  const numeroAdherent =
+    `HA-${itemId}`;
+
+  return {
     numeroAdherent,
-    numeroMembre,
-    identityKey: candidate.identityKey,
     cle: [
-      normalize(effectiveValue("nom")),
-      normalize(effectiveValue("prenom")),
-      normalize(effectiveValue("dateNaissance"))
+      normalize(nom),
+      normalize(prenom),
+      normalize(birthDate)
     ].join("-"),
-
-    nom: effectiveValue("nom"),
-    prenom: effectiveValue("prenom"),
-    dateNaissance: effectiveValue("dateNaissance"),
-    email: effectiveValue("email"),
-    emailParent1: effectiveValue("emailParent1"),
-    emailParent2: effectiveValue("emailParent2"),
-    parent1: effectiveValue("parent1"),
-    parent2: effectiveValue("parent2"),
-    telephone: effectiveValue("telephone"),
-    telephoneUrgence: effectiveValue("telephoneUrgence"),
-
-    groupe: groupes[0] || sourceHelloAsso.groupe || current.groupe || "",
-    groupes,
-
-    sourceHelloAsso,
-    profil,
-    champsModifiesParMembre: modified,
-
+    nom: clean(nom),
+    prenom: clean(prenom),
+    dateNaissance:
+      clean(birthDate),
+    email: clean(email),
+    emailParent1:
+      clean(payer.email || email),
+    emailParent2:
+      clean(emailParent2),
+    parent1: clean(parent1),
+    parent2: clean(parent2),
+    telephone: clean(telephone),
+    telephoneUrgence:
+      clean(telephone),
+    groupe: clean(group),
     saison: season,
     actif: true,
-    cotisationAJour: true,
+
+    /*
+     * La synchronisation ne valide jamais
+     * elle-même une cotisation.
+     */
+    cotisationAJour: false,
+    statutCotisationTresorier:
+      "attente",
+
     source: "helloasso",
-    helloAssoOrderId: candidate.orderId,
-    helloAssoItemId: candidate.itemId,
-    helloAssoItemIds,
-    updatedAt: FieldValue.serverTimestamp()
+    helloAssoOrderId:
+      String(orderId ?? ""),
+    helloAssoItemId:
+      String(itemId),
+    updatedAt:
+      FieldValue.serverTimestamp()
   };
-
-  const adherentId = existing ? existing.id : firestoreId(numeroAdherent);
-  await db.collection(CONFIG.collections.adherents).doc(adherentId).set(adherent, { merge: true });
-
-  if (existing) stats.membershipsMerged += 1;
-  stats.adherentsWritten += 1;
-  return adherent;
 }
 
-async function upsertRegistration(candidate, adherent) {
-  const item = candidate.item;
-  const order = candidate.order;
-  const cents = item?.amount ?? item?.price ?? order?.amount?.total ?? order?.amount ?? 0;
-  const registrationId = firestoreId(`${adherent.numeroAdherent}-${season}-${candidate.itemId}`);
+function buildRegistration(
+  order,
+  item,
+  adherent
+) {
+  const initialCents =
+    item?.initialAmount ??
+    item?.amount ??
+    item?.price ??
+    order?.amount?.total ??
+    order?.amount ??
+    0;
 
-  await db.collection(CONFIG.collections.inscriptions).doc(registrationId).set({
+  const paidCents =
+    totalPaidCents(item);
+
+  return {
     saison: season,
-    numeroAdherent: adherent.numeroAdherent,
-    numeroMembre: adherent.numeroMembre,
-    groupe: candidate.group,
+    numeroAdherent:
+      adherent.numeroAdherent,
+    groupe:
+      adherent.groupe,
     source: "helloasso",
-    statutPaiement: "payé",
-    cotisationAJour: true,
-    montant: Number(cents || 0) / 100,
-    dateInscription: order.date || order.creationDate || new Date().toISOString(),
-    helloAssoOrderId: candidate.orderId,
-    helloAssoItemId: candidate.itemId,
-    donneesHelloAsso: item,
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
 
-  stats.registrationsWritten += 1;
+    /*
+     * Information HelloAsso seulement.
+     * Ce statut ne vaut pas validation
+     * du trésorier.
+     */
+    statutPaiementHelloAsso:
+      paidCents > 0
+        ? "payé"
+        : "non payé en ligne",
+
+    montant:
+      Number(initialCents || 0) / 100,
+
+    montantPayeHelloAsso:
+      Number(paidCents || 0) / 100,
+
+    cotisationAJour: false,
+    statutCotisationTresorier:
+      "attente",
+
+    dateInscription:
+      order.date ||
+      order.creationDate ||
+      new Date().toISOString(),
+
+    helloAssoOrderId:
+      adherent.helloAssoOrderId,
+
+    helloAssoItemId:
+      adherent.helloAssoItemId,
+
+    donneesHelloAsso: item,
+
+    updatedAt:
+      FieldValue.serverTimestamp()
+  };
 }
 
-async function upsertFamily(adherent) {
-  const email = normalize(adherent.emailParent1 || adherent.email);
-  if (!email || !email.includes("@")) return;
+function buildPendingUser(adherent) {
+  const email =
+    normalize(
+      adherent.emailParent1 ||
+      adherent.email
+    );
 
-  const familyId = firestoreId(email);
-  const familyRef = db.collection(FAMILIES).doc(familyId);
-  const snap = await familyRef.get();
-  const existing = Array.isArray(snap.data()?.membres) ? snap.data().membres : [];
+  if (
+    !email ||
+    !email.includes("@")
+  ) {
+    return null;
+  }
 
-  const member = {
-    numeroAdherent: adherent.numeroAdherent,
-    numeroMembre: adherent.numeroMembre,
+  return {
+    email,
     nom: adherent.nom,
     prenom: adherent.prenom,
-    groupes: adherent.groupes || []
+    role: "membre",
+    actif: true,
+    numeroAdherent:
+      adherent.numeroAdherent,
+    source: "helloasso",
+    clubId: CONFIG.clubId,
+    accesPages: {
+      accueil: {
+        lecture: true,
+        ecriture: false
+      },
+      "espace-membre": {
+        lecture: true,
+        ecriture: false
+      },
+      "planning-membre": {
+        lecture: true,
+        ecriture: false
+      },
+      notifications: {
+        lecture: true,
+        ecriture: false
+      },
+      absence: {
+        lecture: true,
+        ecriture: true
+      },
+      boutique: {
+        lecture: true,
+        ecriture: false
+      },
+      panier: {
+        lecture: true,
+        ecriture: true
+      },
+      commande: {
+        lecture: true,
+        ecriture: true
+      }
+    },
+    updatedAt:
+      FieldValue.serverTimestamp()
+  };
+}
+
+async function writeAdherent(
+  adherentId,
+  importedAdherent
+) {
+  const reference = db
+    .collection(
+      CONFIG.collections.adherents
+    )
+    .doc(adherentId);
+
+  const snapshot =
+    await reference.get();
+
+  const current =
+    snapshot.exists
+      ? snapshot.data()
+      : {};
+
+  /*
+   * Les validations du trésorier et les
+   * corrections du membre sont conservées.
+   */
+  const finalAdherent = {
+    ...importedAdherent,
+
+    cotisationAJour:
+      current.cotisationAJour === true,
+
+    statutCotisationTresorier:
+      current
+        .statutCotisationTresorier ||
+      "attente",
+
+    profil:
+      current.profil || {},
+
+    champsModifiesParMembre:
+      current
+        .champsModifiesParMembre ||
+      {},
+
+    sourceHelloAsso: {
+      nom:
+        importedAdherent.nom,
+      prenom:
+        importedAdherent.prenom,
+      dateNaissance:
+        importedAdherent
+          .dateNaissance,
+      email:
+        importedAdherent.email,
+      emailParent1:
+        importedAdherent
+          .emailParent1,
+      emailParent2:
+        importedAdherent
+          .emailParent2,
+      parent1:
+        importedAdherent.parent1,
+      parent2:
+        importedAdherent.parent2,
+      telephone:
+        importedAdherent.telephone,
+      telephoneUrgence:
+        importedAdherent
+          .telephoneUrgence,
+      groupe:
+        importedAdherent.groupe,
+      synchroniseAt:
+        FieldValue.serverTimestamp()
+    }
   };
 
-  const membres = [
-    ...existing.filter((m) => String(m.numeroAdherent) !== String(adherent.numeroAdherent)),
-    member
-  ].sort((a,b) => String(a.prenom || "").localeCompare(String(b.prenom || ""), "fr"));
+  const protectedFields = [
+    "nom",
+    "prenom",
+    "dateNaissance",
+    "email",
+    "emailParent1",
+    "emailParent2",
+    "parent1",
+    "parent2",
+    "telephone",
+    "telephoneUrgence"
+  ];
 
-  const numeroAdherents = unique(membres.map((m) => m.numeroAdherent));
+  for (const field of protectedFields) {
+    if (
+      current
+        ?.champsModifiesParMembre
+        ?.[field] === true
+    ) {
+      finalAdherent[field] =
+        Object.prototype
+          .hasOwnProperty.call(
+            current.profil || {},
+            field
+          )
+          ? current.profil[field]
+          : current[field] ?? "";
+    }
+  }
 
-  await familyRef.set({
-    email, clubId: CONFIG.clubId, numeroAdherents, membres,
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
+  await reference.set(
+    finalAdherent,
+    { merge: true }
+  );
+}
 
-  stats.familiesWritten += 1;
+async function writeRegistration(
+  registrationId,
+  importedRegistration
+) {
+  const reference = db
+    .collection(
+      CONFIG.collections.inscriptions
+    )
+    .doc(registrationId);
 
-  await db.collection(CONFIG.collections.pendingUsers).doc(email).set({
-    email, nom: adherent.nom, prenom: adherent.prenom,
-    role: "membre", actif: true,
-    numeroAdherent: numeroAdherents[0] || adherent.numeroAdherent,
-    numeroAdherents, membres, familyId,
-    source: "helloasso", clubId: CONFIG.clubId,
-    accesPages: {
-      accueil: { lecture: true, ecriture: false },
-      "espace-membre": { lecture: true, ecriture: false },
-      "planning-membre": { lecture: true, ecriture: false },
-      notifications: { lecture: true, ecriture: false },
-      absence: { lecture: true, ecriture: true },
-      boutique: { lecture: true, ecriture: false },
-      panier: { lecture: true, ecriture: true },
-      commande: { lecture: true, ecriture: true }
+  const snapshot =
+    await reference.get();
+
+  const current =
+    snapshot.exists
+      ? snapshot.data()
+      : {};
+
+  await reference.set(
+    {
+      ...importedRegistration,
+
+      /*
+       * Une synchro complète ne remplace
+       * jamais la validation du trésorier.
+       */
+      cotisationAJour:
+        current.cotisationAJour === true,
+
+      statutCotisationTresorier:
+        current
+          .statutCotisationTresorier ||
+        "attente"
     },
-    updatedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
-
-  stats.pendingUsersWritten += 1;
+    { merge: true }
+  );
 }
 
 async function writeOrder(order) {
-  const orderId = firestoreId(order.id ?? order.orderId);
-  if (!orderId) { stats.skipped += 1; return; }
+  const orderId = firestoreId(
+    order.id ?? order.orderId
+  );
 
-  await db.collection(CONFIG.collections.orders).doc(orderId).set({
-    ...order, source: "helloasso",
-    organizationSlug: process.env.HELLOASSO_ORGANIZATION_SLUG,
-    syncedAt: FieldValue.serverTimestamp()
-  }, { merge: true });
+  if (!orderId) {
+    stats.skipped += 1;
+    return;
+  }
+
+  await db
+    .collection(
+      CONFIG.collections.orders
+    )
+    .doc(orderId)
+    .set(
+      {
+        ...order,
+        source: "helloasso",
+        organizationSlug:
+          process.env
+            .HELLOASSO_ORGANIZATION_SLUG,
+        syncedAt:
+          FieldValue.serverTimestamp()
+      },
+      { merge: true }
+    );
+
   stats.ordersWritten += 1;
 
-  for (const payment of order.payments || []) {
-    const paymentId = firestoreId(payment.id ?? `${orderId}-${payment.date || stats.paymentsWritten}`);
-    if (!paymentId) continue;
-    await db.collection(CONFIG.collections.payments).doc(paymentId).set({
-      ...payment,
-      helloAssoOrderId: String(order.id ?? order.orderId ?? ""),
-      source: "helloasso",
-      syncedAt: FieldValue.serverTimestamp()
-    }, { merge: true });
+  for (
+    const payment of
+    order.payments || []
+  ) {
+    const paymentId = firestoreId(
+      payment.id ??
+      `${orderId}-` +
+      `${payment.date || stats.paymentsWritten}`
+    );
+
+    if (!paymentId) {
+      continue;
+    }
+
+    await db
+      .collection(
+        CONFIG.collections.payments
+      )
+      .doc(paymentId)
+      .set(
+        {
+          ...payment,
+          helloAssoOrderId:
+            String(
+              order.id ??
+              order.orderId ??
+              ""
+            ),
+          source: "helloasso",
+          syncedAt:
+            FieldValue.serverTimestamp()
+        },
+        { merge: true }
+      );
+
     stats.paymentsWritten += 1;
   }
 
-  const rawItems = Array.isArray(order.items) ? order.items : [];
-  const memberships = rawItems.filter(isMembership);
-  stats.productsIgnored += rawItems.length - memberships.length;
+  const rawItems =
+    Array.isArray(order.items)
+      ? order.items
+      : [];
 
-  for (let index = 0; index < memberships.length; index += 1) {
-    const candidate = buildCandidate(order, memberships[index], index);
-    if (!candidate.nom && !candidate.prenom && !candidate.email) {
+  /*
+   * Seules les adhésions créent des
+   * adhérents et des inscriptions.
+   * Product, Donation, Payment, etc.
+   * restent dans les commandes/paiements.
+   */
+  const memberships =
+    rawItems.filter(isMembership);
+
+  stats.productsIgnored +=
+    rawItems.length -
+    memberships.length;
+
+  if (memberships.length === 0) {
+    return;
+  }
+
+  for (
+    let index = 0;
+    index < memberships.length;
+    index += 1
+  ) {
+    const item =
+      memberships[index];
+
+    const adherent =
+      buildAdherent(
+        order,
+        item,
+        index
+      );
+
+    if (
+      !adherent.nom &&
+      !adherent.prenom &&
+      !adherent.emailParent1
+    ) {
       stats.skipped += 1;
       continue;
     }
-    const adherent = await upsertAdherent(candidate);
-    await upsertRegistration(candidate, adherent);
-    await upsertFamily(adherent);
+
+    const adherentId =
+      firestoreId(
+        adherent.numeroAdherent
+      );
+
+    /*
+     * L'item HelloAsso fait partie de l'ID :
+     * une seconde licence reste une
+     * inscription distincte.
+     */
+    const registrationId =
+      firestoreId(
+        `${adherent.numeroAdherent}-` +
+        `${season}-` +
+        `${adherent.helloAssoItemId}`
+      );
+
+    await writeAdherent(
+      adherentId,
+      adherent
+    );
+
+    stats.adherentsWritten += 1;
+
+    await writeRegistration(
+      registrationId,
+      buildRegistration(
+        order,
+        item,
+        adherent
+      )
+    );
+
+    stats.registrationsWritten += 1;
+
+    const pending =
+      buildPendingUser(adherent);
+
+    if (pending) {
+      await db
+        .collection(
+          CONFIG.collections.pendingUsers
+        )
+        .doc(pending.email)
+        .set(
+          pending,
+          { merge: true }
+        );
+
+      stats.pendingUsersWritten += 1;
+    }
   }
 }
 
-async function writeStatus(status, extra = {}) {
-  await db.collection(CONFIG.collections.syncStatus).doc("helloasso").set({
-    status, mode, season,
-    organizationSlug: process.env.HELLOASSO_ORGANIZATION_SLUG,
-    finishedAt: FieldValue.serverTimestamp(),
-    stats, ...extra
-  }, { merge: true });
+async function writeStatus(
+  status,
+  extra = {}
+) {
+  await db
+    .collection(
+      CONFIG.collections.syncStatus
+    )
+    .doc("helloasso")
+    .set(
+      {
+        status,
+        mode,
+        season,
+        organizationSlug:
+          process.env
+            .HELLOASSO_ORGANIZATION_SLUG,
+        finishedAt:
+          FieldValue.serverTimestamp(),
+        stats,
+        ...extra
+      },
+      { merge: true }
+    );
 }
 
 async function main() {
   try {
-    await db.collection(CONFIG.collections.syncStatus).doc("helloasso").set({
-      status: "running", mode, season, startedAt: FieldValue.serverTimestamp()
-    }, { merge: true });
+    console.log(
+      "Début synchronisation HelloAsso",
+      { mode, season }
+    );
 
-    const token = await getAccessToken();
-    const lastSyncAt = await getLastSuccessfulSync();
-    const orders = await fetchOrders(token, lastSyncAt);
-    stats.ordersRead = orders.length;
+    await db
+      .collection(
+        CONFIG.collections.syncStatus
+      )
+      .doc("helloasso")
+      .set(
+        {
+          status: "running",
+          mode,
+          season,
+          startedAt:
+            FieldValue.serverTimestamp()
+        },
+        { merge: true }
+      );
+
+    const accessToken =
+      await getAccessToken();
+
+    console.log(
+      "Authentification HelloAsso réussie"
+    );
+
+    const lastSyncAt =
+      await getLastSuccessfulSync();
+
+    if (lastSyncAt) {
+      console.log(
+        `Synchronisation incrémentale ` +
+        `depuis ` +
+        `${lastSyncAt.toISOString()}`
+      );
+    } else {
+      console.log(
+        "Synchronisation complète " +
+        "ou première exécution"
+      );
+    }
+
+    const orders =
+      await fetchOrders(
+        accessToken,
+        lastSyncAt
+      );
+
+    stats.ordersRead =
+      orders.length;
 
     for (const order of orders) {
-      try { await writeOrder(order); }
-      catch (error) {
+      try {
+        await writeOrder(order);
+      } catch (error) {
         stats.errors += 1;
-        console.error("Erreur commande", order?.id ?? order?.orderId, safeMessage(error));
+
+        console.error(
+          "Erreur commande",
+          order?.id ??
+          order?.orderId,
+          safeMessage(error)
+        );
       }
     }
 
-    await writeStatus("success", { lastSuccessAt: FieldValue.serverTimestamp() });
-    console.log("Synchronisation terminee", stats);
-    if (stats.errors > 0) process.exitCode = 2;
+    await writeStatus(
+      "success",
+      {
+        lastSuccessAt:
+          FieldValue.serverTimestamp()
+      }
+    );
+
+    console.log(
+      "Synchronisation terminée",
+      stats
+    );
+
+    if (stats.errors > 0) {
+      process.exitCode = 2;
+    }
   } catch (error) {
     stats.errors += 1;
-    console.error("Synchronisation interrompue", safeMessage(error));
-    await writeStatus("error", { errorMessage: safeMessage(error) }).catch(() => {});
+
+    console.error(
+      "Synchronisation interrompue",
+      safeMessage(error)
+    );
+
+    await writeStatus(
+      "error",
+      {
+        errorMessage:
+          safeMessage(error)
+      }
+    ).catch(statusError => {
+      console.error(
+        "Impossible d'enregistrer " +
+        "l'état d'erreur",
+        safeMessage(statusError)
+      );
+    });
+
     process.exitCode = 1;
   }
 }

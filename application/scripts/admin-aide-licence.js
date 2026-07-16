@@ -90,6 +90,11 @@ function montantInitial(inscription) {
 
 function montantHelloAsso(inscription) {
   const d = inscription?.donneesHelloAsso || {};
+  const totalPaiements = Array.isArray(d.payments)
+    ? d.payments.reduce((total, paiement) =>
+        total + n(paiement.shareAmount ?? paiement.amount ?? 0), 0)
+    : 0;
+  if (totalPaiements > 0) return arr(totalPaiements / 100);
   if (d.amount !== undefined) return arr(n(d.amount) / 100);
   return arr(n(inscription?.montant));
 }
@@ -104,7 +109,23 @@ function dossier(adherent) {
   const ins = derniereInscription(adherent);
   const saved = dossierSauve(adherent);
   const red = reduction(ins);
-  const reglements = Array.isArray(saved.reglements) ? saved.reglements : [];
+  const montantCBImporte = montantHelloAsso(ins);
+  let reglements = Array.isArray(saved.reglements) ? [...saved.reglements] : [];
+  const paiementHelloAssoExistant = reglements.some(reglement =>
+    reglement.source === "helloasso" || reglement.mode === "cb-helloasso"
+  );
+  if (montantCBImporte > 0 && !paiementHelloAssoExistant) {
+    reglements.unshift({
+      id: `helloasso-${ins?.helloAssoItemId || adherent.numeroAdherent}`,
+      source: "helloasso",
+      verrouille: true,
+      mode: "cb-helloasso",
+      montant: montantCBImporte,
+      date: ins?.dateInscription ? String(ins.dateInscription).slice(0, 10) : "",
+      reference: ins?.helloAssoOrderId || ins?.donneesHelloAsso?.payments?.[0]?.id || "",
+      commentaire: "Paiement importé automatiquement depuis HelloAsso"
+    });
+  }
   const attendu = arr(n(saved.montantAttendu || montantInitial(ins)));
   const total = arr(reglements.reduce((s, r) => s + n(r.montant), 0));
   const reste = Math.max(0, arr(attendu - total));
@@ -210,19 +231,24 @@ function afficherStats() {
 
 function paymentRow(r = {}, index = 0) {
   const modes = Object.keys(labelsMode);
+  const verrouille = r.source === "helloasso" || r.verrouille === true;
+  const disabled = verrouille ? "disabled" : "";
   return `
-    <div class="treasury-payment-row">
-      <select class="admin-select" data-p="mode">
+    <div class="treasury-payment-row ${verrouille ? "treasury-payment-imported" : ""}"
+         data-payment-source="${r.source || "manuel"}">
+      <select class="admin-select" data-p="mode" ${disabled}>
         ${modes.map(m => `<option value="${m}" ${r.mode === m ? "selected" : ""}>${labelsMode[m]}</option>`).join("")}
       </select>
       <input class="form-input" data-p="montant" type="number" min="0" step="0.01"
-             value="${r.montant || ""}" placeholder="Montant">
-      <input class="form-input" data-p="date" type="date" value="${r.date || ""}">
+             value="${r.montant || ""}" placeholder="Montant" ${disabled}>
+      <input class="form-input" data-p="date" type="date" value="${r.date || ""}" ${disabled}>
       <input class="form-input" data-p="reference" value="${r.reference || ""}"
-             placeholder="N° chèque / référence">
+             placeholder="N° chèque / référence" ${disabled}>
       <input class="form-input" data-p="commentaire" value="${r.commentaire || ""}"
-             placeholder="Note">
-      <button type="button" class="treasury-remove-payment">×</button>
+             placeholder="Note" ${disabled}>
+      ${verrouille
+        ? `<span class="treasury-imported-badge">Import HelloAsso</span>`
+        : `<button type="button" class="treasury-remove-payment">×</button>`}
     </div>`;
 }
 
@@ -362,8 +388,11 @@ function lireCarte(carte) {
 
   d.reglements = [...carte.querySelectorAll(".treasury-payment-row")].map((row, i) => {
     const val = k => row.querySelector(`[data-p="${k}"]`)?.value || "";
+    const source = row.dataset.paymentSource || "manuel";
     return {
-      id: `${Date.now()}-${i}`,
+      id: source === "helloasso" ? `helloasso-${d.numeroAdherent}` : `${Date.now()}-${i}`,
+      source,
+      verrouille: source === "helloasso",
       mode: val("mode"),
       montant: n(val("montant")),
       date: val("date"),
