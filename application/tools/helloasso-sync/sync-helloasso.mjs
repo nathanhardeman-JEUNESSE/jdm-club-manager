@@ -213,23 +213,108 @@ async function upsertAdherent(candidate) {
     current.helloAssoItemId, candidate.itemId
   ]);
 
+  const previousSource = current.sourceHelloAsso || {};
+  const profil = current.profil || {};
+  const modified = current.champsModifiesParMembre || {};
+
+  const sourceHelloAsso = {
+    nom: candidate.nom || previousSource.nom || current.nom || "",
+    prenom: candidate.prenom || previousSource.prenom || current.prenom || "",
+    dateNaissance:
+      candidate.birthDate ||
+      previousSource.dateNaissance ||
+      current.dateNaissance ||
+      "",
+    email: candidate.email || previousSource.email || current.email || "",
+    emailParent1:
+      candidate.email ||
+      previousSource.emailParent1 ||
+      current.emailParent1 ||
+      current.email ||
+      "",
+    emailParent2:
+      candidate.emailParent2 ||
+      previousSource.emailParent2 ||
+      current.emailParent2 ||
+      "",
+    parent1:
+      candidate.parent1 ||
+      previousSource.parent1 ||
+      current.parent1 ||
+      "",
+    parent2:
+      candidate.parent2 ||
+      previousSource.parent2 ||
+      current.parent2 ||
+      "",
+    telephone:
+      candidate.telephone ||
+      previousSource.telephone ||
+      current.telephone ||
+      "",
+    telephoneUrgence:
+      candidate.telephone ||
+      previousSource.telephoneUrgence ||
+      current.telephoneUrgence ||
+      current.telephone ||
+      "",
+    groupe:
+      candidate.group ||
+      previousSource.groupe ||
+      current.groupe ||
+      "",
+    groupes,
+    helloAssoOrderId: candidate.orderId,
+    helloAssoItemId: candidate.itemId,
+    helloAssoItemIds,
+    synchroniseAt: FieldValue.serverTimestamp()
+  };
+
+  function effectiveValue(field) {
+    if (modified[field] === true) {
+      return Object.prototype.hasOwnProperty.call(profil, field)
+        ? profil[field]
+        : current[field] ?? "";
+    }
+
+    return sourceHelloAsso[field] ?? current[field] ?? "";
+  }
+
   const adherent = {
-    numeroAdherent, numeroMembre, identityKey: candidate.identityKey,
-    cle: [normalize(candidate.nom), normalize(candidate.prenom), normalize(candidate.birthDate)].join("-"),
-    nom: candidate.nom || current.nom || "",
-    prenom: candidate.prenom || current.prenom || "",
-    dateNaissance: candidate.birthDate || current.dateNaissance || "",
-    email: candidate.email || current.email || "",
-    emailParent1: candidate.email || current.emailParent1 || current.email || "",
-    emailParent2: candidate.emailParent2 || current.emailParent2 || "",
-    parent1: candidate.parent1 || current.parent1 || "",
-    parent2: candidate.parent2 || current.parent2 || "",
-    telephone: candidate.telephone || current.telephone || "",
-    telephoneUrgence: candidate.telephone || current.telephoneUrgence || current.telephone || "",
-    groupe: groupes[0] || candidate.group || current.groupe || "",
-    groupes, saison: season, actif: true, cotisationAJour: true,
-    source: "helloasso", helloAssoOrderId: candidate.orderId,
-    helloAssoItemId: candidate.itemId, helloAssoItemIds,
+    numeroAdherent,
+    numeroMembre,
+    identityKey: candidate.identityKey,
+    cle: [
+      normalize(effectiveValue("nom")),
+      normalize(effectiveValue("prenom")),
+      normalize(effectiveValue("dateNaissance"))
+    ].join("-"),
+
+    nom: effectiveValue("nom"),
+    prenom: effectiveValue("prenom"),
+    dateNaissance: effectiveValue("dateNaissance"),
+    email: effectiveValue("email"),
+    emailParent1: effectiveValue("emailParent1"),
+    emailParent2: effectiveValue("emailParent2"),
+    parent1: effectiveValue("parent1"),
+    parent2: effectiveValue("parent2"),
+    telephone: effectiveValue("telephone"),
+    telephoneUrgence: effectiveValue("telephoneUrgence"),
+
+    groupe: groupes[0] || sourceHelloAsso.groupe || current.groupe || "",
+    groupes,
+
+    sourceHelloAsso,
+    profil,
+    champsModifiesParMembre: modified,
+
+    saison: season,
+    actif: true,
+    cotisationAJour: true,
+    source: "helloasso",
+    helloAssoOrderId: candidate.orderId,
+    helloAssoItemId: candidate.itemId,
+    helloAssoItemIds,
     updatedAt: FieldValue.serverTimestamp()
   };
 
