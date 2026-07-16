@@ -3,18 +3,22 @@ import {
   listInscriptions,
   listTresorerieCotisations,
   saveTresorerieCotisation,
-  updateCotisationStatus
+  updateCotisationStatus,
+  listHelloAssoDonations,
+  updateHelloAssoDonation
 } from "../firebase/firebase-db.js";
 
 let adherents = [];
 let inscriptions = [];
 let dossiersSauves = [];
+let donsHelloAsso = [];
 
 const $ = id => document.getElementById(id);
 const zoneStats = $("stats-cotisations");
 const zoneListe = $("liste-aide-licence");
 const zoneAlertes = $("liste-alertes-cotisations");
 const zoneResume = $("resume-liste-tresorerie");
+const zoneDons = $("liste-dons-helloasso");
 const recherche = $("recherche-aide");
 const filtreStatut = $("filtre-aide-statut");
 const filtreMode = $("filtre-mode-paiement");
@@ -210,6 +214,178 @@ function dossiersFiltres() {
   return adherents.map(dossier).filter(visible).sort((a, b) =>
     `${a.nom} ${a.prenom}`.localeCompare(`${b.nom} ${b.prenom}`, "fr", { sensitivity: "base" })
   );
+}
+
+
+function afficherDons() {
+  if (!zoneDons) return;
+
+  const dons = donsHelloAsso
+    .slice()
+    .sort((a, b) =>
+      String(b.dateDon || "")
+        .localeCompare(
+          String(a.dateDon || "")
+        )
+    );
+
+  if (dons.length === 0) {
+    zoneDons.innerHTML = `
+      <section class="card">
+        <p>Aucun don importé.</p>
+      </section>
+    `;
+    return;
+  }
+
+  const totalDons = arr(
+    dons.reduce(
+      (total, don) =>
+        total + n(
+          don.montantPaye ??
+          don.montantDeclare
+        ),
+      0
+    )
+  );
+
+  zoneDons.innerHTML = `
+    <section class="card treasury-donation-summary">
+      <strong>${dons.length} don${dons.length > 1 ? "s" : ""}</strong>
+      <span>Total encaissé : ${euros(totalDons)}</span>
+    </section>
+
+    ${dons.map(don => `
+      <article
+        class="card treasury-donation-card"
+        data-donation-id="${don.id}">
+
+        <div>
+          <h3>
+            🎁 ${don.prenom || ""}
+            ${don.nom || "Donateur"}
+          </h3>
+
+          <p>
+            <strong>Montant :</strong>
+            ${euros(
+              don.montantPaye ??
+              don.montantDeclare
+            )}
+          </p>
+
+          <p>
+            <strong>Date :</strong>
+            ${don.dateDon
+              ? new Date(
+                  don.dateDon
+                ).toLocaleDateString("fr-FR")
+              : "Non renseignée"}
+          </p>
+
+          <p>
+            <strong>Email :</strong>
+            ${don.email || "Non renseigné"}
+          </p>
+        </div>
+
+        <div class="treasury-donation-actions">
+          <label class="treasury-checkbox">
+            <input
+              type="checkbox"
+              data-donation-field="recuDemande"
+              ${don.recuDemande ? "checked" : ""}>
+            Reçu demandé
+          </label>
+
+          <label class="treasury-checkbox">
+            <input
+              type="checkbox"
+              data-donation-field="recuRemis"
+              ${don.recuRemis ? "checked" : ""}>
+            Reçu remis
+          </label>
+
+          <textarea
+            class="form-input"
+            data-donation-field="commentaireTresorier"
+            rows="2"
+            placeholder="Commentaire">${don.commentaireTresorier || ""}</textarea>
+
+          <button
+            type="button"
+            class="primary-button treasury-save-donation">
+            Enregistrer
+          </button>
+        </div>
+      </article>
+    `).join("")}
+  `;
+
+  zoneDons
+    .querySelectorAll(
+      ".treasury-save-donation"
+    )
+    .forEach(button => {
+      button.onclick = async () => {
+        const card = button.closest(
+          "[data-donation-id]"
+        );
+
+        const id =
+          card.dataset.donationId;
+
+        const data = {
+          recuDemande:
+            card.querySelector(
+              '[data-donation-field="recuDemande"]'
+            ).checked,
+
+          recuRemis:
+            card.querySelector(
+              '[data-donation-field="recuRemis"]'
+            ).checked,
+
+          commentaireTresorier:
+            card.querySelector(
+              '[data-donation-field="commentaireTresorier"]'
+            ).value.trim()
+        };
+
+        button.disabled = true;
+        button.textContent =
+          "Enregistrement...";
+
+        try {
+          await updateHelloAssoDonation(
+            id,
+            data
+          );
+
+          const index =
+            donsHelloAsso.findIndex(
+              don => don.id === id
+            );
+
+          if (index >= 0) {
+            donsHelloAsso[index] = {
+              ...donsHelloAsso[index],
+              ...data
+            };
+          }
+
+          afficherDons();
+        } catch (error) {
+          console.error(error);
+          alert(
+            "Impossible d'enregistrer le suivi du don."
+          );
+          button.disabled = false;
+          button.textContent =
+            "Enregistrer";
+        }
+      };
+    });
 }
 
 function afficherStats() {
@@ -497,12 +673,20 @@ $("exporter-alertes").onclick = () =>
 async function init() {
   zoneListe.innerHTML = `<section class="card"><p>Chargement...</p></section>`;
   try {
-    [adherents, inscriptions, dossiersSauves] = await Promise.all([
+    [
+      adherents,
+      inscriptions,
+      dossiersSauves,
+      donsHelloAsso
+    ] = await Promise.all([
       listAdherents(),
       listInscriptions(),
-      listTresorerieCotisations()
+      listTresorerieCotisations(),
+      listHelloAssoDonations()
     ]);
+
     afficherStats();
+    afficherDons();
     afficherListes();
   } catch (error) {
     console.error(error);
