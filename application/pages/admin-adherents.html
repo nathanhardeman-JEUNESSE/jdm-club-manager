@@ -7,6 +7,7 @@
 
     <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/global-header.css">
 </head>
 <body>
 
@@ -19,20 +20,86 @@
 
     <section class="card">
         <h2>👥 Base adhérents</h2>
-
         <p>
-            Cette liste regroupe tous les adhérents enregistrés dans JDM Club Manager.
+            Recherchez un adhérent, filtrez les dossiers
+            et consultez les familles et groupes associés.
         </p>
     </section>
 
+    <section class="card admin-adherents-filters">
+
+        <label class="admin-filter-field admin-filter-search">
+            Recherche
+            <input
+                id="recherche-adherent"
+                class="form-input"
+                type="search"
+                placeholder="Nom, prénom, numéro, email..."
+                autocomplete="off">
+        </label>
+
+        <label class="admin-filter-field">
+            Groupe
+            <select id="filtre-groupe" class="admin-select">
+                <option value="">Tous les groupes</option>
+            </select>
+        </label>
+
+        <label class="admin-filter-field">
+            Dossier
+            <select id="filtre-dossier" class="admin-select">
+                <option value="">Tous les dossiers</option>
+                <option value="complet">Complets</option>
+                <option value="incomplet">Incomplets</option>
+            </select>
+        </label>
+
+        <label class="admin-filter-field">
+            Cotisation
+            <select id="filtre-cotisation" class="admin-select">
+                <option value="">Toutes</option>
+                <option value="ok">À jour</option>
+                <option value="retard">En attente</option>
+            </select>
+        </label>
+
+        <label class="admin-filter-field">
+            Affichage
+            <select id="filtre-affichage" class="admin-select">
+                <option value="adherents">Par adhérent</option>
+                <option value="familles">Par famille</option>
+            </select>
+        </label>
+
+        <button
+            id="reinitialiser-filtres"
+            class="secondary-button admin-reset-button"
+            type="button">
+            Réinitialiser
+        </button>
+
+    </section>
+
     <section id="stats-dossiers-adherents"></section>
+
+    <section
+        id="resume-resultats-adherents"
+        class="admin-adherents-result-count">
+    </section>
 
     <section id="liste-adherents"></section>
 
 </main>
 
-<script type="module" src="../scripts/auth-guard.js" data-roles="admin,super_admin" data-page="admin-adherents"></script>
+<script
+    type="module"
+    src="../scripts/auth-guard.js"
+    data-roles="admin,super_admin"
+    data-page="admin-adherents">
+</script>
+
 <script type="module" src="../scripts/admin-adherents.js"></script>
+<script type="module" src="../scripts/global-header.js"></script>
 
 </body>
 </html>

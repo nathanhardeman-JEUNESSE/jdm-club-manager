@@ -2258,3 +2258,207 @@ overflow: hidden;
         filter: none;
     }
 }
+
+/* ================================================= */
+/* ADMIN ADHERENTS V2                                */
+/* ================================================= */
+
+.admin-adherents-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 20px;
+}
+
+.admin-filter-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-weight: 700;
+}
+
+.admin-filter-field .form-input,
+.admin-filter-field .admin-select {
+    margin-top: 0;
+}
+
+.admin-filter-search {
+    grid-column: 1 / -1;
+}
+
+.admin-reset-button {
+    align-self: end;
+    margin-top: 0;
+}
+
+.admin-adherents-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.admin-adherents-stats > div {
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.06);
+}
+
+.admin-adherents-stats strong,
+.admin-adherents-stats span {
+    display: block;
+}
+
+.admin-adherents-stats strong {
+    font-size: 24px;
+}
+
+.admin-adherents-stats span {
+    margin-top: 4px;
+    color: var(--light-grey);
+    font-size: 13px;
+}
+
+.admin-stat-success {
+    border-left: 5px solid #2f8f46;
+}
+
+.admin-stat-danger {
+    border-left: 5px solid #e63946;
+}
+
+.admin-stat-info {
+    border-left: 5px solid var(--jdm-blue);
+}
+
+.admin-adherents-result-count {
+    margin: 18px 2px 8px;
+    color: var(--light-grey);
+    font-weight: 700;
+}
+
+.admin-adherent-card {
+    margin-top: 14px;
+}
+
+.admin-adherent-card-header,
+.admin-family-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.admin-adherent-card-header h2,
+.admin-family-header h2 {
+    margin: 0 0 5px;
+}
+
+.admin-adherent-number,
+.admin-family-header p {
+    margin: 0;
+    color: var(--light-grey);
+}
+
+.admin-adherent-statuses {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 7px;
+}
+
+.admin-mini-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #333;
+}
+
+.admin-mini-badge-success {
+    background: rgba(47, 143, 70, 0.18);
+    color: #73d488;
+}
+
+.admin-mini-badge-danger {
+    background: rgba(230, 57, 70, 0.18);
+    color: #ff7d87;
+}
+
+.admin-mini-badge-warning {
+    background: rgba(255, 152, 0, 0.18);
+    color: #ffbe5c;
+}
+
+.admin-mini-badge-info {
+    background: rgba(0, 87, 255, 0.18);
+    color: #7da7ff;
+}
+
+.admin-adherent-meta {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 16px 0 10px;
+}
+
+.admin-adherent-meta p {
+    margin: 0;
+    color: var(--light-grey);
+}
+
+.admin-adherent-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin: 12px 0;
+}
+
+.admin-empty-value {
+    color: var(--light-grey);
+}
+
+.admin-adherent-missing {
+    margin: 12px 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: rgba(230, 57, 70, 0.12);
+    border-left: 5px solid #e63946;
+}
+
+.admin-family-card {
+    margin-top: 16px;
+    border-left: 6px solid var(--jdm-blue);
+}
+
+.admin-family-members {
+    margin-top: 14px;
+}
+
+.admin-family-members .admin-adherent-card {
+    background: rgba(255,255,255,0.045);
+    box-shadow: none;
+}
+
+@media screen and (max-width: 760px) {
+    .admin-adherents-filters,
+    .admin-adherents-stats,
+    .admin-adherent-meta {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-filter-search {
+        grid-column: auto;
+    }
+
+    .admin-adherent-card-header,
+    .admin-family-header {
+        flex-direction: column;
+    }
+
+    .admin-adherent-statuses {
+        justify-content: flex-start;
+    }
+}
