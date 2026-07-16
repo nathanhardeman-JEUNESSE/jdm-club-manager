@@ -1,6 +1,7 @@
 import {
     listAdherents,
-    listInscriptions
+    listInscriptions,
+    listTresorerieCotisations
 } from "../firebase/firebase-db.js";
 
 import {
@@ -10,6 +11,7 @@ import {
 
 let adherents = [];
 let inscriptions = [];
+let dossiersTresorerie = [];
 
 const aidesLicence =
     JSON.parse(localStorage.getItem("aidesLicenceLommeJDM")) || [];
@@ -93,19 +95,12 @@ function dossierAdministratif(adherent) {
 }
 
 function cotisationAJour(adherent) {
-    const inscriptionsAdherent = inscriptionsPour(
-        adherent.numeroAdherent
+    const dossier = dossiersTresorerie.find(item =>
+        String(item.numeroAdherent) ===
+        String(adherent.numeroAdherent)
     );
 
-    if (inscriptionsAdherent.length > 0) {
-        return inscriptionsAdherent.some(item =>
-            item.cotisationAJour === true ||
-            nettoyer(item.statutPaiement) === "paye" ||
-            nettoyer(item.statutPaiement) === "payé"
-        );
-    }
-
-    return adherent.cotisationAJour === true;
+    return dossier?.statut === "regle";
 }
 
 function numeroAffiche(adherent) {
@@ -523,9 +518,14 @@ async function initialiserAdherents() {
     }
 
     try {
-        [adherents, inscriptions] = await Promise.all([
+        [
+            adherents,
+            inscriptions,
+            dossiersTresorerie
+        ] = await Promise.all([
             listAdherents(),
-            listInscriptions()
+            listInscriptions(),
+            listTresorerieCotisations()
         ]);
 
         remplirFiltreGroupes();

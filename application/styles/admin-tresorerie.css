@@ -1,0 +1,192 @@
+/* ================================================= */
+/* TRÉSORERIE & COTISATIONS                         */
+/* ================================================= */
+
+.tresorerie-page { max-width: 1180px; }
+
+.treasury-hero {
+  display:flex; align-items:center; justify-content:space-between; gap:22px;
+  border-left:7px solid var(--jdm-blue);
+  background:linear-gradient(135deg,rgba(0,87,255,.16),transparent 55%),var(--card);
+}
+.treasury-hero h2 { margin:4px 0 8px; font-size:30px; }
+.treasury-kicker {
+  margin:0; color:#7da7ff; font-weight:800; text-transform:uppercase;
+  letter-spacing:2px; font-size:12px;
+}
+.treasury-export-button {
+  flex-shrink:0; border:0; border-radius:14px; padding:14px 18px;
+  background:#1f8f4d; color:#fff; font-weight:800; font-size:15px; cursor:pointer;
+}
+
+.treasury-stats {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:12px; margin:20px 0;
+}
+.treasury-stat {
+  min-height:94px; padding:16px; border-radius:16px; background:var(--card);
+  color:#fff; box-shadow:var(--shadow); border-left:7px solid #777;
+}
+.treasury-stat span,.treasury-stat strong { display:block; }
+.treasury-stat span {
+  color:var(--light-grey); font-size:13px; font-weight:700;
+  text-transform:uppercase; letter-spacing:1px;
+}
+.treasury-stat strong { margin-top:8px; font-size:25px; }
+.treasury-stat-blue { border-left-color:#3878ff; }
+.treasury-stat-green { border-left-color:#2f9f57; }
+.treasury-stat-red { border-left-color:#e63946; }
+.treasury-stat-orange { border-left-color:#ff9800; }
+.treasury-stat-neutral { border-left-color:#a6a6a6; }
+
+.treasury-filters {
+  display:grid; grid-template-columns:2fr 1fr 1fr 1fr;
+  gap:12px; align-items:end;
+}
+.treasury-filters label {
+  display:flex; flex-direction:column; gap:7px; font-weight:800;
+}
+.treasury-filters .form-input,.treasury-filters .admin-select { margin:0; }
+.treasury-search { grid-column:1/-1; }
+.treasury-reset-button { margin-top:0; }
+
+.treasury-toolbar {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:14px; margin:20px 2px 12px; color:var(--light-grey); font-weight:800;
+}
+.treasury-toolbar .secondary-button { width:auto; margin:0; }
+
+.treasury-alert-title { border-left:7px solid #e63946; margin-bottom:14px; }
+.treasury-all-clear { border-left:7px solid #2f9f57; }
+.treasury-list-title { margin-top:28px; border-left:7px solid #777; }
+
+.treasury-member-card {
+  margin-top:14px; padding:0; overflow:hidden; border-left:7px solid #777;
+}
+.treasury-status-waiting { border-left-color:#e63946; }
+.treasury-status-partial { border-left-color:#ff9800; }
+.treasury-status-paid { border-left-color:#2f9f57; }
+.treasury-status-cancelled { border-left-color:#777; }
+
+.treasury-member-summary {
+  width:100%; border:0; padding:18px; box-sizing:border-box;
+  display:flex; align-items:flex-start; justify-content:space-between; gap:18px;
+  background:transparent; color:#fff; text-align:left; cursor:pointer;
+}
+.treasury-member-summary:hover { background:rgba(255,255,255,.04); }
+.treasury-member-main h2 { margin:0 0 5px; }
+.treasury-member-number { margin:0 0 10px; color:var(--light-grey); }
+
+.treasury-group-list { display:flex; flex-wrap:wrap; gap:6px; }
+.treasury-group-list span {
+  padding:5px 8px; border-radius:999px; background:rgba(255,255,255,.08);
+  font-size:12px;
+}
+
+.treasury-member-totals {
+  min-width:180px; display:flex; flex-direction:column; align-items:flex-end;
+  gap:7px; text-align:right;
+}
+.treasury-member-totals strong { font-size:17px; }
+.treasury-member-totals small { color:var(--light-grey); }
+
+.treasury-status-pill {
+  padding:6px 10px; border-radius:999px; font-size:12px; font-weight:900;
+}
+.treasury-status-pill.treasury-status-waiting {
+  background:rgba(230,57,70,.18); color:#ff8690;
+}
+.treasury-status-pill.treasury-status-partial {
+  background:rgba(255,152,0,.18); color:#ffc062;
+}
+.treasury-status-pill.treasury-status-paid {
+  background:rgba(47,159,87,.20); color:#78dc98;
+}
+.treasury-status-pill.treasury-status-cancelled {
+  background:rgba(130,130,130,.25); color:#ddd;
+}
+
+.treasury-member-details {
+  padding:18px; border-top:1px solid var(--border);
+  background:rgba(0,0,0,.14);
+}
+.treasury-payment-summary {
+  display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px; margin-bottom:18px;
+}
+.treasury-payment-summary>div {
+  padding:12px; border-radius:12px; background:rgba(255,255,255,.06);
+}
+.treasury-payment-summary span,.treasury-payment-summary strong { display:block; }
+.treasury-payment-summary span { color:var(--light-grey); font-size:12px; }
+.treasury-payment-summary strong { margin-top:5px; }
+
+.treasury-detail-grid,.treasury-address-grid {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px; margin-bottom:18px;
+}
+.treasury-detail-grid label {
+  display:flex; flex-direction:column; gap:6px; font-weight:800;
+}
+
+.treasury-payments-section,.treasury-address-section {
+  margin:20px 0; padding:16px; border-radius:14px;
+  background:rgba(255,255,255,.045);
+}
+.treasury-section-heading {
+  display:flex; align-items:center; justify-content:space-between;
+  gap:14px; margin-bottom:12px;
+}
+.treasury-section-heading h3 { margin:0 0 4px; }
+.treasury-section-heading p { margin:0; color:var(--light-grey); }
+
+.treasury-add-payment {
+  border:0; border-radius:10px; padding:10px 13px;
+  background:var(--jdm-blue); color:#fff; font-weight:800; cursor:pointer;
+}
+
+.treasury-payment-row {
+  display:grid;
+  grid-template-columns:minmax(145px,1fr) minmax(100px,.7fr)
+    minmax(135px,.8fr) minmax(150px,1fr) minmax(160px,1fr) 38px;
+  gap:8px; align-items:center; margin-top:9px;
+}
+.treasury-payment-row .form-input,.treasury-payment-row .admin-select {
+  margin:0; min-width:0;
+}
+.treasury-remove-payment {
+  width:36px; height:36px; border:0; border-radius:50%;
+  background:rgba(230,57,70,.18); color:#ff808a; font-size:22px; cursor:pointer;
+}
+.treasury-empty-payment { color:var(--light-grey); }
+
+.treasury-checkbox {
+  display:flex; align-items:center; gap:10px; font-weight:800;
+}
+.treasury-checkbox input { width:20px; height:20px; }
+.treasury-card-actions { margin-top:16px; }
+
+@media screen and (max-width:900px) {
+  .treasury-filters { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .treasury-payment-row {
+    grid-template-columns:1fr 1fr; padding:12px; border-radius:12px;
+    background:rgba(255,255,255,.045);
+  }
+  .treasury-remove-payment { grid-column:1/-1; justify-self:end; }
+}
+
+@media screen and (max-width:650px) {
+  .treasury-hero,.treasury-toolbar,.treasury-member-summary,
+  .treasury-section-heading { flex-direction:column; align-items:stretch; }
+
+  .treasury-stats,.treasury-filters,.treasury-payment-summary,
+  .treasury-detail-grid,.treasury-address-grid,.treasury-payment-row {
+    grid-template-columns:1fr;
+  }
+
+  .treasury-search { grid-column:auto; }
+  .treasury-member-totals {
+    min-width:0; align-items:flex-start; text-align:left;
+  }
+  .treasury-toolbar .secondary-button { width:100%; }
+}

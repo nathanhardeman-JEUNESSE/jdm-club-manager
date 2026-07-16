@@ -6,6 +6,9 @@ import {
     deleteDoc,
     collection,
     getDocs,
+    query,
+    where,
+    writeBatch,
     serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
@@ -398,4 +401,96 @@ export async function deleteAbsenceFirestore(id) {
     await deleteDoc(
         doc(db, "absences", String(id))
     );
+}
+
+/* =========================================================
+   TRESORERIE & COTISATIONS
+   ========================================================= */
+
+function idTresorerie(numeroAdherent) {
+    return String(numeroAdherent || "")
+        .trim()
+        .replace(/[^a-zA-Z0-9_-]/g, "_");
+}
+
+export async function listTresorerieCotisations() {
+    const snap = await getDocs(
+        collection(db, "tresorerieCotisations")
+    );
+
+    return snap.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+    }));
+}
+
+export async function saveTresorerieCotisation(
+    numeroAdherent,
+    data
+) {
+    const id = idTresorerie(numeroAdherent);
+
+    if (!id) {
+        throw new Error("Numéro adhérent obligatoire.");
+    }
+
+    await setDoc(
+        doc(db, "tresorerieCotisations", id),
+        {
+            ...data,
+            numeroAdherent: String(numeroAdherent),
+            clubId: data.clubId || JDM_CONFIG.clubId,
+            updatedAt: serverTimestamp()
+        },
+        { merge: true }
+    );
+
+    return id;
+}
+
+export async function updateCotisationStatus(
+    numeroAdherent,
+    statut
+) {
+    const numero = String(numeroAdherent || "").trim();
+
+    if (!numero) {
+        throw new Error("Numéro adhérent obligatoire.");
+    }
+
+    const cotisationAJour = statut === "regle";
+
+    const adherentsSnap = await getDocs(
+        query(
+            collection(db, "adherents"),
+            where("numeroAdherent", "==", numero)
+        )
+    );
+
+    const inscriptionsSnap = await getDocs(
+        query(
+            collection(db, "inscriptions"),
+            where("numeroAdherent", "==", numero)
+        )
+    );
+
+    const batch = writeBatch(db);
+
+    adherentsSnap.docs.forEach(item => {
+        batch.update(item.ref, {
+            cotisationAJour,
+            statutCotisationTresorier: statut,
+            updatedAt: serverTimestamp()
+        });
+    });
+
+    inscriptionsSnap.docs.forEach(item => {
+        batch.update(item.ref, {
+            cotisationAJour,
+            statutCotisationTresorier: statut,
+            updatedAt: serverTimestamp()
+        });
+    });
+
+    await batch.commit();
 }
