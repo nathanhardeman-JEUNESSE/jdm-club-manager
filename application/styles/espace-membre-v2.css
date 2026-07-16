@@ -1,0 +1,37 @@
+/* Espace membre V2 */
+.member-switcher-label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 700;
+}
+
+.member-switcher {
+    width: 100%;
+    max-width: 460px;
+    margin-bottom: 18px;
+    padding: 11px 12px;
+    border-radius: 9px;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: #fff;
+    color: #20252a;
+}
+
+.member-dashboard-summary h2 {
+    margin-top: 0;
+}
+
+.member-groups {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    margin-top: 12px;
+}
+
+.member-group-chip {
+    display: inline-flex;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.09);
+    font-size: 0.9rem;
+}

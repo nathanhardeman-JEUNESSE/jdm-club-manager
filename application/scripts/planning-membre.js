@@ -1,12 +1,19 @@
 import {
     listGroupesFirestore,
-    listPlanningExceptionsFirestore
+    listPlanningExceptionsFirestore,
+    listAdherents,
+    listInscriptions,
+    saveAbsenceFirestore,
+    saveNotificationFirestore
 } from "../firebase/firebase-db.js";
+
+import { watchSession } from "./session.js";
 
 let groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
 let exceptions = JSON.parse(localStorage.getItem("planningExceptionsJDM")) || [];
-const utilisateurConnecte = JSON.parse(localStorage.getItem("utilisateurConnecteJDM")) || null;
-const adherents = JSON.parse(localStorage.getItem("adherentsJDM")) || [];
+let utilisateurConnecte = null;
+let adherents = [];
+let adherentSelectionne = null;
 
 let absences = JSON.parse(localStorage.getItem("absencesJDM")) || [];
 let notifications = JSON.parse(localStorage.getItem("notificationsJDM")) || [];
@@ -237,9 +244,12 @@ function champ(donnees, mots) {
     return cle ? donnees[cle] : "";
 }
 
+let inscriptionsPartagees = [];
+
 function derniereInscription(numeroAdherent) {
-    const inscriptions = JSON.parse(localStorage.getItem("inscriptionsJDM")) || [];
-    const liste = inscriptions.filter(i => i.numeroAdherent === numeroAdherent);
+    const liste = inscriptionsPartagees.filter(i =>
+        String(i.numeroAdherent) === String(numeroAdherent)
+    );
     return liste[liste.length - 1] || null;
 }
 
@@ -253,31 +263,34 @@ function groupeAdherent(adherent) {
 }
 
 function groupesDuMembre() {
-    if (!utilisateurConnecte || !utilisateurConnecte.enfants || utilisateurConnecte.enfants.length === 0) {
-        return [];
-    }
+    if (!adherentSelectionne) return [];
 
-    const enfants = adherents.filter(adherent =>
-        utilisateurConnecte.enfants.includes(adherent.numeroAdherent)
-    );
-
-    const nomsGroupes = enfants
-        .map(enfant => groupeAdherent(enfant))
-        .filter(Boolean);
+    const nomsGroupes = [
+        ...(Array.isArray(adherentSelectionne.groupes)
+            ? adherentSelectionne.groupes
+            : []),
+        adherentSelectionne.groupe,
+        ...inscriptionsPartagees
+            .filter(item =>
+                String(item.numeroAdherent) ===
+                String(adherentSelectionne.numeroAdherent)
+            )
+            .map(item =>
+                item.groupe ||
+                item.donneesHelloAsso?.name ||
+                ""
+            )
+    ].filter(Boolean);
 
     return groupes.filter(groupe =>
-        nomsGroupes.some(nomGroupe => nettoyer(nomGroupe) === nettoyer(groupe.nom))
+        nomsGroupes.some(nomGroupe =>
+            nettoyer(nomGroupe) === nettoyer(groupe.nom)
+        )
     );
 }
 
 function enfantConnecte() {
-    if (!utilisateurConnecte || !utilisateurConnecte.enfants || utilisateurConnecte.enfants.length === 0) {
-        return null;
-    }
-
-    return adherents.find(adherent =>
-        utilisateurConnecte.enfants.includes(adherent.numeroAdherent)
-    ) || null;
+    return adherentSelectionne;
 }
 
 function trouverException(groupeId, dateISO) {
@@ -430,7 +443,7 @@ function ouvrirSeance(groupeId, groupeNom, dateISO, jourNom, horaire, statut, me
     absenceCard.scrollIntoView({ behavior: "smooth" });
 }
 
-boutonEnvoyerAbsence.addEventListener("click", () => {
+boutonEnvoyerAbsence.addEventListener("click", async () => {
     if (!seanceSelectionnee) return;
 
     const motif = motifAbsence.value;
@@ -495,6 +508,20 @@ boutonEnvoyerAbsence.addEventListener("click", () => {
     localStorage.setItem("absencesJDM", JSON.stringify(absences));
     localStorage.setItem("notificationsJDM", JSON.stringify(notifications));
 
+    try {
+        await Promise.all([
+            saveAbsenceFirestore(absence),
+            saveNotificationFirestore(
+                notifications[notifications.length - 1]
+            )
+        ]);
+    } catch (error) {
+        console.warn(
+            "Absence enregistrée localement, synchronisation distante impossible",
+            error
+        );
+    }
+
     alert("Absence signalée ✅");
 
     absenceCard.style.display = "none";
@@ -513,4 +540,39 @@ boutonSuivant.addEventListener("click", () => {
     afficherPlanning();
 });
 
-chargerDonneesPartagees().then(afficherPlanning);
+window.addEventListener("jdm:member-changed", event => {
+    adherentSelectionne = event.detail?.adherent || null;
+    afficherPlanning();
+});
+
+watchSession(async (user, profile) => {
+    if (!user || !profile) return;
+
+    utilisateurConnecte = profile;
+
+    try {
+        [adherents, inscriptionsPartagees] = await Promise.all([
+            listAdherents(),
+            listInscriptions()
+        ]);
+
+        const numeroSelectionne =
+            document.body.dataset.numeroAdherentSelectionne ||
+            profile.numeroAdherent ||
+            profile.numeroAdherents?.[0] ||
+            "";
+
+        adherentSelectionne = adherents.find(adherent =>
+            String(adherent.numeroAdherent) ===
+            String(numeroSelectionne)
+        ) || null;
+
+        await chargerDonneesPartagees();
+        afficherPlanning();
+    } catch (error) {
+        console.error(
+            "Impossible de charger le planning membre",
+            error
+        );
+    }
+});

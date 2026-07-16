@@ -1,0 +1,131 @@
+/* Barre supérieure commune JDM */
+body {
+    padding-top: 58px;
+}
+
+.jdm-global-topbar {
+    position: fixed;
+    inset: 0 0 auto 0;
+    height: 58px;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 14px;
+    box-sizing: border-box;
+    background: rgba(20, 24, 28, 0.96);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(10px);
+}
+
+.jdm-global-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.jdm-topbar-icon {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 19px;
+    line-height: 1;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.jdm-topbar-icon:hover,
+.jdm-topbar-icon:focus-visible {
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.jdm-global-badge {
+    position: absolute;
+    right: -3px;
+    top: -4px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #d71920;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.jdm-profile-menu {
+    position: fixed;
+    right: 14px;
+    top: 52px;
+    width: min(260px, calc(100vw - 28px));
+    padding: 10px;
+    border-radius: 12px;
+    background: #20262b;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.4);
+}
+
+.jdm-profile-menu-identity {
+    padding: 8px 10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.jdm-profile-menu-identity strong,
+.jdm-profile-menu-identity small {
+    display: block;
+}
+
+.jdm-profile-menu-identity small {
+    margin-top: 3px;
+    opacity: 0.7;
+    text-transform: capitalize;
+}
+
+.jdm-profile-menu a,
+.jdm-profile-menu button {
+    width: 100%;
+    box-sizing: border-box;
+    display: block;
+    margin-top: 4px;
+    padding: 10px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #fff;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.jdm-profile-menu a:hover,
+.jdm-profile-menu button:hover {
+    background: rgba(255, 255, 255, 0.09);
+}
+
+@media (max-width: 600px) {
+    body {
+        padding-top: 54px;
+    }
+
+    .jdm-global-topbar {
+        height: 54px;
+        padding: 0 10px;
+    }
+
+    .jdm-topbar-icon {
+        width: 36px;
+        height: 36px;
+    }
+}

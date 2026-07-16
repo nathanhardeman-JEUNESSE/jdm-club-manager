@@ -2,107 +2,369 @@ import {
     watchSession,
     logoutAndRedirect
 } from "./session.js";
-import { findAdherentByEmail } from "../firebase/firebase-db.js";
 
-const notifications = JSON.parse(localStorage.getItem("notificationsJDM")) || [];
-const badge = document.getElementById("badge-notifications");
-
-const notificationsParentNonLues = notifications.filter(notification =>
-    !notification.lue &&
-    !notification.archivee &&
-    (
-        notification.categorie === "parents-groupes" ||
-        notification.categorie === "parent" ||
-        notification.type === "planning" ||
-        notification.type === "commande-prete" ||
-        notification.type === "competition"
-    )
-);
-
-if (badge && notificationsParentNonLues.length > 0) {
-    badge.textContent = notificationsParentNonLues.length;
-    badge.className = "notification-badge";
-} else if (badge) {
-    badge.textContent = "";
-    badge.className = "";
-}
+import {
+    findAdherentsByEmail,
+    getAdherentsByNumbers,
+    listInscriptions,
+    listNotificationsFirestore
+} from "../firebase/firebase-db.js";
 
 const zoneProfilMembre = document.getElementById("profil-membre-connecte");
 const zoneDocumentsMembre = document.getElementById("documents-membre");
+const badge = document.getElementById("badge-notifications");
 
-function afficherProfil(profile, adherent) {
-    if (!zoneProfilMembre) return;
+let adherentsCompte = [];
+let inscriptions = [];
+let adherentSelectionne = null;
+let profileActuel = null;
 
-    const nom = profile.nom || (adherent ? adherent.nom : "") || "";
-    const prenom = profile.prenom || (adherent ? adherent.prenom : "") || "";
-    const numero = profile.numeroAdherent || (adherent ? adherent.numeroAdherent : "") || "Non renseigné";
-    const groupe = (adherent ? adherent.groupe : "") || profile.groupe || "Non renseigné";
-    const role = profile.role || "membre";
+function nettoyer(texte) {
+    return String(texte || "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+}
 
-    zoneProfilMembre.innerHTML = `
-        <p><strong>Nom :</strong> ${nom || "Non renseigné"}</p>
-        <p><strong>Prénom :</strong> ${prenom || "Non renseigné"}</p>
-        <p><strong>Email :</strong> ${profile.email || "Non renseigné"}</p>
-        <p><strong>N° adhérent :</strong> ${numero}</p>
-        <p><strong>Groupe :</strong> ${groupe}</p>
-        <p><strong>Rôle :</strong> ${role}</p>
+function inscriptionsPour(numeroAdherent) {
+    return inscriptions.filter(item =>
+        String(item.numeroAdherent) === String(numeroAdherent)
+    );
+}
+
+function groupesPour(adherent) {
+    const depuisAdherent = Array.isArray(adherent?.groupes)
+        ? adherent.groupes
+        : [];
+
+    const depuisInscriptions = inscriptionsPour(
+        adherent?.numeroAdherent
+    ).map(item =>
+        item.groupe ||
+        item.donneesHelloAsso?.name ||
+        ""
+    );
+
+    return [...new Set([
+        ...depuisAdherent,
+        adherent?.groupe,
+        ...depuisInscriptions
+    ].filter(Boolean))]
+        .filter(groupe => nettoyer(groupe) !== "fixed");
+}
+
+function estCompetition(adherent) {
+    return groupesPour(adherent).some(groupe =>
+        nettoyer(groupe).includes("compet")
+    );
+}
+
+function identite(adherent) {
+    return [
+        adherent?.prenom,
+        adherent?.nom
+    ].filter(Boolean).join(" ") || "Adhérent";
+}
+
+function rendreSelecteur() {
+    if (!zoneProfilMembre || adherentsCompte.length <= 1) return "";
+
+    return `
+        <label class="member-switcher-label" for="member-switcher">
+            Adhérent affiché
+        </label>
+
+        <select id="member-switcher" class="member-switcher">
+            ${adherentsCompte.map(adherent => `
+                <option value="${adherent.id}"
+                    ${adherent.id === adherentSelectionne?.id
+                        ? "selected"
+                        : ""}>
+                    ${identite(adherent)}
+                    ${adherent.numeroMembre
+                        ? ` · ${adherent.numeroMembre}`
+                        : ""}
+                </option>
+            `).join("")}
+        </select>
     `;
 }
 
-function afficherDocuments(adherent) {
-    if (!zoneDocumentsMembre) return;
+function afficherProfil() {
+    if (!zoneProfilMembre || !adherentSelectionne) return;
 
-    if (!adherent) {
-        zoneDocumentsMembre.innerHTML = `<p><small>Documents liés à votre fiche adhérent disponibles prochainement.</small></p>`;
-        return;
-    }
+    const groupes = groupesPour(adherentSelectionne);
+    const numero =
+        adherentSelectionne.numeroMembre ||
+        adherentSelectionne.numeroAdherent ||
+        "Non renseigné";
 
-    const numero = adherent.numeroAdherent || "";
+    zoneProfilMembre.innerHTML = `
+        ${rendreSelecteur()}
+
+        <div class="member-dashboard-summary">
+            <h2>Bonjour ${adherentSelectionne.prenom || ""} 👋</h2>
+
+            <p>
+                <strong>Nom :</strong>
+                ${adherentSelectionne.nom || "Non renseigné"}
+            </p>
+
+            <p>
+                <strong>Prénom :</strong>
+                ${adherentSelectionne.prenom || "Non renseigné"}
+            </p>
+
+            <p>
+                <strong>Email du compte :</strong>
+                ${profileActuel?.email || "Non renseigné"}
+            </p>
+
+            <p>
+                <strong>N° membre :</strong>
+                ${numero}
+            </p>
+
+            <div class="member-groups">
+                <strong>Groupe(s) :</strong>
+
+                ${
+                    groupes.length === 0
+                        ? `<span>Non renseigné</span>`
+                        : groupes.map(groupe =>
+                            `<span class="member-group-chip">${groupe}</span>`
+                        ).join("")
+                }
+            </div>
+        </div>
+    `;
+
+    document.getElementById("member-switcher")
+        ?.addEventListener("change", event => {
+            const suivant = adherentsCompte.find(
+                adherent => adherent.id === event.target.value
+            );
+
+            if (!suivant) return;
+
+            adherentSelectionne = suivant;
+            sessionStorage.setItem(
+                "jdmAdherentSelectionne",
+                suivant.numeroAdherent || suivant.id
+            );
+
+            afficherProfil();
+            afficherDocuments();
+            appliquerModulesConditionnels();
+        });
+}
+
+function afficherDocuments() {
+    if (!zoneDocumentsMembre || !adherentSelectionne) return;
+
+    const numero = adherentSelectionne.numeroAdherent || "";
     const liens = [];
 
     if (numero) {
-        liens.push(`<a href="fiche-adherent-complete.html?id=${encodeURIComponent(numero)}">Fiche adhérent complète</a>`);
-        liens.push(`<a href="carte-adherent.html?id=${encodeURIComponent(numero)}">Carte adhérent</a>`);
+        liens.push(`
+            <a href="fiche-adherent-complete.html?id=${encodeURIComponent(numero)}">
+                Fiche adhérent complète
+            </a>
+        `);
+
+        liens.push(`
+            <a href="carte-adherent.html?id=${encodeURIComponent(numero)}">
+                Carte adhérent
+            </a>
+        `);
     }
 
-    if (adherent.certificatMedical) {
-        liens.push(`<a href="${adherent.certificatMedical}" target="_blank" rel="noopener noreferrer">Certificat médical</a>`);
+    const certificat =
+        adherentSelectionne.certificatMedical ||
+        adherentSelectionne.profil?.certificatMedical;
+
+    const photo =
+        adherentSelectionne.photoLicence ||
+        adherentSelectionne.profil?.photoLicence;
+
+    if (certificat) {
+        liens.push(`
+            <a href="${certificat}"
+               target="_blank"
+               rel="noopener noreferrer">
+                Certificat médical
+            </a>
+        `);
     }
 
-    if (adherent.photoLicence) {
-        liens.push(`<a href="${adherent.photoLicence}" target="_blank" rel="noopener noreferrer">Photo licence</a>`);
+    if (photo) {
+        liens.push(`
+            <a href="${photo}"
+               target="_blank"
+               rel="noopener noreferrer">
+                Photo licence
+            </a>
+        `);
     }
 
-    if (liens.length === 0) {
-        zoneDocumentsMembre.innerHTML = `<p><small>Aucun document disponible pour le moment.</small></p>`;
-        return;
+    zoneDocumentsMembre.innerHTML = liens.length
+        ? `<ul>${liens.map(lien => `<li>${lien}</li>`).join("")}</ul>`
+        : `<p><small>Aucun document disponible pour le moment.</small></p>`;
+}
+
+function appliquerModulesConditionnels() {
+    const competition = estCompetition(adherentSelectionne);
+
+    document.querySelectorAll(
+        '[data-member-module="resultats"], #resultats-card, .resultats-card'
+    ).forEach(element => {
+        element.style.display = competition ? "" : "none";
+    });
+
+    document.body.dataset.numeroAdherentSelectionne =
+        adherentSelectionne?.numeroAdherent || "";
+
+    window.dispatchEvent(new CustomEvent(
+        "jdm:member-changed",
+        {
+            detail: {
+                adherent: adherentSelectionne,
+                groupes: groupesPour(adherentSelectionne)
+            }
+        }
+    ));
+}
+
+async function actualiserBadge(profile) {
+    if (!badge) return;
+
+    try {
+        const notifications = await listNotificationsFirestore();
+        const numeros = new Set(
+            adherentsCompte
+                .map(adherent => adherent.numeroAdherent)
+                .filter(Boolean)
+                .map(String)
+        );
+
+        const nonLues = notifications.filter(notification => {
+            if (notification.archivee === true || notification.lue === true) {
+                return false;
+            }
+
+            if (
+                notification.numeroAdherent &&
+                numeros.has(String(notification.numeroAdherent))
+            ) {
+                return true;
+            }
+
+            return (
+                notification.categorie === "parents-groupes" ||
+                notification.categorie === "parent" ||
+                notification.destinataire === "parent" ||
+                ["planning", "commande-prete", "competition"]
+                    .includes(notification.type)
+            );
+        });
+
+        badge.textContent = nonLues.length > 0
+            ? String(nonLues.length)
+            : "";
+
+        badge.className = nonLues.length > 0
+            ? "notification-badge"
+            : "";
+    } catch (error) {
+        console.warn("Notifications indisponibles", error);
+    }
+}
+
+async function chargerAdherentsCompte(user, profile) {
+    const numeros = [
+        ...(Array.isArray(profile.numeroAdherents)
+            ? profile.numeroAdherents
+            : []),
+        profile.numeroAdherent
+    ].filter(Boolean);
+
+    let adherents = numeros.length > 0
+        ? await getAdherentsByNumbers(numeros)
+        : [];
+
+    if (adherents.length === 0) {
+        adherents = await findAdherentsByEmail(
+            profile.email || user.email
+        );
     }
 
-    zoneDocumentsMembre.innerHTML = `
-        <ul>
-            ${liens.map(lien => `<li>${lien}</li>`).join("")}
-        </ul>
-    `;
+    return adherents
+        .filter(adherent => adherent.actif !== false)
+        .sort((a, b) =>
+            identite(a).localeCompare(identite(b), "fr")
+        );
 }
 
 watchSession(async (user, profile) => {
     if (!user || !profile) return;
 
-    let adherent = null;
+    profileActuel = profile;
 
     try {
-        adherent = await findAdherentByEmail(profile.email || user.email);
+        [adherentsCompte, inscriptions] = await Promise.all([
+            chargerAdherentsCompte(user, profile),
+            listInscriptions()
+        ]);
+
+        if (adherentsCompte.length === 0) {
+            if (zoneProfilMembre) {
+                zoneProfilMembre.innerHTML = `
+                    <p>
+                        Aucune fiche adhérent n'est encore rattachée
+                        à ce compte.
+                    </p>
+                `;
+            }
+
+            if (zoneDocumentsMembre) {
+                zoneDocumentsMembre.innerHTML = "";
+            }
+
+            return;
+        }
+
+        const selectionSauvee = sessionStorage.getItem(
+            "jdmAdherentSelectionne"
+        );
+
+        adherentSelectionne =
+            adherentsCompte.find(adherent =>
+                String(adherent.numeroAdherent) ===
+                String(selectionSauvee)
+            ) ||
+            adherentsCompte[0];
+
+        afficherProfil();
+        afficherDocuments();
+        appliquerModulesConditionnels();
+        actualiserBadge(profile);
     } catch (error) {
-        console.warn("Fiche adhérent non trouvée", error);
+        console.error(
+            "Impossible de charger l'espace membre",
+            error
+        );
+
+        if (zoneProfilMembre) {
+            zoneProfilMembre.innerHTML = `
+                <p>
+                    Impossible de charger les informations
+                    du compte.
+                </p>
+            `;
+        }
     }
-
-    afficherProfil(profile, adherent);
-    afficherDocuments(adherent);
 });
-const boutonDeconnexion = document.getElementById("deconnexion-button");
 
-if (boutonDeconnexion) {
-    boutonDeconnexion.addEventListener("click", async () => {
-        await logoutAndRedirect();
-    });
-}
+document.getElementById("deconnexion-button")
+    ?.addEventListener("click", logoutAndRedirect);

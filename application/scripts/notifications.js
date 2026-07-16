@@ -1,24 +1,48 @@
-let notifications = JSON.parse(localStorage.getItem("notificationsJDM")) || [];
+import {
+    listNotificationsFirestore,
+    updateNotificationFirestore
+} from "../firebase/firebase-db.js";
 
-const zoneNotifications = document.getElementById("liste-notifications-parent");
-const resumeNotifications = document.getElementById("resume-notifications");
-const boutonToutLu = document.getElementById("tout-marquer-lu");
-const boutonSupprimerLues = document.getElementById("supprimer-notifications-lues");
+import { watchSession } from "./session.js";
 
-function sauvegarderNotifications() {
-    localStorage.setItem("notificationsJDM", JSON.stringify(notifications));
-}
+let notifications = [];
+let profileActuel = null;
+
+const zoneNotifications =
+    document.getElementById("liste-notifications-parent");
+
+const resumeNotifications =
+    document.getElementById("resume-notifications");
+
+const boutonToutLu =
+    document.getElementById("tout-marquer-lu");
+
+const boutonSupprimerLues =
+    document.getElementById("supprimer-notifications-lues");
 
 function notificationVisibleParent(notification) {
-    if (notification.archivee) return false;
+    if (notification.archivee === true) return false;
+
+    const numeros = new Set([
+        profileActuel?.numeroAdherent,
+        ...(Array.isArray(profileActuel?.numeroAdherents)
+            ? profileActuel.numeroAdherents
+            : [])
+    ].filter(Boolean).map(String));
+
+    if (
+        notification.numeroAdherent &&
+        numeros.has(String(notification.numeroAdherent))
+    ) {
+        return true;
+    }
 
     return (
         notification.categorie === "parent" ||
         notification.categorie === "parents-groupes" ||
         notification.destinataire === "parent" ||
-        notification.type === "commande-prete" ||
-        notification.type === "planning" ||
-        notification.type === "competition"
+        ["commande-prete", "planning", "competition"]
+            .includes(notification.type)
     );
 }
 
@@ -27,7 +51,9 @@ function notificationsVisiblesParent() {
 }
 
 function notificationsNonLuesParent() {
-    return notificationsVisiblesParent().filter(notification => !notification.lue);
+    return notificationsVisiblesParent().filter(
+        notification => notification.lue !== true
+    );
 }
 
 function afficherResume() {
@@ -35,63 +61,55 @@ function afficherResume() {
 
     const nonLues = notificationsNonLuesParent().length;
 
-    if (nonLues === 0) {
-        resumeNotifications.textContent = "Aucune notification non lue.";
-    } else {
-        resumeNotifications.textContent = `${nonLues} notification(s) non lue(s).`;
-    }
+    resumeNotifications.textContent = nonLues === 0
+        ? "Aucune notification non lue."
+        : `${nonLues} notification(s) non lue(s).`;
 }
 
-function marquerCommeLue(id) {
-    notifications = notifications.map(notification => {
-        if (String(notification.id) === String(id)) {
-            return { ...notification, lue: true };
-        }
-        return notification;
-    });
-
-    sauvegarderNotifications();
-    afficherNotifications();
+async function marquerCommeLue(id) {
+    await updateNotificationFirestore(id, { lue: true });
+    await chargerNotifications();
 }
 
-function supprimerNotification(id) {
-    notifications = notifications.map(notification => {
-        if (String(notification.id) === String(id)) {
-            return { ...notification, archivee: true, lue: true, traitee: true };
-        }
-        return notification;
+async function supprimerNotification(id) {
+    await updateNotificationFirestore(id, {
+        archivee: true,
+        lue: true,
+        traitee: true
     });
 
-    sauvegarderNotifications();
-    afficherNotifications();
+    await chargerNotifications();
 }
 
-function toutMarquerCommeLu() {
-    const idsVisibles = notificationsVisiblesParent().map(n => String(n.id));
+async function toutMarquerCommeLu() {
+    await Promise.all(
+        notificationsVisiblesParent().map(notification =>
+            updateNotificationFirestore(
+                notification.id,
+                { lue: true }
+            )
+        )
+    );
 
-    notifications = notifications.map(notification => {
-        if (idsVisibles.includes(String(notification.id))) {
-            return { ...notification, lue: true };
-        }
-        return notification;
-    });
-
-    sauvegarderNotifications();
-    afficherNotifications();
+    await chargerNotifications();
 }
 
-function supprimerNotificationsLues() {
-    const idsVisibles = notificationsVisiblesParent().map(n => String(n.id));
+async function supprimerNotificationsLues() {
+    await Promise.all(
+        notificationsVisiblesParent()
+            .filter(notification => notification.lue === true)
+            .map(notification =>
+                updateNotificationFirestore(
+                    notification.id,
+                    {
+                        archivee: true,
+                        traitee: true
+                    }
+                )
+            )
+    );
 
-    notifications = notifications.map(notification => {
-        if (idsVisibles.includes(String(notification.id)) && notification.lue) {
-            return { ...notification, archivee: true, traitee: true };
-        }
-        return notification;
-    });
-
-    sauvegarderNotifications();
-    afficherNotifications();
+    await chargerNotifications();
 }
 
 function detailsNotification(notification) {
@@ -99,19 +117,39 @@ function detailsNotification(notification) {
     let html = "";
 
     if (notification.groupeNom) {
-        html += `<p><strong>Groupe :</strong> ${notification.groupeNom}</p>`;
+        html += `
+            <p>
+                <strong>Groupe :</strong>
+                ${notification.groupeNom}
+            </p>
+        `;
     }
 
     if (notification.date) {
-        html += `<p><strong>Date :</strong> ${notification.date}</p>`;
+        html += `
+            <p>
+                <strong>Date :</strong>
+                ${notification.date}
+            </p>
+        `;
     }
 
     if (donnees.numeroCommande) {
-        html += `<p><strong>Commande :</strong> n°${donnees.numeroCommande}</p>`;
+        html += `
+            <p>
+                <strong>Commande :</strong>
+                n°${donnees.numeroCommande}
+            </p>
+        `;
     }
 
     if (donnees.total) {
-        html += `<p><strong>Montant :</strong> ${donnees.total} €</p>`;
+        html += `
+            <p>
+                <strong>Montant :</strong>
+                ${donnees.total} €
+            </p>
+        `;
     }
 
     return html;
@@ -130,18 +168,21 @@ function afficherNotifications() {
         zoneNotifications.innerHTML = `
             <section class="card">
                 <h2>Aucune notification</h2>
-                <p>Vous n'avez aucune notification pour le moment.</p>
+                <p>
+                    Vous n'avez aucune notification
+                    pour le moment.
+                </p>
             </section>
         `;
         return;
     }
 
-    zoneNotifications.innerHTML = "";
+    zoneNotifications.innerHTML = liste.map(notification => {
+        const classe = notification.lue
+            ? "notification-lue"
+            : "notification-non-lue";
 
-    liste.forEach(notification => {
-        const classe = notification.lue ? "notification-lue" : "notification-non-lue";
-
-        zoneNotifications.innerHTML += `
+        return `
             <section class="card ${classe}">
                 <h2>
                     ${notification.lue ? "✅" : "🔴"}
@@ -149,33 +190,81 @@ function afficherNotifications() {
                 </h2>
 
                 <p>${notification.message || ""}</p>
+
                 ${detailsNotification(notification)}
 
                 <p>
                     <strong>Reçue le :</strong>
-                    ${notification.dateCreation ? new Date(notification.dateCreation).toLocaleString("fr-FR") : "Non renseigné"}
+                    ${
+                        notification.dateCreation
+                            ? new Date(
+                                notification.dateCreation
+                            ).toLocaleString("fr-FR")
+                            : "Non renseigné"
+                    }
                 </p>
 
-                ${!notification.lue ? `
-                    <button class="primary-button order-button" onclick="marquerCommeLue('${notification.id}')">
-                        Marquer comme lu
-                    </button>
-                ` : ""}
+                ${
+                    !notification.lue
+                        ? `
+                            <button
+                                class="primary-button order-button"
+                                onclick="marquerCommeLue('${notification.id}')">
+                                Marquer comme lu
+                            </button>
+                        `
+                        : ""
+                }
 
-                <button class="secondary-button" onclick="supprimerNotification('${notification.id}')">
+                <button
+                    class="secondary-button"
+                    onclick="supprimerNotification('${notification.id}')">
                     Supprimer
                 </button>
             </section>
         `;
-    });
+    }).join("");
 }
 
-if (boutonToutLu) {
-    boutonToutLu.addEventListener("click", toutMarquerCommeLu);
+async function chargerNotifications() {
+    try {
+        notifications = await listNotificationsFirestore();
+        afficherNotifications();
+    } catch (error) {
+        console.error(
+            "Impossible de charger les notifications",
+            error
+        );
+
+        if (zoneNotifications) {
+            zoneNotifications.innerHTML = `
+                <section class="card">
+                    <h2>Erreur</h2>
+                    <p>
+                        Impossible de charger les notifications.
+                    </p>
+                </section>
+            `;
+        }
+    }
 }
 
-if (boutonSupprimerLues) {
-    boutonSupprimerLues.addEventListener("click", supprimerNotificationsLues);
-}
+window.marquerCommeLue = marquerCommeLue;
+window.supprimerNotification = supprimerNotification;
 
-afficherNotifications();
+boutonToutLu?.addEventListener(
+    "click",
+    toutMarquerCommeLu
+);
+
+boutonSupprimerLues?.addEventListener(
+    "click",
+    supprimerNotificationsLues
+);
+
+watchSession((user, profile) => {
+    if (!user || !profile) return;
+
+    profileActuel = profile;
+    chargerNotifications();
+});
