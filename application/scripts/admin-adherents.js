@@ -100,7 +100,13 @@ function cotisationAJour(adherent) {
         String(adherent.numeroAdherent)
     );
 
-    return dossier?.statut === "regle";
+    return (
+        adherent.cotisationAJour === true ||
+        adherent.statutCotisationTresorier === "regle" ||
+        dossier?.statut === "regle" ||
+        dossier?.licenceValidee === true ||
+        dossier?.cotisationRegularisee === true
+    );
 }
 
 function numeroAffiche(adherent) {

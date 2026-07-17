@@ -247,3 +247,19 @@
     flex-direction: column;
   }
 }
+
+
+/* Validation humaine du trésorier */
+.treasury-manual-validation {
+  margin: 16px 0 20px;
+  padding: 14px;
+  border-radius: 12px;
+  border-left: 6px solid #2f9f57;
+  background: rgba(47,159,87,.10);
+}
+
+.treasury-manual-validation p {
+  margin: 8px 0 0;
+  color: var(--light-grey);
+  font-size: 13px;
+}

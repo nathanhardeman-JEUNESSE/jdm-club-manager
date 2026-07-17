@@ -135,9 +135,17 @@ function dossier(adherent) {
   const reste = Math.max(0, arr(attendu - total));
 
   let statut = "attente";
-  if (saved.statutForce && saved.statut === "annule") statut = "annule";
-  else if (attendu > 0 && total >= attendu) statut = "regle";
-  else if (total > 0) statut = "partiel";
+
+  if (
+    saved.statutForce === true &&
+    ["attente", "partiel", "regle", "annule"].includes(saved.statut)
+  ) {
+    statut = saved.statut;
+  } else if (attendu > 0 && total >= attendu) {
+    statut = "regle";
+  } else if (total > 0) {
+    statut = "partiel";
+  }
 
   return {
     ...saved,
@@ -160,6 +168,9 @@ function dossier(adherent) {
     codePostal: valeurChamp(ins, ["code", "postal"]),
     ville: valeurChamp(ins, ["ville"]),
     justificatifValide: saved.justificatifValide === true,
+    licenceValidee: saved.licenceValidee === true,
+    cotisationRegularisee: saved.cotisationRegularisee === true,
+    dateValidationTresorier: saved.dateValidationTresorier || "",
     relance: saved.relance === true,
     commentaire: saved.commentaire || ""
   };
@@ -457,15 +468,41 @@ function card(d) {
             <input class="form-input" data-f="montantAttendu" type="number" min="0"
                    step="0.01" value="${d.montantAttendu}">
           </label>
-          <label>Statut exceptionnel
+          <label>Validation du trésorier
             <select class="admin-select" data-f="statutManuel">
-              <option value="">Calcul automatique</option>
-              <option value="annule" ${d.statut === "annule" ? "selected" : ""}>
+              <option value="" ${!d.statutForce ? "selected" : ""}>
+                Calcul automatique
+              </option>
+              <option value="regle" ${d.statutForce && d.statut === "regle" ? "selected" : ""}>
+                Cotisation régularisée / licence validée
+              </option>
+              <option value="partiel" ${d.statutForce && d.statut === "partiel" ? "selected" : ""}>
+                Paiement partiel confirmé
+              </option>
+              <option value="attente" ${d.statutForce && d.statut === "attente" ? "selected" : ""}>
+                En attente de règlement
+              </option>
+              <option value="annule" ${d.statutForce && d.statut === "annule" ? "selected" : ""}>
                 Annulé / impayé
               </option>
             </select>
           </label>
         </div>
+
+        <section class="treasury-manual-validation">
+          <label class="treasury-checkbox">
+            <input
+              data-f="licenceValidee"
+              type="checkbox"
+              ${d.licenceValidee ? "checked" : ""}>
+            Licence validée par le trésorier
+          </label>
+
+          <p>
+            À utiliser notamment lorsqu'une réduction a été contrôlée
+            (résident Lomme, Pass’Sport, aide, régularisation, etc.).
+          </p>
+        </section>
 
         <section class="treasury-payments-section">
           <div class="treasury-section-heading">
@@ -556,11 +593,37 @@ function afficherListes() {
 function lireCarte(carte) {
   const adherent = adherents.find(a => String(a.numeroAdherent) === String(carte.dataset.numero));
   const d = dossier(adherent);
-  d.montantAttendu = n(carte.querySelector('[data-f="montantAttendu"]').value);
-  d.justificatifValide = carte.querySelector('[data-f="justificatifValide"]').checked;
-  d.commentaire = carte.querySelector('[data-f="commentaire"]').value.trim();
-  d.relance = carte.querySelector('[data-f="relance"]').checked;
-  d.statutForce = carte.querySelector('[data-f="statutManuel"]').value === "annule";
+  d.montantAttendu = n(
+    carte.querySelector('[data-f="montantAttendu"]').value
+  );
+
+  d.justificatifValide =
+    carte.querySelector('[data-f="justificatifValide"]').checked;
+
+  d.licenceValidee =
+    carte.querySelector('[data-f="licenceValidee"]').checked;
+
+  d.cotisationRegularisee = d.licenceValidee;
+
+  d.commentaire =
+    carte.querySelector('[data-f="commentaire"]').value.trim();
+
+  d.relance =
+    carte.querySelector('[data-f="relance"]').checked;
+
+  const statutManuel =
+    carte.querySelector('[data-f="statutManuel"]').value;
+
+  d.statutForce = statutManuel !== "";
+
+  if (d.licenceValidee) {
+    d.statutForce = true;
+    d.statut = "regle";
+    d.dateValidationTresorier =
+      new Date().toISOString();
+  } else if (d.statutForce) {
+    d.statut = statutManuel;
+  }
 
   d.reglements = [...carte.querySelectorAll(".treasury-payment-row")].map((row, i) => {
     const val = k => row.querySelector(`[data-p="${k}"]`)?.value || "";
@@ -580,10 +643,18 @@ function lireCarte(carte) {
   d.totalRegle = arr(d.reglements.reduce((s, r) => s + n(r.montant), 0));
   d.reste = Math.max(0, arr(d.montantAttendu - d.totalRegle));
 
-  if (d.statutForce) d.statut = "annule";
-  else if (d.montantAttendu > 0 && d.totalRegle >= d.montantAttendu) d.statut = "regle";
-  else if (d.totalRegle > 0) d.statut = "partiel";
-  else d.statut = "attente";
+  if (!d.statutForce) {
+    if (
+      d.montantAttendu > 0 &&
+      d.totalRegle >= d.montantAttendu
+    ) {
+      d.statut = "regle";
+    } else if (d.totalRegle > 0) {
+      d.statut = "partiel";
+    } else {
+      d.statut = "attente";
+    }
+  }
 
   return d;
 }
@@ -634,6 +705,9 @@ function exportRows(data) {
     "Code postal": d.codePostal,
     Ville: d.ville,
     "Justificatif validé": d.justificatifValide ? "Oui" : "Non",
+    "Licence validée": d.licenceValidee ? "Oui" : "Non",
+    "Cotisation régularisée": d.cotisationRegularisee ? "Oui" : "Non",
+    "Date validation trésorier": d.dateValidationTresorier || "",
     Relance: d.relance ? "Oui" : "Non",
     Commentaire: d.commentaire
   }));
