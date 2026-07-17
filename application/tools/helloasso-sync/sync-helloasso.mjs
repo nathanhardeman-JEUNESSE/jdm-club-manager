@@ -33,6 +33,8 @@ const stats = {
   adherentsWritten: 0,
   registrationsWritten: 0,
   pendingUsersWritten: 0,
+  donationsWritten: 0,
+  productsIgnored: 0,
   skipped: 0,
   errors: 0
 };
@@ -379,11 +381,65 @@ async function writeOrder(order) {
     stats.paymentsWritten += 1;
   }
 
-  const items =
-    Array.isArray(order.items) && order.items.length ? order.items : [{}];
+  const allItems = Array.isArray(order.items) ? order.items : [];
 
-  for (let index = 0; index < items.length; index += 1) {
-    const item = items[index];
+  const membershipItems = allItems.filter((item) =>
+    String(item?.type || "").trim().toLowerCase() === "membership"
+  );
+
+  const donationItems = allItems.filter((item) =>
+    String(item?.type || "").trim().toLowerCase() === "donation"
+  );
+
+  const productItems = allItems.filter((item) =>
+    String(item?.type || "").trim().toLowerCase() === "product"
+  );
+
+  stats.productsIgnored += productItems.length;
+
+  for (let index = 0; index < donationItems.length; index += 1) {
+    const item = donationItems[index];
+    const donationId = firestoreId(item?.id ?? `${orderId}-donation-${index + 1}`);
+
+    if (!donationId) {
+      stats.skipped += 1;
+      continue;
+    }
+
+    const payer = getPayer(order);
+    const cents = item?.amount ?? item?.price ?? order?.amount?.total ?? order?.amount ?? 0;
+
+    await db
+      .collection(CONFIG.collections.donations)
+      .doc(donationId)
+      .set(
+        {
+          helloAssoDonationId: String(item?.id ?? donationId),
+          helloAssoOrderId: String(order.id ?? order.orderId ?? ""),
+          nom: payer.lastName || "",
+          prenom: payer.firstName || "",
+          email: payer.email || "",
+          montant: Number(cents || 0) / 100,
+          date: order.date || order.creationDate || new Date().toISOString(),
+          source: "helloasso",
+          donneesHelloAsso: item,
+          updatedAt: FieldValue.serverTimestamp()
+        },
+        { merge: true }
+      );
+
+    stats.donationsWritten += 1;
+  }
+
+  if (membershipItems.length === 0) {
+    console.log(
+      "Commande sans adhésion Membership : aucun adhérent créé",
+      order.id ?? order.orderId ?? ""
+    );
+  }
+
+  for (let index = 0; index < membershipItems.length; index += 1) {
+    const item = membershipItems[index];
     const adherent = buildAdherent(order, item, index);
 
     if (!adherent.nom && !adherent.prenom && !adherent.emailParent1) {
