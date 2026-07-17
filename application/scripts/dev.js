@@ -624,11 +624,17 @@ function viderCachesHelloAssoLocaux() {
     CLES_CACHE_HELLOASSO.forEach(cle => localStorage.removeItem(cle));
 }
 
-function nettoyerInscriptionsHelloAssoLocales() {
+function nettoyerDonneesHelloAssoLocales() {
+    const adherents = lireJSON(clesLocales.adherents, []);
     const inscriptions = lireJSON(clesLocales.inscriptions, []);
-    const conservees = inscriptions.filter(item => !estDonneeHelloAsso(item));
-    ecrireJSON(clesLocales.inscriptions, conservees);
-    return inscriptions.length - conservees.length;
+    const adherentsConserves = adherents.filter(item => !estDonneeHelloAsso(item));
+    const inscriptionsConservees = inscriptions.filter(item => !estDonneeHelloAsso(item));
+    ecrireJSON(clesLocales.adherents, adherentsConserves);
+    ecrireJSON(clesLocales.inscriptions, inscriptionsConservees);
+    return {
+        adherents: adherents.length - adherentsConserves.length,
+        inscriptions: inscriptions.length - inscriptionsConservees.length
+    };
 }
 
 
@@ -660,8 +666,12 @@ async function analyserRafraichissementHelloAsso() {
 
     zone.innerHTML = `<section class="card"><p>🔍 Analyse en lecture seule de Firestore...</p></section>`;
 
-    const [inscriptions, tresorerie, dons] = await Promise.all([
+    const [adherents, inscriptions, accesMembres, commandes, paiements, tresorerie, dons] = await Promise.all([
+        compterDocuments("adherents", data => estDonneeHelloAsso(data)),
         compterDocuments("inscriptions", data => estDonneeHelloAsso(data)),
+        compterDocuments("pendingUsers", data => estDonneeHelloAsso(data) && !["admin", "superadmin", "super-admin", "super_admin"].includes(String(data.role || "").toLowerCase())),
+        compterDocuments("helloassoOrders"),
+        compterDocuments("helloassoPayments"),
         compterDocuments(
             "tresorerieCotisations",
             data => estDonneeHelloAsso(data) &&
@@ -671,6 +681,8 @@ async function analyserRafraichissementHelloAsso() {
         compterDocuments("helloassoDonations")
     ]);
 
+    const adherentsLocaux = lireJSON(clesLocales.adherents, [])
+        .filter(item => estDonneeHelloAsso(item)).length;
     const inscriptionsLocales = lireJSON(clesLocales.inscriptions, [])
         .filter(item => estDonneeHelloAsso(item)).length;
     const cachesLocaux = CLES_CACHE_HELLOASSO
@@ -679,13 +691,18 @@ async function analyserRafraichissementHelloAsso() {
     zone.innerHTML = `
         <section class="card">
             <h3>🔍 Simulation terminée — aucune donnée modifiée</h3>
+            ${ligneSimulation("Adhérents importés HelloAsso qui seraient supprimés", adherents)}
             ${ligneSimulation("Inscriptions HelloAsso Firestore qui seraient supprimées", inscriptions)}
+            ${ligneSimulation("Accès membres préparés par HelloAsso qui seraient supprimés", accesMembres)}
+            ${ligneSimulation("Commandes techniques HelloAsso qui seraient supprimées", commandes)}
+            ${ligneSimulation("Paiements techniques HelloAsso qui seraient supprimés", paiements)}
             ${ligneSimulation("Dossiers trésorerie HelloAsso non validés qui seraient supprimés", tresorerie)}
             ${ligneSimulation("Dons HelloAsso qui seraient supprimés puis réimportés", dons)}
+            <p><strong>Adhérents HelloAsso locaux qui seraient supprimés :</strong> ${adherentsLocaux}</p>
             <p><strong>Inscriptions HelloAsso locales qui seraient supprimées :</strong> ${inscriptionsLocales}</p>
             <p><strong>Caches techniques HelloAsso qui seraient vidés :</strong> ${cachesLocaux}</p>
             <hr>
-            <p><strong>Conservés :</strong> adhérents, numéros d'adhérent, licences, profils Firestore, comptes membres et réglages des familles.</p>
+            <p><strong>Conservés :</strong> administrateurs, groupes, planning, configuration Firebase/HelloAsso et données créées manuellement sans source HelloAsso.</p>
         </section>
     `;
 }
@@ -782,7 +799,8 @@ async function rafraichirImportsHelloAsso() {
 
     if (!confirm(
         "Nettoyer les imports HelloAsso ?\n\n" +
-        "Les adhérents, numéros, licences, comptes membres et profils familles seront conservés."
+        "Tous les adhérents, inscriptions et accès membres provenant de HelloAsso seront supprimés puis reconstruits au prochain import.\n" +
+        "Les administrateurs, groupes, planning et réglages techniques seront conservés."
     )) return;
 
     const texte = prompt("Tape exactement RAFRAICHIR pour confirmer :");
@@ -795,10 +813,14 @@ async function rafraichirImportsHelloAsso() {
 
     const etapes = [
         { id: "sauvegarde", label: "Sauvegarde JSON avant nettoyage" },
+        { id: "adherents", label: "Adhérents importés HelloAsso" },
         { id: "inscriptions", label: "Inscriptions HelloAsso Firestore" },
+        { id: "pendingUsers", label: "Accès membres préparés par HelloAsso" },
+        { id: "orders", label: "Commandes techniques HelloAsso" },
+        { id: "payments", label: "Paiements techniques HelloAsso" },
         { id: "tresorerie", label: "Dossiers trésorerie HelloAsso non validés" },
         { id: "dons", label: "Dons HelloAsso" },
-        { id: "local", label: "Inscriptions HelloAsso locales" },
+        { id: "local", label: "Adhérents et inscriptions HelloAsso locales" },
         { id: "caches", label: "Caches techniques HelloAsso" }
     ];
     const suivi = creerSuiviOperation(zone, "🔄 Rafraîchissement sécurisé HelloAsso", etapes);
@@ -808,7 +830,11 @@ async function rafraichirImportsHelloAsso() {
         const donnees = {
             type: "rafraichissement-imports-helloasso",
             date: new Date().toISOString(),
+            adherents: await lireCollectionPourSauvegarde("adherents"),
             inscriptions: await lireCollectionPourSauvegarde("inscriptions"),
+            pendingUsers: await lireCollectionPourSauvegarde("pendingUsers"),
+            commandes: await lireCollectionPourSauvegarde("helloassoOrders"),
+            paiements: await lireCollectionPourSauvegarde("helloassoPayments"),
             tresorerie: await lireCollectionPourSauvegarde("tresorerieCotisations"),
             dons: await lireCollectionPourSauvegarde("helloassoDonations")
         };
@@ -820,10 +846,35 @@ async function rafraichirImportsHelloAsso() {
     }, { formaterSucces: () => "Sauvegarde téléchargée" });
     rapport.sauvegarde = sauvegarde;
 
+
+    rapport.adherents = await executerEtapeSuivie(
+        suivi,
+        "adherents",
+        () => supprimerDocuments("adherents", data => estDonneeHelloAsso(data)),
+        { formaterSucces: total => `${total} document(s) supprimé(s)` }
+    );
     rapport.inscriptions = await executerEtapeSuivie(
         suivi,
         "inscriptions",
         () => supprimerDocuments("inscriptions", data => estDonneeHelloAsso(data)),
+        { formaterSucces: total => `${total} document(s) supprimé(s)` }
+    );
+    rapport.pendingUsers = await executerEtapeSuivie(
+        suivi,
+        "pendingUsers",
+        () => supprimerDocuments("pendingUsers", data => estDonneeHelloAsso(data) && !["admin", "superadmin", "super-admin", "super_admin"].includes(String(data.role || "").toLowerCase())),
+        { formaterSucces: total => `${total} document(s) supprimé(s)` }
+    );
+    rapport.orders = await executerEtapeSuivie(
+        suivi,
+        "orders",
+        () => supprimerDocuments("helloassoOrders"),
+        { formaterSucces: total => `${total} document(s) supprimé(s)` }
+    );
+    rapport.payments = await executerEtapeSuivie(
+        suivi,
+        "payments",
+        () => supprimerDocuments("helloassoPayments"),
         { formaterSucces: total => `${total} document(s) supprimé(s)` }
     );
     rapport.tresorerie = await executerEtapeSuivie(
@@ -846,8 +897,8 @@ async function rafraichirImportsHelloAsso() {
     rapport.local = await executerEtapeSuivie(
         suivi,
         "local",
-        async () => nettoyerInscriptionsHelloAssoLocales(),
-        { formaterSucces: total => `${total} inscription(s) locale(s) supprimée(s)` }
+        async () => nettoyerDonneesHelloAssoLocales(),
+        { formaterSucces: resultat => `${resultat.adherents} adhérent(s) et ${resultat.inscriptions} inscription(s) locale(s) supprimé(s)` }
     );
     rapport.caches = await executerEtapeSuivie(
         suivi,
