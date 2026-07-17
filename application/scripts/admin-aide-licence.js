@@ -575,18 +575,152 @@ function brancher() {
   });
 }
 
+
+function ordreStatut(statut) {
+  return {
+    attente: 1,
+    partiel: 2,
+    regle: 3,
+    annule: 4
+  }[statut] || 5;
+}
+
+function titreSectionStatut(statut) {
+  return {
+    attente: "🔴 En attente",
+    partiel: "🟠 Partiellement réglés",
+    regle: "🟢 Réglés / licences validées",
+    annule: "⚫ Annulés / impayés"
+  }[statut] || "Autres";
+}
+
+function sectionStatut(statut, dossiers, ouverteParDefaut = false) {
+  const id = `treasury-section-${statut}`;
+
+  return `
+    <section class="treasury-status-section ${classesStatut[statut] || ""}">
+      <button
+        type="button"
+        class="treasury-status-section-toggle"
+        aria-expanded="${ouverteParDefaut ? "true" : "false"}"
+        aria-controls="${id}">
+        <span>
+          ${titreSectionStatut(statut)}
+          <strong>${dossiers.length}</strong>
+        </span>
+
+        <span class="treasury-status-section-arrow">
+          ${ouverteParDefaut ? "▾" : "▸"}
+        </span>
+      </button>
+
+      <div
+        id="${id}"
+        class="treasury-status-section-content"
+        ${ouverteParDefaut ? "" : "hidden"}>
+        ${dossiers.length
+          ? dossiers.map(card).join("")
+          : `
+              <section class="card treasury-empty-section">
+                <p>Aucun dossier dans cette section.</p>
+              </section>
+            `}
+      </div>
+    </section>
+  `;
+}
+
+function brancherSectionsStatut() {
+  document
+    .querySelectorAll(".treasury-status-section-toggle")
+    .forEach(button => {
+      button.onclick = () => {
+        const id = button.getAttribute("aria-controls");
+        const content = document.getElementById(id);
+        if (!content) return;
+
+        const ouvert = content.hidden === false;
+        content.hidden = ouvert;
+        button.setAttribute("aria-expanded", String(!ouvert));
+
+        const arrow = button.querySelector(
+          ".treasury-status-section-arrow"
+        );
+
+        if (arrow) {
+          arrow.textContent = ouvert ? "▸" : "▾";
+        }
+      };
+    });
+}
+
 function afficherListes() {
-  const data = dossiersFiltres();
-  zoneResume.textContent = `${data.length} dossier${data.length > 1 ? "s" : ""}`;
+  const data = dossiersFiltres()
+    .slice()
+    .sort((a, b) => {
+      const statutDiff =
+        ordreStatut(a.statut) -
+        ordreStatut(b.statut);
 
-  const alertes = data.filter(d => d.reste > 0 || d.relance || !d.justificatifValide);
+      if (statutDiff !== 0) {
+        return statutDiff;
+      }
+
+      return `${a.nom} ${a.prenom}`.localeCompare(
+        `${b.nom} ${b.prenom}`,
+        "fr",
+        { sensitivity: "base" }
+      );
+    });
+
+  zoneResume.textContent =
+    `${data.length} dossier${data.length > 1 ? "s" : ""}`;
+
+  const groupes = {
+    attente: data.filter(d => d.statut === "attente"),
+    partiel: data.filter(d => d.statut === "partiel"),
+    regle: data.filter(d => d.statut === "regle"),
+    annule: data.filter(d => d.statut === "annule")
+  };
+
+  const alertes = data.filter(d =>
+    d.statut === "attente" ||
+    d.statut === "partiel" ||
+    d.relance ||
+    !d.justificatifValide
+  );
+
   zoneAlertes.innerHTML = alertes.length
-    ? `<section class="card treasury-alert-title"><h2>🚨 À traiter</h2>
-       <p>Reste à payer, relance ou justificatif à vérifier.</p></section>${alertes.map(card).join("")}`
-    : `<section class="card treasury-all-clear"><h2>✅ Aucun dossier urgent</h2></section>`;
+    ? `
+        <section class="card treasury-alert-title">
+          <h2>🚨 À traiter</h2>
+          <p>
+            Dossiers en attente, partiels, à relancer
+            ou justificatifs à vérifier.
+          </p>
+        </section>
+      `
+    : `
+        <section class="card treasury-all-clear">
+          <h2>✅ Aucun dossier urgent</h2>
+        </section>
+      `;
 
-  zoneListe.innerHTML = data.length ? data.map(card).join("") :
-    `<section class="card"><h2>Aucun résultat</h2></section>`;
+  zoneListe.innerHTML = data.length
+    ? [
+        sectionStatut("attente", groupes.attente, true),
+        sectionStatut("partiel", groupes.partiel, true),
+        sectionStatut("regle", groupes.regle, false),
+        sectionStatut("annule", groupes.annule, false)
+      ].join("")
+    : `
+        <section class="card">
+          <h2>Aucun résultat</h2>
+          <p>Aucun dossier ne correspond aux filtres.</p>
+        </section>
+      `;
+
+  brancherSectionsStatut();
   brancher();
 }
 

@@ -263,3 +263,79 @@
   color: var(--light-grey);
   font-size: 13px;
 }
+
+
+/* Sections repliables par statut */
+.treasury-status-section {
+  margin-top: 16px;
+  border-radius: 16px;
+  overflow: hidden;
+  border-left: 7px solid #777;
+  background: rgba(255,255,255,.025);
+}
+
+.treasury-status-section.treasury-status-waiting {
+  border-left-color: #e63946;
+}
+
+.treasury-status-section.treasury-status-partial {
+  border-left-color: #ff9800;
+}
+
+.treasury-status-section.treasury-status-paid {
+  border-left-color: #2f9f57;
+}
+
+.treasury-status-section.treasury-status-cancelled {
+  border-left-color: #777;
+}
+
+.treasury-status-section-toggle {
+  width: 100%;
+  border: 0;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: var(--card);
+  color: #fff;
+  text-align: left;
+  font-size: 17px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.treasury-status-section-toggle:hover {
+  background: rgba(255,255,255,.08);
+}
+
+.treasury-status-section-toggle strong {
+  display: inline-flex;
+  min-width: 28px;
+  height: 28px;
+  margin-left: 8px;
+  padding: 0 8px;
+  border-radius: 999px;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,.10);
+  font-size: 13px;
+}
+
+.treasury-status-section-arrow {
+  font-size: 22px;
+}
+
+.treasury-status-section-content {
+  padding: 2px 12px 14px;
+}
+
+.treasury-status-section-content .treasury-member-card {
+  margin-top: 12px;
+}
+
+.treasury-empty-section {
+  margin-top: 12px;
+  color: var(--light-grey);
+}
