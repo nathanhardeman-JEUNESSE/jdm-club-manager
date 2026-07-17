@@ -2,6 +2,8 @@ import { watchSession } from "./session.js";
 
 import {
     findAdherentByEmail,
+    findAdherentsByEmail,
+    getAdherentsByNumbers,
     listGroupesFirestore,
     listAbsencesFirestore,
     saveAbsenceFirestore,
@@ -23,6 +25,58 @@ const listeAbsences = document.getElementById("liste-absences-parent");
 
 let profilConnecte = null;
 let adherentConnecte = null;
+let adherentsCompte = [];
+
+function identiteAdherent(adherent) {
+    return [adherent?.prenom, adherent?.nom].filter(Boolean).join(" ") || "Adhérent";
+}
+
+function afficherSelecteurAdherent() {
+    let zone = document.getElementById("absence-member-switcher-zone");
+
+    if (!zone) {
+        zone = document.createElement("section");
+        zone.id = "absence-member-switcher-zone";
+        zone.className = "card";
+        champNom?.closest("section.card")?.parentElement?.insertBefore(
+            zone,
+            champNom.closest("section.card")
+        );
+    }
+
+    if (!zone || adherentsCompte.length <= 1) {
+        if (zone) zone.hidden = true;
+        return;
+    }
+
+    zone.hidden = false;
+    zone.innerHTML = `
+        <label for="absence-member-switcher"><strong>Adhérent concerné :</strong></label>
+        <select id="absence-member-switcher" class="form-input">
+            ${adherentsCompte.map(adherent => `
+                <option value="${adherent.numeroAdherent || adherent.id}"
+                    ${(adherent.numeroAdherent || adherent.id) === (adherentConnecte?.numeroAdherent || adherentConnecte?.id) ? "selected" : ""}>
+                    ${identiteAdherent(adherent)}
+                </option>
+            `).join("")}
+        </select>
+    `;
+
+    document.getElementById("absence-member-switcher")
+        ?.addEventListener("change", event => {
+            adherentConnecte = adherentsCompte.find(adherent =>
+                String(adherent.numeroAdherent || adherent.id) === String(event.target.value)
+            ) || adherentsCompte[0];
+
+            sessionStorage.setItem(
+                "jdmAdherentSelectionne",
+                adherentConnecte.numeroAdherent || adherentConnecte.id
+            );
+
+            preRemplirFormulaire();
+            afficherAbsences();
+        });
+}
 
 async function chargerDonneesPartagees() {
     try {
@@ -104,6 +158,10 @@ function remplirGroupes(groupeUnique = "") {
 
 function preRemplirFormulaire() {
     if (!profilConnecte && !adherentConnecte) return;
+
+    champNom.readOnly = false;
+    champPrenom.readOnly = false;
+    selectGroupe.disabled = false;
 
     const nom = (adherentConnecte && adherentConnecte.nom) || (profilConnecte && profilConnecte.nom) || "";
     const prenom = (adherentConnecte && adherentConnecte.prenom) || (profilConnecte && profilConnecte.prenom) || "";
@@ -292,17 +350,41 @@ watchSession(async (user, profile) => {
     profilConnecte = profile;
 
     try {
-        adherentConnecte =
-            await findAdherentByEmail(profile.email || user.email) ||
-            trouverAdherentLocalParNumero(profile.numeroAdherent) ||
-            trouverAdherentLocalParEmail(profile.email || user.email);
+        const numerosCompte = [
+            ...(Array.isArray(profile.numeroAdherents) ? profile.numeroAdherents : []),
+            profile.numeroAdherent
+        ].filter(Boolean);
+
+        adherentsCompte = numerosCompte.length
+            ? await getAdherentsByNumbers(numerosCompte)
+            : await findAdherentsByEmail(profile.email || user.email);
+
+        if (adherentsCompte.length === 0) {
+            const unique = await findAdherentByEmail(profile.email || user.email);
+            adherentsCompte = unique ? [unique] : [];
+        }
     } catch (error) {
-        console.warn("Recherche adhérent Firebase impossible, fallback localStorage", error);
-        adherentConnecte =
-            trouverAdherentLocalParNumero(profile.numeroAdherent) ||
-            trouverAdherentLocalParEmail(profile.email || user.email);
+        console.warn("Recherche adhérents Firebase impossible, fallback localStorage", error);
+        adherentsCompte = adherents.filter(adherent => {
+            const numero = String(adherent.numeroAdherent || "");
+            return (profile.numeroAdherents || []).map(String).includes(numero) ||
+                numero === String(profile.numeroAdherent || "");
+        });
+
+        if (adherentsCompte.length === 0) {
+            const local =
+                trouverAdherentLocalParNumero(profile.numeroAdherent) ||
+                trouverAdherentLocalParEmail(profile.email || user.email);
+            adherentsCompte = local ? [local] : [];
+        }
     }
 
+    const selectionSauvee = sessionStorage.getItem("jdmAdherentSelectionne");
+    adherentConnecte = adherentsCompte.find(adherent =>
+        String(adherent.numeroAdherent || adherent.id) === String(selectionSauvee)
+    ) || adherentsCompte[0] || null;
+
+    afficherSelecteurAdherent();
     preRemplirFormulaire();
     afficherAbsences();
 });

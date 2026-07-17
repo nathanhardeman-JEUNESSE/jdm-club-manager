@@ -228,15 +228,28 @@ function dossiersFiltres() {
 }
 
 
+function montantDon(don = {}) {
+  if (don.montantPaye !== undefined && don.montantPaye !== null) return arr(n(don.montantPaye));
+  if (don.montant !== undefined && don.montant !== null) return arr(n(don.montant));
+  if (don.montantDeclare !== undefined && don.montantDeclare !== null) return arr(n(don.montantDeclare));
+
+  const cents = don.montantCentimes ?? don.donneesHelloAsso?.amount ?? don.donneesHelloAsso?.payments?.[0]?.shareAmount;
+  return cents !== undefined && cents !== null ? arr(n(cents) / 100) : 0;
+}
+
+function dateDon(don = {}) {
+  return don.dateDon || don.date || don.donneesHelloAsso?.date || "";
+}
+
 function afficherDons() {
   if (!zoneDons) return;
 
   const dons = donsHelloAsso
     .slice()
     .sort((a, b) =>
-      String(b.dateDon || "")
+      String(dateDon(b))
         .localeCompare(
-          String(a.dateDon || "")
+          String(dateDon(a))
         )
     );
 
@@ -252,10 +265,7 @@ function afficherDons() {
   const totalDons = arr(
     dons.reduce(
       (total, don) =>
-        total + n(
-          don.montantPaye ??
-          don.montantDeclare
-        ),
+        total + montantDon(don),
       0
     )
   );
@@ -279,18 +289,13 @@ function afficherDons() {
 
           <p>
             <strong>Montant :</strong>
-            ${euros(
-              don.montantPaye ??
-              don.montantDeclare
-            )}
+            ${euros(montantDon(don))}
           </p>
 
           <p>
             <strong>Date :</strong>
-            ${don.dateDon
-              ? new Date(
-                  don.dateDon
-                ).toLocaleDateString("fr-FR")
+            ${dateDon(don)
+              ? new Date(dateDon(don)).toLocaleDateString("fr-FR")
               : "Non renseignée"}
           </p>
 

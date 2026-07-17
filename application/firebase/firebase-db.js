@@ -20,6 +20,15 @@ function emailId(email) {
     return String(email || "").trim().toLowerCase();
 }
 
+function listeNumerosAdherents(...sources) {
+    return [...new Set(
+        sources
+            .flatMap(source => Array.isArray(source) ? source : [source])
+            .map(value => String(value || "").trim())
+            .filter(Boolean)
+    )];
+}
+
 export async function getUserProfile(uid) {
     const ref = doc(db, "users", uid);
     const snap = await getDoc(ref);
@@ -53,13 +62,45 @@ export async function deletePendingUser(email) {
 export async function ensureUserProfile(user) {
     if (!user) return null;
 
-    const existing = await getUserProfile(user.uid);
-    if (existing) {
-        return { uid: user.uid, ...existing };
-    }
-
     const email = emailId(user.email);
-    const pending = await getPendingUserByEmail(email);
+    const [existing, pending] = await Promise.all([
+        getUserProfile(user.uid),
+        getPendingUserByEmail(email)
+    ]);
+
+    if (existing) {
+        const numerosAdherents = listeNumerosAdherents(
+            existing.numerosAdherents,
+            existing.numeroAdherent,
+            pending?.numerosAdherents,
+            pending?.numeroAdherent
+        );
+
+        const numeroAdherent =
+            existing.numeroAdherent || numerosAdherents[0] || "";
+
+        const modifications = {
+            numerosAdherents,
+            numeroAdherent,
+            updatedAt: serverTimestamp()
+        };
+
+        if (pending) {
+            await createOrUpdateUser(user.uid, modifications);
+            await deletePendingUser(email);
+        } else if (
+            !Array.isArray(existing.numerosAdherents) ||
+            existing.numerosAdherents.length !== numerosAdherents.length
+        ) {
+            await createOrUpdateUser(user.uid, modifications);
+        }
+
+        return {
+            uid: user.uid,
+            ...existing,
+            ...modifications
+        };
+    }
 
     if (!pending) {
         const error = new Error("Aucun accès préparé n'a été trouvé pour cette adresse email.");
@@ -73,13 +114,22 @@ export async function ensureUserProfile(user) {
         throw error;
     }
 
+    const numerosAdherents = listeNumerosAdherents(
+        pending.numerosAdherents,
+        pending.numeroAdherent
+    );
+
     const profile = {
         email,
         role: pending.role || JDM_CONFIG.roles.MEMBRE,
+        roles: Array.isArray(pending.roles)
+            ? pending.roles
+            : [pending.role || JDM_CONFIG.roles.MEMBRE],
         actif: true,
         clubId: JDM_CONFIG.clubId,
         accesPages: pending.accesPages || {},
-        numeroAdherent: pending.numeroAdherent || "",
+        numeroAdherent: pending.numeroAdherent || numerosAdherents[0] || "",
+        numerosAdherents,
         nom: pending.nom || "",
         prenom: pending.prenom || "",
         source: pending.source || "invitation",
@@ -221,6 +271,55 @@ export async function findAdherentByEmail(email) {
             adherent.emailParent1,
             adherent.emailParent2
         ].map(emailId).includes(cible)) || null;
+}
+
+
+export async function findAdherentsByEmail(email) {
+    const cible = emailId(email);
+    if (!cible) return [];
+
+    const snap = await getDocs(collection(db, "adherents"));
+
+    return snap.docs
+        .map(item => ({ id: item.id, ...item.data() }))
+        .filter(adherent => [
+            adherent.email,
+            adherent.emailAdherent,
+            adherent.emailParent1,
+            adherent.emailParent2,
+            adherent.emailPayeur
+        ].map(emailId).includes(cible));
+}
+
+export async function getAdherentsByNumbers(numeros) {
+    const cibles = new Set(
+        listeNumerosAdherents(numeros).map(String)
+    );
+
+    if (cibles.size === 0) return [];
+
+    const snap = await getDocs(collection(db, "adherents"));
+
+    return snap.docs
+        .map(item => ({ id: item.id, ...item.data() }))
+        .filter(adherent =>
+            cibles.has(String(adherent.numeroAdherent || adherent.id))
+        );
+}
+
+export async function updateMemberProfile(adherentId, modifications) {
+    if (!adherentId) throw new Error("Identifiant adhérent manquant.");
+
+    const champs = Object.keys(modifications || {});
+    const champsModifiesParMembre = Object.fromEntries(
+        champs.map(champ => [champ, true])
+    );
+
+    await setDoc(doc(db, "adherents", String(adherentId)), {
+        profil: modifications || {},
+        champsModifiesParMembre,
+        updatedAt: serverTimestamp()
+    }, { merge: true });
 }
 
 

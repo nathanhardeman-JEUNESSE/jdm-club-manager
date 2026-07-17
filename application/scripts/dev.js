@@ -424,6 +424,10 @@ function libelleStatistique(cle) {
         adherentsWritten: "Adhérents enregistrés",
         registrationsWritten: "Inscriptions enregistrées",
         pendingUsersWritten: "Accès membres préparés",
+        donationsWritten: "Dons enregistrés",
+        productsIgnored: "Produits ignorés",
+        uniqueAdherentsWritten: "Adhérents uniques",
+        duplicateMembershipsMerged: "Lignes fusionnées",
         skipped: "Éléments ignorés",
         errors: "Erreurs"
     };
@@ -455,7 +459,7 @@ function afficherProgressionHelloAsso(data = {}) {
         ${data.errorMessage ? `<p style="color:#ff8c94;"><strong>Erreur :</strong> ${echapperHTML(data.errorMessage)}</p>` : ""}
     `;
 
-    const ordre = ["ordersRead", "ordersWritten", "paymentsWritten", "adherentsWritten", "registrationsWritten", "pendingUsersWritten", "skipped", "errors"];
+    const ordre = ["ordersRead", "ordersWritten", "paymentsWritten", "uniqueAdherentsWritten", "duplicateMembershipsMerged", "registrationsWritten", "pendingUsersWritten", "donationsWritten", "productsIgnored", "skipped", "errors"];
     zoneProgression.innerHTML = `
         <section class="card">
             <h3>📊 Rapport GitHub → Firestore</h3>

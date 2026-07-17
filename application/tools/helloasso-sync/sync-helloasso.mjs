@@ -35,12 +35,47 @@ const stats = {
   pendingUsersWritten: 0,
   donationsWritten: 0,
   productsIgnored: 0,
+  uniqueAdherentsWritten: 0,
+  duplicateMembershipsMerged: 0,
   skipped: 0,
   errors: 0
 };
 
 function safeMessage(error) {
   return error instanceof Error ? error.message : String(error);
+}
+
+const adherentIdsWritten = new Set();
+
+function stableHash(value) {
+  let hash = 2166136261;
+  const text = String(value || "");
+
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return String(hash >>> 0).padStart(10, "0");
+}
+
+function normalizeDate(value) {
+  return normalize(value).replace(/[^0-9]/g, "");
+}
+
+function buildIdentityKey({ nom, prenom, birthDate, email, telephone }) {
+  const namePart = `${normalize(nom)}|${normalize(prenom)}`;
+  const birthPart = normalizeDate(birthDate);
+
+  if (birthPart) return `${namePart}|birth:${birthPart}`;
+
+  const emailPart = normalize(email);
+  if (emailPart) return `${namePart}|email:${emailPart}`;
+
+  const phonePart = String(telephone || "").replace(/\D/g, "");
+  if (phonePart) return `${namePart}|phone:${phonePart}`;
+
+  return `${namePart}|unknown`;
 }
 
 async function getAccessToken() {
@@ -254,11 +289,19 @@ function buildAdherent(order, item, index) {
 
   const orderId = order.id ?? order.orderId;
   const itemId = item?.id ?? `${orderId}-${index + 1}`;
-  const numeroAdherent = `HA-${itemId}`;
+  const cleIdentite = buildIdentityKey({
+    nom,
+    prenom,
+    birthDate,
+    email: email || payer.email,
+    telephone
+  });
+  const numeroAdherent = `HA-${stableHash(cleIdentite)}`;
 
   return {
     numeroAdherent,
-    cle: [normalize(nom), normalize(prenom), normalize(birthDate)].join("-"),
+    cle: cleIdentite,
+    cleIdentite,
     nom,
     prenom,
     dateNaissance: birthDate,
@@ -270,6 +313,7 @@ function buildAdherent(order, item, index) {
     telephone,
     telephoneUrgence: telephone,
     groupe: group,
+    groupes: group ? FieldValue.arrayUnion(group) : [],
     saison: season,
     actif: true,
     cotisationAJour: false,
@@ -292,6 +336,7 @@ function buildRegistration(order, item, adherent) {
   return {
     saison: season,
     numeroAdherent: adherent.numeroAdherent,
+    groupe: item?.name || item?.tierName || item?.title || item?.priceCategory || "",
     source: "helloasso",
     statutPaiement: "payé",
     cotisationAJour: true,
@@ -307,8 +352,8 @@ function buildRegistration(order, item, adherent) {
   };
 }
 
-function buildPendingUser(adherent) {
-  const email = normalize(adherent.emailParent1 || adherent.email);
+function buildPendingUser(adherent, emailCible) {
+  const email = normalize(emailCible);
 
   if (!email || !email.includes("@")) return null;
 
@@ -319,6 +364,7 @@ function buildPendingUser(adherent) {
     role: "membre",
     actif: true,
     numeroAdherent: adherent.numeroAdherent,
+    numerosAdherents: FieldValue.arrayUnion(adherent.numeroAdherent),
     source: "helloasso",
     clubId: CONFIG.clubId,
     accesPages: {
@@ -420,7 +466,10 @@ async function writeOrder(order) {
           prenom: payer.firstName || "",
           email: payer.email || "",
           montant: Number(cents || 0) / 100,
+          montantPaye: Number(cents || 0) / 100,
+          montantCentimes: Number(cents || 0),
           date: order.date || order.creationDate || new Date().toISOString(),
+          dateDon: order.date || order.creationDate || new Date().toISOString(),
           source: "helloasso",
           donneesHelloAsso: item,
           updatedAt: FieldValue.serverTimestamp()
@@ -448,8 +497,9 @@ async function writeOrder(order) {
     }
 
     const adherentId = firestoreId(adherent.numeroAdherent);
+    const itemId = firestoreId(item?.id ?? `${orderId}-${index + 1}`);
     const registrationId = firestoreId(
-      `${adherent.numeroAdherent}-${season}`
+      `${adherent.numeroAdherent}-${itemId}-${season}`
     );
 
     await db
@@ -458,6 +508,12 @@ async function writeOrder(order) {
       .set(adherent, { merge: true });
 
     stats.adherentsWritten += 1;
+    if (adherentIdsWritten.has(adherentId)) {
+      stats.duplicateMembershipsMerged += 1;
+    } else {
+      adherentIdsWritten.add(adherentId);
+      stats.uniqueAdherentsWritten += 1;
+    }
 
     await db
       .collection(CONFIG.collections.inscriptions)
@@ -466,13 +522,46 @@ async function writeOrder(order) {
 
     stats.registrationsWritten += 1;
 
-    const pending = buildPendingUser(adherent);
+    const emailsAcces = [...new Set([
+      adherent.email,
+      adherent.emailParent1,
+      adherent.emailParent2
+    ].map(normalize).filter(email => email && email.includes("@")))];
 
-    if (pending) {
-      await db
+    for (const emailAcces of emailsAcces) {
+      const pending = buildPendingUser(adherent, emailAcces);
+      if (!pending) continue;
+
+      const pendingRef = db
         .collection(CONFIG.collections.pendingUsers)
-        .doc(pending.email)
-        .set(pending, { merge: true });
+        .doc(pending.email);
+
+      await db.runTransaction(async transaction => {
+        const snapshot = await transaction.get(pendingRef);
+        const existant = snapshot.exists ? snapshot.data() : {};
+
+        transaction.set(pendingRef, {
+          ...pending,
+          numeroAdherent:
+            existant.numeroAdherent || pending.numeroAdherent,
+          nom: existant.nom || pending.nom,
+          prenom: existant.prenom || pending.prenom
+        }, { merge: true });
+      });
+
+      const usersSnapshot = await db
+        .collection("users")
+        .where("email", "==", pending.email)
+        .get();
+
+      for (const userDoc of usersSnapshot.docs) {
+        await userDoc.ref.set({
+          numeroAdherent:
+            userDoc.data()?.numeroAdherent || pending.numeroAdherent,
+          numerosAdherents: FieldValue.arrayUnion(adherent.numeroAdherent),
+          updatedAt: FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
 
       stats.pendingUsersWritten += 1;
     }

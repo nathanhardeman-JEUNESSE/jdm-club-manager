@@ -3,6 +3,8 @@ import {
     listPlanningExceptionsFirestore,
     listAdherents,
     listInscriptions,
+    getAdherentsByNumbers,
+    findAdherentsByEmail,
     saveAbsenceFirestore,
     saveNotificationFirestore
 } from "../firebase/firebase-db.js";
@@ -13,6 +15,7 @@ let groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
 let exceptions = JSON.parse(localStorage.getItem("planningExceptionsJDM")) || [];
 let utilisateurConnecte = null;
 let adherents = [];
+let adherentsCompte = [];
 let adherentSelectionne = null;
 
 let absences = JSON.parse(localStorage.getItem("absencesJDM")) || [];
@@ -31,6 +34,54 @@ const boutonEnvoyerAbsence = document.getElementById("envoyer-absence");
 
 let dateReference = new Date();
 let seanceSelectionnee = null;
+
+function identiteAdherent(adherent) {
+    return [adherent?.prenom, adherent?.nom].filter(Boolean).join(" ") || "Adhérent";
+}
+
+function afficherSelecteurAdherent() {
+    let zone = document.getElementById("planning-member-switcher-zone");
+
+    if (!zone) {
+        zone = document.createElement("section");
+        zone.id = "planning-member-switcher-zone";
+        zone.className = "card";
+        zone.style.marginBottom = "14px";
+        zonePlanning?.parentElement?.insertBefore(zone, zonePlanning);
+    }
+
+    if (adherentsCompte.length <= 1) {
+        zone.hidden = true;
+        return;
+    }
+
+    zone.hidden = false;
+    zone.innerHTML = `
+        <label for="planning-member-switcher"><strong>Planning affiché :</strong></label>
+        <select id="planning-member-switcher" class="form-input">
+            ${adherentsCompte.map(adherent => `
+                <option value="${adherent.numeroAdherent || adherent.id}"
+                    ${(adherent.numeroAdherent || adherent.id) === (adherentSelectionne?.numeroAdherent || adherentSelectionne?.id) ? "selected" : ""}>
+                    ${identiteAdherent(adherent)}
+                </option>
+            `).join("")}
+        </select>
+    `;
+
+    document.getElementById("planning-member-switcher")
+        ?.addEventListener("change", event => {
+            adherentSelectionne = adherentsCompte.find(adherent =>
+                String(adherent.numeroAdherent || adherent.id) === String(event.target.value)
+            ) || adherentsCompte[0];
+
+            sessionStorage.setItem(
+                "jdmAdherentSelectionne",
+                adherentSelectionne.numeroAdherent || adherentSelectionne.id
+            );
+
+            afficherPlanning();
+        });
+}
 
 async function chargerDonneesPartagees() {
     try {
@@ -551,22 +602,39 @@ watchSession(async (user, profile) => {
     utilisateurConnecte = profile;
 
     try {
-        [adherents, inscriptionsPartagees] = await Promise.all([
+        const numerosCompte = [
+            ...(Array.isArray(profile.numeroAdherents) ? profile.numeroAdherents : []),
+            profile.numeroAdherent
+        ].filter(Boolean);
+
+        [adherents, inscriptionsPartagees, adherentsCompte] = await Promise.all([
             listAdherents(),
-            listInscriptions()
+            listInscriptions(),
+            numerosCompte.length
+                ? getAdherentsByNumbers(numerosCompte)
+                : findAdherentsByEmail(profile.email || user.email)
         ]);
 
+        if (adherentsCompte.length === 0) {
+            adherentsCompte = adherents.filter(adherent =>
+                [adherent.email, adherent.emailParent1, adherent.emailParent2]
+                    .map(value => String(value || "").trim().toLowerCase())
+                    .includes(String(profile.email || user.email || "").trim().toLowerCase())
+            );
+        }
+
         const numeroSelectionne =
+            sessionStorage.getItem("jdmAdherentSelectionne") ||
             document.body.dataset.numeroAdherentSelectionne ||
             profile.numeroAdherent ||
             profile.numeroAdherents?.[0] ||
             "";
 
-        adherentSelectionne = adherents.find(adherent =>
-            String(adherent.numeroAdherent) ===
-            String(numeroSelectionne)
-        ) || null;
+        adherentSelectionne = adherentsCompte.find(adherent =>
+            String(adherent.numeroAdherent || adherent.id) === String(numeroSelectionne)
+        ) || adherentsCompte[0] || null;
 
+        afficherSelecteurAdherent();
         await chargerDonneesPartagees();
         afficherPlanning();
     } catch (error) {
