@@ -285,14 +285,25 @@ function exporterSauvegardeLocale() {
     ajouterJournal("Sauvegarde locale exportée", "Fichier JSON généré.");
 }
 
-document.getElementById("bouton-nouvelle-saison").addEventListener("click", nouvelleSaison);
-document.getElementById("vider-pointages").addEventListener("click", () => viderCles("Pointages vidés", [clesLocales.pointages, clesLocales.appels]));
-document.getElementById("vider-planning").addEventListener("click", () => viderCles("Planning vidé", [clesLocales.planning]));
-document.getElementById("vider-competitions").addEventListener("click", () => viderCles("Compétitions vidées", [clesLocales.competitions]));
-document.getElementById("vider-notifications").addEventListener("click", () => viderCles("Notifications vidées", [clesLocales.notifications, clesLocales.notificationsTresorier]));
-document.getElementById("vider-boutique").addEventListener("click", () => viderCles("Commandes boutique vidées", [clesLocales.commandes, clesLocales.notificationsTresorier, clesLocales.panier]));
-document.getElementById("vider-adherents").addEventListener("click", () => viderCles("Adhérents et inscriptions vidés", [clesLocales.adherents, clesLocales.inscriptions]));
-document.getElementById("export-local").addEventListener("click", exporterSauvegardeLocale);
+function lierBouton(id, gestionnaire) {
+    const bouton = document.getElementById(id);
+
+    if (!bouton) {
+        console.warn(`[DEV] Bouton absent : #${id}`);
+        return;
+    }
+
+    bouton.addEventListener("click", gestionnaire);
+}
+
+lierBouton("bouton-nouvelle-saison", nouvelleSaison);
+lierBouton("vider-pointages", () => viderCles("Pointages vidés", [clesLocales.pointages, clesLocales.appels]));
+lierBouton("vider-planning", () => viderCles("Planning vidé", [clesLocales.planning]));
+lierBouton("vider-competitions", () => viderCles("Compétitions vidées", [clesLocales.competitions]));
+lierBouton("vider-notifications", () => viderCles("Notifications vidées", [clesLocales.notifications, clesLocales.notificationsTresorier]));
+lierBouton("vider-boutique", () => viderCles("Commandes boutique vidées", [clesLocales.commandes, clesLocales.notificationsTresorier, clesLocales.panier]));
+lierBouton("vider-adherents", () => viderCles("Adhérents et inscriptions vidés", [clesLocales.adherents, clesLocales.inscriptions]));
+lierBouton("export-local", exporterSauvegardeLocale);
 
 afficherSaison();
 afficherStats();
