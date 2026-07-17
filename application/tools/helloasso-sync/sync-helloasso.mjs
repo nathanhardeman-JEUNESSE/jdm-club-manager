@@ -48,6 +48,8 @@ const stats = {
   productsIgnored: 0,
   unknownItemsIgnored: 0,
   skipped: 0,
+  cleanupDeleted: 0,
+  donationAnnotationsRestored: 0,
   errors: 0
 };
 
@@ -65,6 +67,79 @@ function normalizeEmail(value) {
 
 function stableHash(value, length = 20) {
   return crypto.createHash("sha256").update(value).digest("hex").slice(0, length);
+}
+
+
+function donationKey(data = {}) {
+  const itemId = clean(data.helloAssoItemId || data.helloassoItemId || data.donneesHelloAsso?.id);
+  if (itemId) return `item:${itemId}`;
+
+  return [
+    clean(data.helloAssoOrderId || data.helloassoOrderId),
+    normalizeEmail(data.email),
+    clean(data.date || data.dateDon),
+    String(Number(data.montant ?? data.montantPaye ?? 0))
+  ].join("|");
+}
+
+async function deleteQuerySnapshot(snapshot) {
+  const docs = snapshot.docs || [];
+  for (let index = 0; index < docs.length; index += 400) {
+    const batch = db.batch();
+    for (const item of docs.slice(index, index + 400)) batch.delete(item.ref);
+    await batch.commit();
+  }
+  stats.cleanupDeleted += docs.length;
+  return docs.length;
+}
+
+async function deleteHelloAssoDocuments(collectionName) {
+  const snapshot = await db.collection(collectionName).get();
+  const targeted = snapshot.docs.filter(item => {
+    const data = item.data() || {};
+    return String(data.source || "").toLowerCase() === "helloasso" ||
+      Boolean(data.helloAssoOrderId) || Boolean(data.helloassoOrderId) ||
+      Boolean(data.helloAssoItemId) || Boolean(data.helloassoItemId);
+  });
+
+  for (let index = 0; index < targeted.length; index += 400) {
+    const batch = db.batch();
+    for (const item of targeted.slice(index, index + 400)) batch.delete(item.ref);
+    await batch.commit();
+  }
+  stats.cleanupDeleted += targeted.length;
+  return targeted.length;
+}
+
+async function cleanupCompleteImport() {
+  if (mode !== "complete") return new Map();
+
+  console.log("Nettoyage serveur préalable à la synchronisation complète");
+  const donationAnnotations = new Map();
+  const donationsSnapshot = await db.collection(collections.donations).get();
+
+  for (const item of donationsSnapshot.docs) {
+    const data = item.data() || {};
+    const key = donationKey(data);
+    const previous = donationAnnotations.get(key) || {};
+    donationAnnotations.set(key, {
+      recuDemande: previous.recuDemande === true || data.recuDemande === true,
+      recuRemis: previous.recuRemis === true || data.recuRemis === true,
+      commentaireTresorier: clean(data.commentaireTresorier) || clean(previous.commentaireTresorier)
+    });
+  }
+
+  await Promise.all([
+    deleteHelloAssoDocuments(collections.adherents),
+    deleteHelloAssoDocuments(collections.inscriptions),
+    deleteHelloAssoDocuments(collections.pendingUsers),
+    deleteQuerySnapshot(await db.collection(collections.orders).get()),
+    deleteQuerySnapshot(await db.collection(collections.payments).get()),
+    deleteQuerySnapshot(donationsSnapshot)
+  ]);
+
+  console.log(`Nettoyage terminé : ${stats.cleanupDeleted} document(s) supprimé(s)`);
+  return donationAnnotations;
 }
 
 async function getAccessToken() {
@@ -326,6 +401,7 @@ function buildRegistration(order, item, person) {
     helloAssoOrderId: person.helloAssoOrderId,
     helloAssoItemId: person.helloAssoItemId,
     donneesHelloAsso: item,
+    dedupeKey: donationKey({ helloAssoItemId: itemId, helloAssoOrderId: orderId }),
     updatedAt: FieldValue.serverTimestamp()
   };
 }
@@ -372,6 +448,7 @@ function buildDonation(order, item, index) {
     date: order.date || order.creationDate || new Date().toISOString(),
     saison: season,
     donneesHelloAsso: item,
+    dedupeKey: donationKey({ helloAssoItemId: itemId, helloAssoOrderId: orderId }),
     updatedAt: FieldValue.serverTimestamp()
   };
 }
@@ -404,7 +481,7 @@ async function archiveOrder(order) {
   }
 }
 
-async function processOrders(orders) {
+async function processOrders(orders, donationAnnotations = new Map()) {
   const people = new Map();
   const registrations = [];
   const donations = [];
@@ -490,7 +567,14 @@ async function processOrders(orders) {
 
   for (const donation of donations) {
     const donationId = firestoreId(`HA-DON-${donation.helloAssoItemId}`);
-    await db.collection(collections.donations).doc(donationId).set(donation, { merge: true });
+    const annotations = donationAnnotations.get(donationKey(donation)) || {};
+    await db.collection(collections.donations).doc(donationId).set({
+      ...donation,
+      ...annotations
+    }, { merge: true });
+    if (annotations.recuDemande || annotations.recuRemis || annotations.commentaireTresorier) {
+      stats.donationAnnotationsRestored += 1;
+    }
     stats.donationsWritten += 1;
   }
 }
@@ -517,12 +601,13 @@ async function main() {
       stats
     }, { merge: true });
 
+    const donationAnnotations = await cleanupCompleteImport();
     const accessToken = await getAccessToken();
     const lastSyncAt = await getLastSuccessfulSync();
     const orders = await fetchOrders(accessToken, lastSyncAt);
     stats.ordersRead = orders.length;
 
-    await processOrders(orders);
+    await processOrders(orders, donationAnnotations);
 
     await writeStatus("success", {
       lastSuccessAt: FieldValue.serverTimestamp()

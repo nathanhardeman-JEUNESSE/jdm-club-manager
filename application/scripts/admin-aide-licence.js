@@ -53,8 +53,29 @@ function inscriptionsPour(numero) {
   return inscriptions.filter(i => String(i.numeroAdherent) === String(numero));
 }
 
+function inscriptionsUniquesPour(numero) {
+  const map = new Map();
+
+  for (const inscription of inscriptionsPour(numero)) {
+    const cle = String(
+      inscription.helloAssoItemId ||
+      inscription.donneesHelloAsso?.id ||
+      [
+        inscription.helloAssoOrderId,
+        inscription.groupe || inscription.donneesHelloAsso?.name,
+        inscription.montant,
+        inscription.dateInscription
+      ].join("|")
+    );
+
+    if (!map.has(cle)) map.set(cle, inscription);
+  }
+
+  return [...map.values()];
+}
+
 function derniereInscription(adherent) {
-  return inscriptionsPour(adherent.numeroAdherent)
+  return inscriptionsUniquesPour(adherent.numeroAdherent)
     .slice()
     .sort((a, b) => String(a.dateInscription || "").localeCompare(String(b.dateInscription || "")))
     .at(-1) || null;
@@ -70,11 +91,19 @@ function valeurChamp(inscription, mots, exclusions = []) {
   return found?.answer ?? "";
 }
 
+function premiereValeurChamp(inscriptionsAdherent, mots, exclusions = []) {
+  for (const inscription of inscriptionsAdherent) {
+    const valeur = valeurChamp(inscription, mots, exclusions);
+    if (String(valeur || "").trim()) return valeur;
+  }
+  return "";
+}
+
 function groupes(adherent) {
   return unique([
     ...(Array.isArray(adherent.groupes) ? adherent.groupes : []),
     adherent.groupe,
-    ...inscriptionsPour(adherent.numeroAdherent).map(i =>
+    ...inscriptionsUniquesPour(adherent.numeroAdherent).map(i =>
       i.groupe || i.donneesHelloAsso?.name || ""
     )
   ]).filter(g => nettoyer(g) !== "fixed");
@@ -109,33 +138,62 @@ function dossierSauve(adherent) {
   ) || {};
 }
 
+function reglementHelloAsso(inscription, adherent) {
+  const montant = montantHelloAsso(inscription);
+  if (montant <= 0) return null;
+
+  const itemId = inscription?.helloAssoItemId || inscription?.donneesHelloAsso?.id || "";
+  const orderId = inscription?.helloAssoOrderId || "";
+  const cle = itemId || `${orderId}-${inscription?.groupe || inscription?.dateInscription || adherent.numeroAdherent}`;
+
+  return {
+    id: `helloasso-${cle}`,
+    source: "helloasso",
+    verrouille: true,
+    mode: "cb-helloasso",
+    montant,
+    date: inscription?.dateInscription ? String(inscription.dateInscription).slice(0, 10) : "",
+    reference: orderId || inscription?.donneesHelloAsso?.payments?.[0]?.id || "",
+    helloAssoItemId: itemId,
+    commentaire: `Paiement HelloAsso · ${inscription?.groupe || inscription?.donneesHelloAsso?.name || "adhésion"}`
+  };
+}
+
 function dossier(adherent) {
+  const toutes = inscriptionsUniquesPour(adherent.numeroAdherent);
   const ins = derniereInscription(adherent);
   const saved = dossierSauve(adherent);
-  const red = reduction(ins);
-  const montantCBImporte = montantHelloAsso(ins);
-  let reglements = Array.isArray(saved.reglements) ? [...saved.reglements] : [];
-  const paiementHelloAssoExistant = reglements.some(reglement =>
-    reglement.source === "helloasso" || reglement.mode === "cb-helloasso"
-  );
-  if (montantCBImporte > 0 && !paiementHelloAssoExistant) {
-    reglements.unshift({
-      id: `helloasso-${ins?.helloAssoItemId || adherent.numeroAdherent}`,
-      source: "helloasso",
-      verrouille: true,
-      mode: "cb-helloasso",
-      montant: montantCBImporte,
-      date: ins?.dateInscription ? String(ins.dateInscription).slice(0, 10) : "",
-      reference: ins?.helloAssoOrderId || ins?.donneesHelloAsso?.payments?.[0]?.id || "",
-      commentaire: "Paiement importé automatiquement depuis HelloAsso"
-    });
-  }
-  const attendu = arr(n(saved.montantAttendu || montantInitial(ins)));
+
+  const montantInitialTotal = arr(toutes.reduce((total, inscription) =>
+    total + montantInitial(inscription), 0));
+  const montantHelloAssoTotal = arr(toutes.reduce((total, inscription) =>
+    total + montantHelloAsso(inscription), 0));
+
+  const reductions = toutes.map(reduction);
+  const reductionCodes = unique(reductions.map(item => item.code));
+  const reductionMontantTotal = arr(reductions.reduce((total, item) => total + n(item.montant), 0));
+
+  const reglementsManuels = Array.isArray(saved.reglements)
+    ? saved.reglements.filter(reglement =>
+        reglement.source !== "helloasso" && reglement.mode !== "cb-helloasso")
+    : [];
+  const reglementsHelloAsso = toutes
+    .map(inscription => reglementHelloAsso(inscription, adherent))
+    .filter(Boolean);
+  const reglements = [...reglementsHelloAsso, ...reglementsManuels];
+
+  const ancienMontantAuto = n(saved.montantInitial);
+  const montantSauve = n(saved.montantAttendu);
+  const montantAttenduSembleManuel =
+    saved.montantAttendu !== undefined &&
+    saved.montantAttendu !== null &&
+    Math.abs(montantSauve - ancienMontantAuto) > 0.009;
+  const attendu = arr(montantAttenduSembleManuel ? montantSauve : montantInitialTotal);
+
   const total = arr(reglements.reduce((s, r) => s + n(r.montant), 0));
   const reste = Math.max(0, arr(attendu - total));
 
   let statut = "attente";
-
   if (
     saved.statutForce === true &&
     ["attente", "partiel", "regle", "annule"].includes(saved.statut)
@@ -155,18 +213,18 @@ function dossier(adherent) {
     prenom: adherent.prenom || "",
     groupes: groupes(adherent),
     saison: ins?.saison || adherent.saison || "",
-    montantInitial: montantInitial(ins),
+    montantInitial: montantInitialTotal,
     montantAttendu: attendu,
-    montantHelloAsso: montantHelloAsso(ins),
-    reductionCode: red.code,
-    reductionMontant: red.montant,
+    montantHelloAsso: montantHelloAssoTotal,
+    reductionCode: reductionCodes.join(" · "),
+    reductionMontant: reductionMontantTotal,
     reglements,
     totalRegle: total,
     reste,
     statut,
-    adresse: valeurChamp(ins, ["adresse"], ["email"]),
-    codePostal: valeurChamp(ins, ["code", "postal"]),
-    ville: valeurChamp(ins, ["ville"]),
+    adresse: premiereValeurChamp(toutes, ["adresse"], ["email"]),
+    codePostal: premiereValeurChamp(toutes, ["code", "postal"]),
+    ville: premiereValeurChamp(toutes, ["ville"]),
     justificatifValide: saved.justificatifValide === true,
     licenceValidee: saved.licenceValidee === true,
     cotisationRegularisee: saved.cotisationRegularisee === true,
@@ -427,7 +485,8 @@ function paymentRow(r = {}, index = 0) {
   const disabled = verrouille ? "disabled" : "";
   return `
     <div class="treasury-payment-row ${verrouille ? "treasury-payment-imported" : ""}"
-         data-payment-source="${r.source || "manuel"}">
+         data-payment-source="${r.source || "manuel"}"
+         data-payment-id="${r.id || ""}">
       <select class="admin-select" data-p="mode" ${disabled}>
         ${modes.map(m => `<option value="${m}" ${r.mode === m ? "selected" : ""}>${labelsMode[m]}</option>`).join("")}
       </select>
@@ -768,7 +827,7 @@ function lireCarte(carte) {
     const val = k => row.querySelector(`[data-p="${k}"]`)?.value || "";
     const source = row.dataset.paymentSource || "manuel";
     return {
-      id: source === "helloasso" ? `helloasso-${d.numeroAdherent}` : `${Date.now()}-${i}`,
+      id: row.dataset.paymentId || (source === "helloasso" ? `helloasso-${d.numeroAdherent}-${i}` : `${Date.now()}-${i}`),
       source,
       verrouille: source === "helloasso",
       mode: val("mode"),
