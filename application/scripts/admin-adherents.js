@@ -100,10 +100,19 @@ function cotisationAJour(adherent) {
         String(adherent.numeroAdherent)
     );
 
+    /*
+     * La liste admin ne considère la cotisation comme OK
+     * qu'après une validation humaine explicite du trésorier.
+     *
+     * On ignore volontairement :
+     * - adherent.cotisationAJour
+     * - statut == "regle" calculé automatiquement
+     * - le montant payé en ligne
+     *
+     * car ces éléments peuvent provenir d'anciens imports
+     * ou d'un calcul automatique sans contrôle humain.
+     */
     return (
-        adherent.cotisationAJour === true ||
-        adherent.statutCotisationTresorier === "regle" ||
-        dossier?.statut === "regle" ||
         dossier?.licenceValidee === true ||
         dossier?.cotisationRegularisee === true
     );
