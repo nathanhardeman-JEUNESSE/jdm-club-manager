@@ -1465,6 +1465,65 @@ function nettoyerInscriptionsHelloAssoLocales() {
     return inscriptions.length - conservees.length;
 }
 
+
+async function compterDocuments(nomCollection, filtre = () => true) {
+    try {
+        const snap = await getDocs(collection(db, nomCollection));
+        return {
+            total: snap.docs.filter(item => filtre(item.data(), item.id)).length,
+            erreur: ""
+        };
+    } catch (error) {
+        return {
+            total: 0,
+            erreur: error.message || "Lecture impossible"
+        };
+    }
+}
+
+function ligneSimulation(label, resultat) {
+    if (resultat.erreur) {
+        return `<p><strong>${label} :</strong> ⚠️ lecture impossible (${resultat.erreur})</p>`;
+    }
+    return `<p><strong>${label} :</strong> ${resultat.total}</p>`;
+}
+
+async function analyserRafraichissementHelloAsso() {
+    const zone = document.getElementById("rapport-rafraichissement-helloasso");
+    if (!zone) return;
+
+    zone.innerHTML = `<section class="card"><p>🔍 Analyse en lecture seule de Firestore...</p></section>`;
+
+    const [inscriptions, tresorerie, dons] = await Promise.all([
+        compterDocuments("inscriptions", data => estDonneeHelloAsso(data)),
+        compterDocuments(
+            "tresorerieCotisations",
+            data => estDonneeHelloAsso(data) &&
+                data.licenceValidee !== true &&
+                data.cotisationRegularisee !== true
+        ),
+        compterDocuments("helloassoDonations")
+    ]);
+
+    const inscriptionsLocales = lireJSON(clesLocales.inscriptions, [])
+        .filter(item => estDonneeHelloAsso(item)).length;
+    const cachesLocaux = CLES_CACHE_HELLOASSO
+        .filter(cle => localStorage.getItem(cle) !== null).length;
+
+    zone.innerHTML = `
+        <section class="card">
+            <h3>🔍 Simulation terminée — aucune donnée modifiée</h3>
+            ${ligneSimulation("Inscriptions HelloAsso Firestore qui seraient supprimées", inscriptions)}
+            ${ligneSimulation("Dossiers trésorerie HelloAsso non validés qui seraient supprimés", tresorerie)}
+            ${ligneSimulation("Dons HelloAsso qui seraient supprimés puis réimportés", dons)}
+            <p><strong>Inscriptions HelloAsso locales qui seraient supprimées :</strong> ${inscriptionsLocales}</p>
+            <p><strong>Caches techniques HelloAsso qui seraient vidés :</strong> ${cachesLocaux}</p>
+            <hr>
+            <p><strong>Conservés :</strong> adhérents, numéros d'adhérent, licences, profils Firestore, comptes membres et réglages des familles.</p>
+        </section>
+    `;
+}
+
 async function rafraichirImportsHelloAsso() {
     const zone = document.getElementById("rapport-rafraichissement-helloasso");
 
@@ -1545,6 +1604,62 @@ async function rafraichirImportsHelloAsso() {
         if (zone) zone.innerHTML = `<section class="card"><h3>❌ Nettoyage interrompu</h3><p>${error.message || "Erreur inconnue"}</p></section>`;
         alert("Le nettoyage a été interrompu. Aucune suppression supplémentaire ne sera tentée.");
     }
+}
+
+
+async function analyserResetGlobalDeveloppement() {
+    const zone = document.getElementById("rapport-reset-global");
+    if (!zone) return;
+
+    const conserverPlanning = Boolean(
+        document.getElementById("conserver-planning-groupes")?.checked
+    );
+
+    zone.innerHTML = `<section class="card"><p>🔍 Inventaire en lecture seule de Firestore...</p></section>`;
+
+    const collections = [
+        ["adherents", "Adhérents", () => true],
+        ["inscriptions", "Inscriptions", () => true],
+        ["tresorerieCotisations", "Dossiers de trésorerie", () => true],
+        ["helloassoDonations", "Dons HelloAsso", () => true],
+        ["pendingUsers", "Accès membres préparés", data => !["admin", "superadmin", "super-admin"].includes(String(data.role || "").toLowerCase())],
+        ["notifications", "Notifications", () => true],
+        ["absences", "Absences", () => true],
+        ["pointages", "Pointages", () => true],
+        ["appels", "Appels", () => true],
+        ["competitions", "Compétitions", () => true],
+        ["commandes", "Commandes", () => true],
+        ["users", "Profils membres Firestore", data => ["membre", "parent", "adherent", "adhérent"].includes(String(data.role || "").toLowerCase())]
+    ];
+
+    if (!conserverPlanning) {
+        collections.push(
+            ["groupes", "Groupes", () => true],
+            ["planningExceptions", "Exceptions de planning", () => true]
+        );
+    }
+
+    const resultats = await Promise.all(
+        collections.map(async ([nom, label, filtre]) => ({
+            nom,
+            label,
+            ...(await compterDocuments(nom, filtre))
+        }))
+    );
+
+    const totalFirestore = resultats.reduce((somme, item) => somme + item.total, 0);
+
+    zone.innerHTML = `
+        <section class="card">
+            <h3>🔍 Simulation nucléaire — aucune donnée modifiée</h3>
+            <p><strong>Total Firestore qui serait supprimé :</strong> ${totalFirestore} document(s)</p>
+            ${resultats.map(item => ligneSimulation(item.label, item)).join("")}
+            <hr>
+            <p><strong>Groupes et planning :</strong> ${conserverPlanning ? "✅ conservés" : "☠️ supprimés"}</p>
+            <p><strong>Toujours conservés :</strong> administrateurs, paramètres Firebase, configuration HelloAsso et comptes Firebase Authentication.</p>
+            <p class="dev-small">Le bouton réel téléchargera une sauvegarde JSON et demandera toutes les confirmations avant la première suppression.</p>
+        </section>
+    `;
 }
 
 async function resetGlobalDeveloppement() {
@@ -1677,11 +1792,21 @@ async function resetGlobalDeveloppement() {
     }
 }
 
+const boutonAnalyserRafraichissement = document.getElementById("analyser-rafraichissement-helloasso");
 const boutonRafraichirImports = document.getElementById("rafraichir-imports-helloasso");
+const boutonAnalyserResetGlobal = document.getElementById("analyser-reset-global");
 const boutonResetGlobal = document.getElementById("reset-global-developpement");
+
+if (boutonAnalyserRafraichissement) {
+    boutonAnalyserRafraichissement.addEventListener("click", analyserRafraichissementHelloAsso);
+}
 
 if (boutonRafraichirImports) {
     boutonRafraichirImports.addEventListener("click", rafraichirImportsHelloAsso);
+}
+
+if (boutonAnalyserResetGlobal) {
+    boutonAnalyserResetGlobal.addEventListener("click", analyserResetGlobalDeveloppement);
 }
 
 if (boutonResetGlobal) {
