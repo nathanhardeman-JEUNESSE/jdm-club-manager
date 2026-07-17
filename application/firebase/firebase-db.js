@@ -494,3 +494,46 @@ export async function updateCotisationStatus(
 
     await batch.commit();
 }
+
+
+/* =========================================================
+   DONS HELLOASSO
+   ========================================================= */
+
+export async function listHelloAssoDonations() {
+    const snap = await getDocs(
+        collection(
+            db,
+            "helloassoDonations"
+        )
+    );
+
+    return snap.docs.map(item => ({
+        id: item.id,
+        ...item.data()
+    }));
+}
+
+export async function updateHelloAssoDonation(
+    donationId,
+    data
+) {
+    if (!donationId) {
+        throw new Error(
+            "Identifiant du don obligatoire."
+        );
+    }
+
+    await setDoc(
+        doc(
+            db,
+            "helloassoDonations",
+            String(donationId)
+        ),
+        {
+            ...data,
+            updatedAt: serverTimestamp()
+        },
+        { merge: true }
+    );
+}
