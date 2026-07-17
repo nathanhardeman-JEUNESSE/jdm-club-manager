@@ -1388,4 +1388,302 @@ if (boutonExporterDonneesHelloAsso) {
 }
 
 actualiserEtatHelloAssoDetaille();
-\n\n/* =========================================================\n   DOUBLE RESET DEV / HELLOASSO\n   ========================================================= */\n\nconst CLES_CACHE_HELLOASSO = [\n    "helloAssoFormulairesTestJDM",\n    "helloAssoCommandesTestJDM",\n    "helloAssoPreviewImportJDM",\n    "helloAssoTokenTestJDM"\n];\n\nfunction estDonneeHelloAsso(data = {}) {\n    return (\n        String(data.source || "").toLowerCase() === "helloasso" ||\n        Boolean(data.helloAssoOrderId) ||\n        Boolean(data.helloassoOrderId) ||\n        Boolean(data.helloAssoItemId) ||\n        Boolean(data.helloassoItemId) ||\n        Boolean(data.helloAssoPaymentId) ||\n        Boolean(data.helloassoPaymentId)\n    );\n}\n\nfunction telechargerJSON(nom, data) {\n    const blob = new Blob(\n        [JSON.stringify(data, null, 2)],\n        { type: "application/json" }\n    );\n    const url = URL.createObjectURL(blob);\n    const lien = document.createElement("a");\n    lien.href = url;\n    lien.download = nom;\n    lien.click();\n    URL.revokeObjectURL(url);\n}\n\nasync function lireCollectionPourSauvegarde(nomCollection) {\n    try {\n        const snap = await getDocs(collection(db, nomCollection));\n        return {\n            collection: nomCollection,\n            documents: snap.docs.map(item => ({ id: item.id, ...item.data() }))\n        };\n    } catch (error) {\n        return {\n            collection: nomCollection,\n            documents: [],\n            erreur: error.message || "Lecture impossible"\n        };\n    }\n}\n\nasync function supprimerDocuments(nomCollection, filtre = () => true) {\n    const snap = await getDocs(collection(db, nomCollection));\n    const cibles = snap.docs.filter(item => filtre(item.data(), item.id));\n\n    for (let index = 0; index < cibles.length; index += 20) {\n        const lot = cibles.slice(index, index + 20);\n        await Promise.all(lot.map(item => deleteDoc(item.ref)));\n    }\n\n    return cibles.length;\n}\n\nfunction viderCachesHelloAssoLocaux() {\n    CLES_CACHE_HELLOASSO.forEach(cle => localStorage.removeItem(cle));\n}\n\nfunction nettoyerInscriptionsHelloAssoLocales() {\n    const inscriptions = lireJSON(clesLocales.inscriptions, []);\n    const conservees = inscriptions.filter(item => !estDonneeHelloAsso(item));\n    ecrireJSON(clesLocales.inscriptions, conservees);\n    return inscriptions.length - conservees.length;\n}\n\nasync function rafraichirImportsHelloAsso() {\n    const zone = document.getElementById("rapport-rafraichissement-helloasso");\n\n    if (!confirm(\n        "Nettoyer les imports HelloAsso ?\\n\\n" +\n        "Les adhérents, numéros, licences, comptes membres et profils familles seront conservés."\n    )) return;\n\n    if (!demanderCodeSecurite()) return;\n\n    const texte = prompt("Tape exactement RAFRAICHIR pour confirmer :");\n    if (texte !== "RAFRAICHIR") {\n        alert("Confirmation incorrecte. Aucune donnée modifiée.");\n        return;\n    }\n\n    if (zone) zone.innerHTML = `<section class="card"><p>Nettoyage sécurisé en cours...</p></section>`;\n\n    try {\n        const sauvegarde = {\n            type: "rafraichissement-imports-helloasso",\n            date: new Date().toISOString(),\n            inscriptions: await lireCollectionPourSauvegarde("inscriptions"),\n            tresorerie: await lireCollectionPourSauvegarde("tresorerieCotisations"),\n            dons: await lireCollectionPourSauvegarde("helloassoDonations")\n        };\n\n        telechargerJSON(\n            `sauvegarde-avant-rafraichissement-helloasso-${new Date().toISOString().slice(0,10)}.json`,\n            sauvegarde\n        );\n\n        const resultats = {};\n\n        resultats.inscriptionsFirebase = await supprimerDocuments(\n            "inscriptions",\n            data => estDonneeHelloAsso(data)\n        );\n\n        resultats.tresorerieFirebase = await supprimerDocuments(\n            "tresorerieCotisations",\n            data => estDonneeHelloAsso(data) &&\n                data.licenceValidee !== true &&\n                data.cotisationRegularisee !== true\n        );\n\n        resultats.donsFirebase = await supprimerDocuments(\n            "helloassoDonations"\n        );\n\n        resultats.inscriptionsLocales = nettoyerInscriptionsHelloAssoLocales();\n        viderCachesHelloAssoLocaux();\n\n        ajouterJournal(\n            "Rafraîchissement imports HelloAsso",\n            `${resultats.inscriptionsFirebase} inscription(s), ${resultats.tresorerieFirebase} dossier(s) trésorerie, ${resultats.donsFirebase} don(s) supprimé(s).`\n        );\n\n        afficherStats();\n        actualiserEtatHelloAssoDetaille();\n\n        if (zone) {\n            zone.innerHTML = `\n                <section class="card">\n                    <h3>✅ Imports prêts à être relancés</h3>\n                    <p><strong>Inscriptions Firebase supprimées :</strong> ${resultats.inscriptionsFirebase}</p>\n                    <p><strong>Dossiers trésorerie importés supprimés :</strong> ${resultats.tresorerieFirebase}</p>\n                    <p><strong>Dons importés supprimés :</strong> ${resultats.donsFirebase}</p>\n                    <p><strong>Inscriptions locales supprimées :</strong> ${resultats.inscriptionsLocales}</p>\n                    <p>Les adhérents, comptes membres, licences et réglages familles ont été conservés.</p>\n                </section>\n            `;\n        }\n\n        alert("Rafraîchissement terminé ✅\\nTu peux maintenant relancer un import HelloAsso propre.");\n    } catch (error) {\n        console.error("Rafraîchissement HelloAsso", error);\n        if (zone) zone.innerHTML = `<section class="card"><h3>❌ Nettoyage interrompu</h3><p>${error.message || "Erreur inconnue"}</p></section>`;\n        alert("Le nettoyage a été interrompu. Aucune suppression supplémentaire ne sera tentée.");\n    }\n}\n\nasync function resetGlobalDeveloppement() {\n    const zone = document.getElementById("rapport-reset-global");\n    const conserverPlanning = Boolean(\n        document.getElementById("conserver-planning-groupes")?.checked\n    );\n\n    if (!confirm(\n        "☠️ RÉINITIALISATION GLOBALE DE DÉVELOPPEMENT\\n\\n" +\n        "Cette action efface les données de travail et les espaces membres de test.\\n" +\n        "Les administrateurs, paramètres Firebase et identifiants HelloAsso restent conservés.\\n\\n" +\n        "Continuer ?"\n    )) return;\n\n    const texte = prompt("Tape exactement JE DETRUIS LES DONNEES DE TEST :");\n    if (texte !== "JE DETRUIS LES DONNEES DE TEST") {\n        alert("Phrase incorrecte. Aucune donnée modifiée.");\n        return;\n    }\n\n    if (!demanderCodeSecurite()) return;\n\n    if (!confirm(\n        `DERNIÈRE CONFIRMATION ☠️\\n\\nGroupes et planning : ${conserverPlanning ? "CONSERVÉS" : "SUPPRIMÉS"}\\n\\nÊtes-vous absolument certain ?`\n    )) return;\n\n    if (zone) zone.innerHTML = `<section class="card"><p>☠️ Sauvegarde puis réinitialisation en cours...</p></section>`;\n\n    const collectionsBase = [\n        "adherents",\n        "inscriptions",\n        "tresorerieCotisations",\n        "helloassoDonations",\n        "pendingUsers",\n        "notifications",\n        "absences",\n        "pointages",\n        "appels",\n        "competitions",\n        "commandes"\n    ];\n\n    if (!conserverPlanning) {\n        collectionsBase.push("groupes", "planningExceptions");\n    }\n\n    try {\n        const sauvegardes = [];\n        for (const nom of [...collectionsBase, "users"]) {\n            sauvegardes.push(await lireCollectionPourSauvegarde(nom));\n        }\n\n        telechargerJSON(\n            `sauvegarde-avant-reset-global-jdm-${new Date().toISOString().slice(0,10)}.json`,\n            {\n                type: "reset-global-developpement",\n                date: new Date().toISOString(),\n                conserverPlanningGroupes: conserverPlanning,\n                collections: sauvegardes\n            }\n        );\n\n        const rapport = [];\n\n        for (const nom of collectionsBase) {\n            const total = await supprimerDocuments(\n                nom,\n                nom === "pendingUsers"\n                    ? data => !["admin", "superadmin", "super-admin"].includes(String(data.role || "").toLowerCase())\n                    : () => true\n            );\n            rapport.push([nom, total]);\n        }\n\n        const membresSupprimes = await supprimerDocuments(\n            "users",\n            data => ["membre", "parent", "adherent", "adhérent"].includes(\n                String(data.role || "").toLowerCase()\n            )\n        );\n        rapport.push(["users (membres uniquement)", membresSupprimes]);\n\n        const clesASupprimer = [\n            clesLocales.adherents,\n            clesLocales.inscriptions,\n            clesLocales.pointages,\n            clesLocales.appels,\n            clesLocales.absences,\n            clesLocales.competitions,\n            clesLocales.notifications,\n            clesLocales.notificationsTresorier,\n            clesLocales.commandes,\n            clesLocales.panier,\n            clesLocales.validationsDossiers,\n            clesLocales.aidesLicence\n        ];\n\n        if (!conserverPlanning) {\n            clesASupprimer.push(clesLocales.groupes, clesLocales.planning);\n        }\n\n        clesASupprimer.forEach(cle => localStorage.removeItem(cle));\n        viderCachesHelloAssoLocaux();\n\n        ajouterJournal(\n            "☠️ Réinitialisation globale développement",\n            rapport.map(([nom, total]) => `${nom}: ${total}`).join(" · ")\n        );\n\n        afficherStats();\n        actualiserEtatHelloAssoDetaille();\n\n        if (zone) {\n            zone.innerHTML = `\n                <section class="card">\n                    <h3>✅ Réinitialisation terminée</h3>\n                    ${rapport.map(([nom, total]) => `<p><strong>${nom} :</strong> ${total} document(s)</p>`).join("")}\n                    <p><strong>Groupes et planning :</strong> ${conserverPlanning ? "conservés" : "supprimés"}</p>\n                    <p class="dev-small">Les comptes Firebase Authentication eux-mêmes ne peuvent pas être supprimés depuis cette page. Leurs profils Firestore membres ont été retirés.</p>\n                </section>\n            `;\n        }\n\n        alert("☠️ Réinitialisation globale terminée. La base de test est prête.");\n    } catch (error) {\n        console.error("Reset global développement", error);\n        if (zone) zone.innerHTML = `<section class="card"><h3>❌ Réinitialisation interrompue</h3><p>${error.message || "Erreur inconnue"}</p><p>La sauvegarde téléchargée permet de contrôler les données avant l'incident.</p></section>`;\n        alert("La réinitialisation a été interrompue. Consulte le rapport affiché.");\n    }\n}\n\nconst boutonRafraichirImports = document.getElementById("rafraichir-imports-helloasso");\nconst boutonResetGlobal = document.getElementById("reset-global-developpement");\n\nif (boutonRafraichirImports) {\n    boutonRafraichirImports.addEventListener("click", rafraichirImportsHelloAsso);\n}\n\nif (boutonResetGlobal) {\n    boutonResetGlobal.addEventListener("click", resetGlobalDeveloppement);\n}\n
+
+
+/* =========================================================
+   DOUBLE RESET DEV / HELLOASSO
+   ========================================================= */
+
+const CLES_CACHE_HELLOASSO = [
+    "helloAssoFormulairesTestJDM",
+    "helloAssoCommandesTestJDM",
+    "helloAssoPreviewImportJDM",
+    "helloAssoTokenTestJDM"
+];
+
+function estDonneeHelloAsso(data = {}) {
+    return (
+        String(data.source || "").toLowerCase() === "helloasso" ||
+        Boolean(data.helloAssoOrderId) ||
+        Boolean(data.helloassoOrderId) ||
+        Boolean(data.helloAssoItemId) ||
+        Boolean(data.helloassoItemId) ||
+        Boolean(data.helloAssoPaymentId) ||
+        Boolean(data.helloassoPaymentId)
+    );
+}
+
+function telechargerJSON(nom, data) {
+    const blob = new Blob(
+        [JSON.stringify(data, null, 2)],
+        { type: "application/json" }
+    );
+    const url = URL.createObjectURL(blob);
+    const lien = document.createElement("a");
+    lien.href = url;
+    lien.download = nom;
+    lien.click();
+    URL.revokeObjectURL(url);
+}
+
+async function lireCollectionPourSauvegarde(nomCollection) {
+    try {
+        const snap = await getDocs(collection(db, nomCollection));
+        return {
+            collection: nomCollection,
+            documents: snap.docs.map(item => ({ id: item.id, ...item.data() }))
+        };
+    } catch (error) {
+        return {
+            collection: nomCollection,
+            documents: [],
+            erreur: error.message || "Lecture impossible"
+        };
+    }
+}
+
+async function supprimerDocuments(nomCollection, filtre = () => true) {
+    const snap = await getDocs(collection(db, nomCollection));
+    const cibles = snap.docs.filter(item => filtre(item.data(), item.id));
+
+    for (let index = 0; index < cibles.length; index += 20) {
+        const lot = cibles.slice(index, index + 20);
+        await Promise.all(lot.map(item => deleteDoc(item.ref)));
+    }
+
+    return cibles.length;
+}
+
+function viderCachesHelloAssoLocaux() {
+    CLES_CACHE_HELLOASSO.forEach(cle => localStorage.removeItem(cle));
+}
+
+function nettoyerInscriptionsHelloAssoLocales() {
+    const inscriptions = lireJSON(clesLocales.inscriptions, []);
+    const conservees = inscriptions.filter(item => !estDonneeHelloAsso(item));
+    ecrireJSON(clesLocales.inscriptions, conservees);
+    return inscriptions.length - conservees.length;
+}
+
+async function rafraichirImportsHelloAsso() {
+    const zone = document.getElementById("rapport-rafraichissement-helloasso");
+
+    if (!confirm(
+        "Nettoyer les imports HelloAsso ?\\n\\n" +
+        "Les adhérents, numéros, licences, comptes membres et profils familles seront conservés."
+    )) return;
+
+    if (!demanderCodeSecurite()) return;
+
+    const texte = prompt("Tape exactement RAFRAICHIR pour confirmer :");
+    if (texte !== "RAFRAICHIR") {
+        alert("Confirmation incorrecte. Aucune donnée modifiée.");
+        return;
+    }
+
+    if (zone) zone.innerHTML = `<section class="card"><p>Nettoyage sécurisé en cours...</p></section>`;
+
+    try {
+        const sauvegarde = {
+            type: "rafraichissement-imports-helloasso",
+            date: new Date().toISOString(),
+            inscriptions: await lireCollectionPourSauvegarde("inscriptions"),
+            tresorerie: await lireCollectionPourSauvegarde("tresorerieCotisations"),
+            dons: await lireCollectionPourSauvegarde("helloassoDonations")
+        };
+
+        telechargerJSON(
+            `sauvegarde-avant-rafraichissement-helloasso-${new Date().toISOString().slice(0,10)}.json`,
+            sauvegarde
+        );
+
+        const resultats = {};
+
+        resultats.inscriptionsFirebase = await supprimerDocuments(
+            "inscriptions",
+            data => estDonneeHelloAsso(data)
+        );
+
+        resultats.tresorerieFirebase = await supprimerDocuments(
+            "tresorerieCotisations",
+            data => estDonneeHelloAsso(data) &&
+                data.licenceValidee !== true &&
+                data.cotisationRegularisee !== true
+        );
+
+        resultats.donsFirebase = await supprimerDocuments(
+            "helloassoDonations"
+        );
+
+        resultats.inscriptionsLocales = nettoyerInscriptionsHelloAssoLocales();
+        viderCachesHelloAssoLocaux();
+
+        ajouterJournal(
+            "Rafraîchissement imports HelloAsso",
+            `${resultats.inscriptionsFirebase} inscription(s), ${resultats.tresorerieFirebase} dossier(s) trésorerie, ${resultats.donsFirebase} don(s) supprimé(s).`
+        );
+
+        afficherStats();
+        actualiserEtatHelloAssoDetaille();
+
+        if (zone) {
+            zone.innerHTML = `
+                <section class="card">
+                    <h3>✅ Imports prêts à être relancés</h3>
+                    <p><strong>Inscriptions Firebase supprimées :</strong> ${resultats.inscriptionsFirebase}</p>
+                    <p><strong>Dossiers trésorerie importés supprimés :</strong> ${resultats.tresorerieFirebase}</p>
+                    <p><strong>Dons importés supprimés :</strong> ${resultats.donsFirebase}</p>
+                    <p><strong>Inscriptions locales supprimées :</strong> ${resultats.inscriptionsLocales}</p>
+                    <p>Les adhérents, comptes membres, licences et réglages familles ont été conservés.</p>
+                </section>
+            `;
+        }
+
+        alert("Rafraîchissement terminé ✅\\nTu peux maintenant relancer un import HelloAsso propre.");
+    } catch (error) {
+        console.error("Rafraîchissement HelloAsso", error);
+        if (zone) zone.innerHTML = `<section class="card"><h3>❌ Nettoyage interrompu</h3><p>${error.message || "Erreur inconnue"}</p></section>`;
+        alert("Le nettoyage a été interrompu. Aucune suppression supplémentaire ne sera tentée.");
+    }
+}
+
+async function resetGlobalDeveloppement() {
+    const zone = document.getElementById("rapport-reset-global");
+    const conserverPlanning = Boolean(
+        document.getElementById("conserver-planning-groupes")?.checked
+    );
+
+    if (!confirm(
+        "☠️ RÉINITIALISATION GLOBALE DE DÉVELOPPEMENT\\n\\n" +
+        "Cette action efface les données de travail et les espaces membres de test.\\n" +
+        "Les administrateurs, paramètres Firebase et identifiants HelloAsso restent conservés.\\n\\n" +
+        "Continuer ?"
+    )) return;
+
+    const texte = prompt("Tape exactement JE DETRUIS LES DONNEES DE TEST :");
+    if (texte !== "JE DETRUIS LES DONNEES DE TEST") {
+        alert("Phrase incorrecte. Aucune donnée modifiée.");
+        return;
+    }
+
+    if (!demanderCodeSecurite()) return;
+
+    if (!confirm(
+        `DERNIÈRE CONFIRMATION ☠️\\n\\nGroupes et planning : ${conserverPlanning ? "CONSERVÉS" : "SUPPRIMÉS"}\\n\\nÊtes-vous absolument certain ?`
+    )) return;
+
+    if (zone) zone.innerHTML = `<section class="card"><p>☠️ Sauvegarde puis réinitialisation en cours...</p></section>`;
+
+    const collectionsBase = [
+        "adherents",
+        "inscriptions",
+        "tresorerieCotisations",
+        "helloassoDonations",
+        "pendingUsers",
+        "notifications",
+        "absences",
+        "pointages",
+        "appels",
+        "competitions",
+        "commandes"
+    ];
+
+    if (!conserverPlanning) {
+        collectionsBase.push("groupes", "planningExceptions");
+    }
+
+    try {
+        const sauvegardes = [];
+        for (const nom of [...collectionsBase, "users"]) {
+            sauvegardes.push(await lireCollectionPourSauvegarde(nom));
+        }
+
+        telechargerJSON(
+            `sauvegarde-avant-reset-global-jdm-${new Date().toISOString().slice(0,10)}.json`,
+            {
+                type: "reset-global-developpement",
+                date: new Date().toISOString(),
+                conserverPlanningGroupes: conserverPlanning,
+                collections: sauvegardes
+            }
+        );
+
+        const rapport = [];
+
+        for (const nom of collectionsBase) {
+            const total = await supprimerDocuments(
+                nom,
+                nom === "pendingUsers"
+                    ? data => !["admin", "superadmin", "super-admin"].includes(String(data.role || "").toLowerCase())
+                    : () => true
+            );
+            rapport.push([nom, total]);
+        }
+
+        const membresSupprimes = await supprimerDocuments(
+            "users",
+            data => ["membre", "parent", "adherent", "adhérent"].includes(
+                String(data.role || "").toLowerCase()
+            )
+        );
+        rapport.push(["users (membres uniquement)", membresSupprimes]);
+
+        const clesASupprimer = [
+            clesLocales.adherents,
+            clesLocales.inscriptions,
+            clesLocales.pointages,
+            clesLocales.appels,
+            clesLocales.absences,
+            clesLocales.competitions,
+            clesLocales.notifications,
+            clesLocales.notificationsTresorier,
+            clesLocales.commandes,
+            clesLocales.panier,
+            clesLocales.validationsDossiers,
+            clesLocales.aidesLicence
+        ];
+
+        if (!conserverPlanning) {
+            clesASupprimer.push(clesLocales.groupes, clesLocales.planning);
+        }
+
+        clesASupprimer.forEach(cle => localStorage.removeItem(cle));
+        viderCachesHelloAssoLocaux();
+
+        ajouterJournal(
+            "☠️ Réinitialisation globale développement",
+            rapport.map(([nom, total]) => `${nom}: ${total}`).join(" · ")
+        );
+
+        afficherStats();
+        actualiserEtatHelloAssoDetaille();
+
+        if (zone) {
+            zone.innerHTML = `
+                <section class="card">
+                    <h3>✅ Réinitialisation terminée</h3>
+                    ${rapport.map(([nom, total]) => `<p><strong>${nom} :</strong> ${total} document(s)</p>`).join("")}
+                    <p><strong>Groupes et planning :</strong> ${conserverPlanning ? "conservés" : "supprimés"}</p>
+                    <p class="dev-small">Les comptes Firebase Authentication eux-mêmes ne peuvent pas être supprimés depuis cette page. Leurs profils Firestore membres ont été retirés.</p>
+                </section>
+            `;
+        }
+
+        alert("☠️ Réinitialisation globale terminée. La base de test est prête.");
+    } catch (error) {
+        console.error("Reset global développement", error);
+        if (zone) zone.innerHTML = `<section class="card"><h3>❌ Réinitialisation interrompue</h3><p>${error.message || "Erreur inconnue"}</p><p>La sauvegarde téléchargée permet de contrôler les données avant l'incident.</p></section>`;
+        alert("La réinitialisation a été interrompue. Consulte le rapport affiché.");
+    }
+}
+
+const boutonRafraichirImports = document.getElementById("rafraichir-imports-helloasso");
+const boutonResetGlobal = document.getElementById("reset-global-developpement");
+
+if (boutonRafraichirImports) {
+    boutonRafraichirImports.addEventListener("click", rafraichirImportsHelloAsso);
+}
+
+if (boutonResetGlobal) {
+    boutonResetGlobal.addEventListener("click", resetGlobalDeveloppement);
+}
