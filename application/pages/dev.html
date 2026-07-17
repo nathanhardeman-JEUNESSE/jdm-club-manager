@@ -90,192 +90,51 @@
     </section>
 
     <section class="card">
-        <h2>🔄 HelloAsso</h2>
-        <p>Préparation de la future synchronisation API.</p>
-        <div class="dev-actions">
-            <button class="secondary-button" id="test-helloasso" disabled>Vérifier API HelloAsso</button>
-            <button class="secondary-button" id="sync-helloasso" disabled>Synchroniser HelloAsso</button>
-        </div>
-        <p class="dev-small">Module en attente de connexion API sécurisée. L'import Excel reste le mode de secours.</p>
-    </section>
-
-    <section class="card">
-        <h2>💾 Sauvegardes</h2>
-        <p>Export local de secours des données du navigateur.</p>
-        <div class="dev-actions">
-            <button class="primary-button order-button" id="export-local">Exporter sauvegarde locale</button>
-            <input type="file" id="fichier-import-local" accept="application/json" style="display:none;">
-            <button class="secondary-button" id="import-local">Importer une sauvegarde locale</button>
-        </div>
-    </section>
-
-
-    <section class="card">
-        <h2>🔄 HelloAsso - Préparation API</h2>
-        <p>Paramètres nécessaires pour la future synchronisation sécurisée HelloAsso.</p>
-
-        <input class="form-input" id="helloasso-client-id" placeholder="Client ID">
-        <input class="form-input" id="helloasso-client-secret" type="password" placeholder="Client Secret">
-        <input class="form-input" id="helloasso-organization-slug" placeholder="Slug organisation HelloAsso">
+        <h2>🚀 Synchronisation HelloAsso via GitHub</h2>
+        <p>La synchronisation sécurisée est exécutée par GitHub Actions. Les secrets HelloAsso restent dans GitHub et ne sont jamais exposés dans le navigateur.</p>
 
         <div class="dev-actions">
-            <button class="primary-button order-button" id="enregistrer-helloasso">
-                Enregistrer les paramètres
+            <button class="primary-button order-button" id="ouvrir-sync-helloasso-github">
+                Ouvrir la synchronisation GitHub
             </button>
-
-            <button class="secondary-button" id="tester-helloasso">
-                Tester la connexion HelloAsso
+            <button class="secondary-button" id="actualiser-sync-helloasso">
+                Actualiser le suivi
             </button>
         </div>
 
-        <p class="dev-small" id="etat-helloasso">
-            Aucun paramètre HelloAsso enregistré.
+        <p class="dev-small">
+            Dans GitHub : clique sur <strong>Run workflow</strong>, choisis <strong>incremental</strong> pour une mise à jour normale ou <strong>complete</strong> après une réinitialisation globale.
         </p>
+
+        <section class="card" id="etat-sync-helloasso" style="margin-top:16px;">
+            <h3>⏳ État de la synchronisation</h3>
+            <p>Lecture de <code>syncStatus/helloasso</code>...</p>
+        </section>
+
+        <section id="progression-sync-helloasso" style="margin-top:14px;"></section>
     </section>
 
+    <section class="card">
+        <h2>✅ Vérification Firestore HelloAsso</h2>
+        <p>Compte les données actuellement présentes dans Firestore après l'exécution du workflow GitHub.</p>
+        <div class="dev-actions">
+            <button class="primary-button order-button" id="verifier-donnees-helloasso-firestore">
+                Vérifier les données importées
+            </button>
+        </div>
+        <section id="rapport-verification-helloasso"></section>
+    </section>
 
     <section class="card">
         <h2>🩺 Diagnostic système</h2>
         <section class="dev-grid" id="diagnostic-systeme">
-            <section class="card">
-                <h3>Firebase</h3>
-                <p id="diag-firebase">⏳ Vérification...</p>
-            </section>
-            <section class="card">
-                <h3>Connexion</h3>
-                <p id="diag-connexion">⏳ Vérification...</p>
-            </section>
-            <section class="card">
-                <h3>HelloAsso</h3>
-                <p id="diag-helloasso">⚪ En attente API</p>
-            </section>
-            <section class="card">
-                <h3>Saison</h3>
-                <p id="diag-saison">--</p>
-            </section>
-            <section class="card">
-                <h3>Version</h3>
-                <p>Beta 0.9.x</p>
-            </section>
+            <section class="card"><h3>Firebase</h3><p id="diag-firebase">⏳ Vérification...</p></section>
+            <section class="card"><h3>Connexion</h3><p id="diag-connexion">⏳ Vérification...</p></section>
+            <section class="card"><h3>HelloAsso</h3><p id="diag-helloasso">⏳ Lecture du workflow...</p></section>
+            <section class="card"><h3>Saison</h3><p id="diag-saison">--</p></section>
+            <section class="card"><h3>Version</h3><p>Beta 0.9.x</p></section>
         </section>
     </section>
-
-
-    <section class="card">
-        <h2>📋 Formulaires HelloAsso</h2>
-        <p>Lecture seule : affiche les formulaires disponibles pour l'organisation configurée.</p>
-
-        <div class="dev-actions">
-            <button class="primary-button order-button" id="charger-formulaires-helloasso">
-                Charger les formulaires HelloAsso
-            </button>
-        </div>
-
-        <section id="liste-formulaires-helloasso"></section>
-    </section>
-
-
-    <section class="card">
-        <h2>🧾 Commandes HelloAsso</h2>
-        <p>Lecture seule : sélectionne un formulaire HelloAsso puis charge les commandes/inscriptions liées.</p>
-
-        <select class="form-input" id="helloasso-formulaire-select">
-            <option value="">Choisir un formulaire chargé</option>
-        </select>
-
-        <div class="dev-actions">
-            <button class="primary-button order-button" id="charger-commandes-helloasso">
-                Charger les commandes du formulaire
-            </button>
-        </div>
-
-        <section id="liste-commandes-helloasso"></section>
-    </section>
-
-    <section class="card">
-        <h2>👥 Import HelloAsso vers JDM</h2>
-        <p>Prévisualise puis importe localement les adhérents détectés dans les commandes HelloAsso.</p>
-        <div class="dev-actions">
-            <button class="primary-button order-button" id="previsualiser-import-helloasso">Prévisualiser l'import</button>
-            <button class="secondary-button" id="importer-helloasso-local">Importer dans JDM local</button>
-        </div>
-        <section id="preview-import-helloasso"></section>
-    </section>
-
-
-    <section class="card">
-        <h2>🔐 Comptes Firebase depuis HelloAsso</h2>
-        <p>Prépare les accès membres Firebase à partir des adhérents importés localement depuis HelloAsso.</p>
-
-        <div class="dev-actions">
-            <button class="primary-button order-button" id="preparer-comptes-helloasso">
-                Préparer les comptes membres
-            </button>
-        </div>
-
-        <section id="rapport-comptes-helloasso"></section>
-    </section>
-
-
-    <section class="card">
-        <h2>☁️ Synchronisation HelloAsso vers Firebase</h2>
-        <p>Envoie les adhérents et inscriptions HelloAsso déjà importés localement vers Firestore.</p>
-
-        <div class="dev-actions">
-            <button class="primary-button order-button" id="synchroniser-helloasso-firebase">
-                Synchroniser HelloAsso vers Firebase
-            </button>
-        </div>
-
-        <section id="rapport-sync-helloasso-firebase"></section>
-    </section>
-
-
-    <section class="card">
-        <h2>✅ Vérification Firebase HelloAsso</h2>
-        <p>Contrôle que les adhérents et inscriptions HelloAsso sont bien présents dans Firebase.</p>
-
-        <div class="dev-actions">
-            <button class="primary-button order-button" id="verifier-helloasso-firebase">
-                Vérifier la synchronisation Firebase
-            </button>
-        </div>
-
-        <section id="rapport-verif-helloasso-firebase"></section>
-    </section>
-
-
-    <section class="card">
-        <h2>🚀 Synchronisation complète HelloAsso</h2>
-        <p>Enchaîne les étapes principales : formulaires, commandes, prévisualisation, import local, comptes membres, synchronisation Firebase et vérification.</p>
-
-        <div class="dev-actions">
-            <button class="primary-button order-button" id="sync-complete-helloasso">
-                Lancer la synchronisation complète
-            </button>
-        </div>
-
-        <section id="rapport-sync-complete-helloasso"></section>
-    </section>
-
-
-    <section class="card">
-        <h2>📌 État HelloAsso</h2>
-        <p>Résumé rapide des dernières données HelloAsso chargées et synchronisées.</p>
-
-        <div class="dev-actions">
-            <button class="primary-button order-button" id="actualiser-etat-helloasso">
-                Actualiser l'état HelloAsso
-            </button>
-
-            <button class="secondary-button" id="exporter-donnees-helloasso">
-                Exporter données HelloAsso brutes
-            </button>
-        </div>
-
-        <section id="etat-detaille-helloasso"></section>
-    </section>
-
 
     <section class="card dev-refresh-zone">
         <h2>🔄 Rafraîchir les imports HelloAsso</h2>
