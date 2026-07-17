@@ -17,6 +17,33 @@
         .dev-small { opacity: 0.75; font-size: 13px; }
         .dev-log { max-height: 260px; overflow: auto; }
         .dev-log-entry { border-bottom: 1px solid rgba(255,255,255,0.12); padding: 8px 0; }
+        .dev-death-zone {
+            border: 2px solid rgba(230,57,70,.8);
+            background: linear-gradient(145deg, rgba(80,8,15,.72), rgba(28,28,35,.96));
+            box-shadow: 0 0 28px rgba(230,57,70,.16);
+        }
+        .dev-death-zone h2 { color: #ff6b75; }
+        .dev-death-button {
+            background: linear-gradient(135deg, #780814, #e63946);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,.18);
+            font-weight: 900;
+        }
+        .dev-refresh-zone {
+            border-left: 6px solid #2d7dd2;
+            background: linear-gradient(145deg, rgba(34,78,122,.22), rgba(35,37,48,.94));
+        }
+        .dev-option-line {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 14px 0;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: rgba(255,255,255,.06);
+        }
+        .dev-option-line input { width: 20px; height: 20px; }
+        .dev-reset-report { margin-top: 14px; }
     </style>
 </head>
 
@@ -247,6 +274,39 @@
         </div>
 
         <section id="etat-detaille-helloasso"></section>
+    </section>
+
+
+    <section class="card dev-refresh-zone">
+        <h2>🔄 Rafraîchir les imports HelloAsso</h2>
+        <p>Supprime uniquement les données techniques et financières issues des imports pour permettre un nouvel import propre.</p>
+        <p class="dev-small"><strong>Conservé :</strong> adhérents, numéros d'adhérent, licences, comptes membres, profils et réglages saisis par les familles.</p>
+        <div class="dev-actions">
+            <button class="secondary-button" id="rafraichir-imports-helloasso">
+                🔄 Nettoyer puis réimporter proprement
+            </button>
+        </div>
+        <section class="dev-reset-report" id="rapport-rafraichissement-helloasso"></section>
+    </section>
+
+    <section class="card dev-death-zone">
+        <h2>☠️ RÉINITIALISATION GLOBALE DE DÉVELOPPEMENT</h2>
+        <p><strong>NE JAMAIS UTILISER EN PRODUCTION.</strong></p>
+        <p>Efface les données de travail afin de reprendre les tests depuis une base propre. Les administrateurs, les paramètres Firebase et la configuration HelloAsso sont conservés.</p>
+
+        <label class="dev-option-line">
+            <input type="checkbox" id="conserver-planning-groupes" checked>
+            <span>Conserver les groupes et le planning</span>
+        </label>
+
+        <div class="dev-actions">
+            <button class="dev-death-button" id="reset-global-developpement">
+                ☠️ RÉINITIALISER TOUTES LES DONNÉES DE TEST
+            </button>
+        </div>
+
+        <p class="dev-small">Une sauvegarde JSON est téléchargée avant toute suppression. Une triple confirmation est obligatoire.</p>
+        <section class="dev-reset-report" id="rapport-reset-global"></section>
     </section>
 
     <section class="card">
