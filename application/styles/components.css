@@ -2462,3 +2462,220 @@ overflow: hidden;
         justify-content: flex-start;
     }
 }
+
+/* =========================================================
+   JDM - UNIFORMISATION VISUELLE SOBRE 2026
+   Ajout global sans modification des pages HTML
+   ========================================================= */
+
+:root {
+    --jdm-surface-deep: #151a21;
+    --jdm-surface-mid: #242c36;
+    --jdm-surface-soft: #334152;
+    --jdm-blue-muted: #315f83;
+    --jdm-indigo-muted: #4b527d;
+    --jdm-teal-muted: #356b6d;
+    --jdm-sage-muted: #526b5d;
+    --jdm-purple-muted: #655574;
+    --jdm-slate-muted: #536273;
+    --jdm-gold-muted: #81704d;
+    --jdm-soft-border: rgba(255, 255, 255, 0.11);
+    --jdm-soft-highlight: rgba(255, 255, 255, 0.06);
+    --jdm-modern-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+}
+
+/* Suppression de l'ancienne grande barre supérieure injectée. */
+.jdm-global-topbar,
+.jdm-profile-menu {
+    display: none !important;
+}
+
+/* Neutralise l'espace éventuellement réservé par la barre supérieure. */
+body {
+    padding-top: 0 !important;
+}
+
+/* Fond global plus profond et moins gris plat. */
+body {
+    background:
+        radial-gradient(circle at top, rgba(49, 95, 131, 0.16), transparent 34rem),
+        linear-gradient(155deg, #3d4249 0%, #292e35 48%, #20242a 100%);
+    background-attachment: fixed;
+}
+
+/* Cartes de contenu : relief commun et palette bleu-gris sobre. */
+.card,
+.schedule-card,
+.product-card,
+.product-detail,
+.architecture-block,
+.groupe-card,
+.admin-adherent-card,
+.admin-family-card {
+    background:
+        linear-gradient(145deg, rgba(54, 69, 86, 0.96) 0%, rgba(27, 33, 41, 0.98) 62%, rgba(18, 22, 28, 1) 100%);
+    border: 1px solid var(--jdm-soft-border);
+    box-shadow: var(--jdm-modern-shadow);
+}
+
+/* Tuiles principales de navigation. */
+.navigation-card {
+    position: relative;
+    overflow: hidden;
+    background:
+        linear-gradient(135deg, rgba(52, 79, 104, 0.98) 0%, rgba(34, 42, 52, 0.98) 58%, rgba(20, 24, 30, 1) 100%);
+    border: 1px solid var(--jdm-soft-border);
+    box-shadow: var(--jdm-modern-shadow);
+}
+
+.navigation-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(110deg, rgba(255,255,255,0.08), transparent 38%);
+}
+
+.navigation-card > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Variations sobres automatiques, sans ajouter de classes dans les HTML. */
+.navigation-link:nth-of-type(4n + 1) .navigation-card {
+    background: linear-gradient(135deg, #3e6574 0%, #29343d 58%, #181d22 100%);
+}
+
+.navigation-link:nth-of-type(4n + 2) .navigation-card {
+    background: linear-gradient(135deg, #515b83 0%, #303545 58%, #1b1e26 100%);
+}
+
+.navigation-link:nth-of-type(4n + 3) .navigation-card {
+    background: linear-gradient(135deg, #4c6b5b 0%, #2e3933 58%, #1a201d 100%);
+}
+
+.navigation-link:nth-of-type(4n) .navigation-card {
+    background: linear-gradient(135deg, #675a76 0%, #393241 58%, #211d26 100%);
+}
+
+.navigation-card:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.06);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.navigation-arrow {
+    color: rgba(255, 255, 255, 0.78);
+}
+
+.navigation-content p,
+.card p,
+.schedule-info p {
+    color: rgba(235, 239, 244, 0.78);
+}
+
+/* En-têtes et boutons de retour plus légers. */
+.back-button,
+.week-button,
+.admin-action-button {
+    background: linear-gradient(145deg, #3b4653, #20262d);
+    border: 1px solid var(--jdm-soft-border);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.25);
+}
+
+.back-button:hover,
+.week-button:hover,
+.admin-action-button:hover {
+    background: linear-gradient(145deg, #456b87, #293744);
+}
+
+/* Boutons normaux : bleu ardoise, jamais rouge au survol. */
+.primary-button,
+.quantity-button,
+.print-button-fiche {
+    background: linear-gradient(135deg, #3c6f93, #294d69);
+    box-shadow: 0 7px 18px rgba(16, 32, 48, 0.25);
+}
+
+.primary-button:hover,
+.quantity-button:hover,
+.print-button-fiche:hover {
+    background: linear-gradient(135deg, #477da2, #315a78);
+    filter: brightness(1.04);
+}
+
+.secondary-button {
+    background: rgba(255,255,255,0.035);
+    border-color: rgba(255,255,255,0.16);
+}
+
+.secondary-button:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+/* Champs et sélecteurs harmonisés. */
+.form-input,
+.admin-select,
+.member-switcher,
+.profile-grid input,
+.profile-family-selector-label select {
+    background: rgba(12, 16, 21, 0.72);
+    color: var(--white);
+    border: 1px solid rgba(255,255,255,0.16);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.035);
+}
+
+.form-input:focus,
+.admin-select:focus,
+.member-switcher:focus,
+.profile-grid input:focus,
+.profile-family-selector-label select:focus {
+    outline: none;
+    border-color: rgba(92, 145, 184, 0.85);
+    box-shadow: 0 0 0 3px rgba(70, 120, 155, 0.18);
+}
+
+/* Les couleurs fortes restent réservées aux vrais états métier. */
+.notification-non-lue,
+.absence-card-admin.absence-declaree,
+.absence-admin-info,
+.profile-message-error {
+    /* rouge conservé pour urgence, erreur ou action nécessaire */
+}
+
+.notification-lue,
+.absence-card-admin.absence-traitee,
+.profile-message-success,
+.dot.ok,
+.slot.ok,
+.admin-day-cell.ok {
+    /* vert conservé pour validation */
+}
+
+/* Orange adouci pour les informations d'attention non critiques. */
+.aide-licence-card,
+.competition-history-card,
+.architecture-block.progress {
+    border-left-color: #8b7954;
+}
+
+/* Amélioration mobile : relief présent sans surcharge. */
+@media screen and (max-width: 600px) {
+    .navigation-card,
+    .card,
+    .schedule-card,
+    .product-card,
+    .product-detail {
+        box-shadow: 0 9px 22px rgba(0,0,0,0.24);
+    }
+}
+
+/* Respect du confort visuel. */
+@media (prefers-reduced-motion: reduce) {
+    .navigation-card,
+    .primary-button,
+    .secondary-button,
+    .back-button {
+        transition: none !important;
+    }
+}
