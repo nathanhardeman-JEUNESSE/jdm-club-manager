@@ -23,6 +23,7 @@ const boutonImprimer = document.getElementById("imprimer-mois");
 const totalGymnastes = document.getElementById("total-gymnastes");
 const totalPresents = document.getElementById("total-presents");
 const totalAbsents = document.getElementById("total-absents");
+const logoUrl = new URL("../images/logo-jdm-noir.png", import.meta.url).href;
 
 const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
 const JOURS_LABEL = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
