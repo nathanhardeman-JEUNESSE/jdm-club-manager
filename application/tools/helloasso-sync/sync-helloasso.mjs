@@ -48,9 +48,13 @@ const stats = {
   productsIgnored: 0,
   unknownItemsIgnored: 0,
   skipped: 0,
-  cleanupDeleted: 0,
-  donationAnnotationsRestored: 0,
-  errors: 0
+  errors: 0,
+  cleanupAdherents: 0,
+  cleanupRegistrations: 0,
+  cleanupPendingUsers: 0,
+  cleanupOrders: 0,
+  cleanupPayments: 0,
+  cleanupDonations: 0
 };
 
 function safeMessage(error) {
@@ -69,76 +73,70 @@ function stableHash(value, length = 20) {
   return crypto.createHash("sha256").update(value).digest("hex").slice(0, length);
 }
 
-
 function donationKey(data = {}) {
-  const itemId = clean(data.helloAssoItemId || data.helloassoItemId || data.donneesHelloAsso?.id);
+  const itemId = clean(data.helloAssoItemId || data.helloassoItemId);
   if (itemId) return `item:${itemId}`;
 
-  return [
-    clean(data.helloAssoOrderId || data.helloassoOrderId),
-    normalizeEmail(data.email),
-    clean(data.date || data.dateDon),
-    String(Number(data.montant ?? data.montantPaye ?? 0))
-  ].join("|");
+  const orderId = clean(data.helloAssoOrderId || data.helloassoOrderId);
+  const email = normalizeEmail(data.email);
+  const amount = Number(data.montant ?? data.montantPaye ?? data.montantDeclare ?? 0);
+  const date = clean(data.dateDon || data.date || data.donneesHelloAsso?.date);
+  return `fallback:${orderId}|${email}|${amount}|${date}`;
 }
 
-async function deleteQuerySnapshot(snapshot) {
-  const docs = snapshot.docs || [];
-  for (let index = 0; index < docs.length; index += 400) {
-    const batch = db.batch();
-    for (const item of docs.slice(index, index + 400)) batch.delete(item.ref);
-    await batch.commit();
-  }
-  stats.cleanupDeleted += docs.length;
-  return docs.length;
-}
-
-async function deleteHelloAssoDocuments(collectionName) {
+async function deleteMatchingDocuments(collectionName, predicate = () => true) {
   const snapshot = await db.collection(collectionName).get();
-  const targeted = snapshot.docs.filter(item => {
-    const data = item.data() || {};
-    return String(data.source || "").toLowerCase() === "helloasso" ||
-      Boolean(data.helloAssoOrderId) || Boolean(data.helloassoOrderId) ||
-      Boolean(data.helloAssoItemId) || Boolean(data.helloassoItemId);
-  });
+  const documents = snapshot.docs.filter(doc => predicate(doc.data() || {}, doc.id));
 
-  for (let index = 0; index < targeted.length; index += 400) {
+  for (let index = 0; index < documents.length; index += 400) {
     const batch = db.batch();
-    for (const item of targeted.slice(index, index + 400)) batch.delete(item.ref);
+    for (const document of documents.slice(index, index + 400)) batch.delete(document.ref);
     await batch.commit();
   }
-  stats.cleanupDeleted += targeted.length;
-  return targeted.length;
+
+  return documents.length;
 }
 
-async function cleanupCompleteImport() {
-  if (mode !== "complete") return new Map();
-
-  console.log("Nettoyage serveur préalable à la synchronisation complète");
+async function prepareCompleteCleanup() {
   const donationAnnotations = new Map();
   const donationsSnapshot = await db.collection(collections.donations).get();
 
-  for (const item of donationsSnapshot.docs) {
-    const data = item.data() || {};
-    const key = donationKey(data);
-    const previous = donationAnnotations.get(key) || {};
-    donationAnnotations.set(key, {
-      recuDemande: previous.recuDemande === true || data.recuDemande === true,
-      recuRemis: previous.recuRemis === true || data.recuRemis === true,
-      commentaireTresorier: clean(data.commentaireTresorier) || clean(previous.commentaireTresorier)
+  for (const document of donationsSnapshot.docs) {
+    const data = document.data() || {};
+    donationAnnotations.set(donationKey(data), {
+      recuDemande: data.recuDemande === true,
+      recuRemis: data.recuRemis === true,
+      commentaireTresorier: clean(data.commentaireTresorier)
     });
   }
 
-  await Promise.all([
-    deleteHelloAssoDocuments(collections.adherents),
-    deleteHelloAssoDocuments(collections.inscriptions),
-    deleteHelloAssoDocuments(collections.pendingUsers),
-    deleteQuerySnapshot(await db.collection(collections.orders).get()),
-    deleteQuerySnapshot(await db.collection(collections.payments).get()),
-    deleteQuerySnapshot(donationsSnapshot)
-  ]);
+  console.log("Nettoyage complet des anciennes données HelloAsso...");
+  stats.cleanupAdherents = await deleteMatchingDocuments(
+    collections.adherents,
+    data => clean(data.source).toLowerCase() === "helloasso" || clean(data.numeroAdherent).startsWith("HA-")
+  );
+  stats.cleanupRegistrations = await deleteMatchingDocuments(
+    collections.inscriptions,
+    data => clean(data.source).toLowerCase() === "helloasso" || Boolean(data.helloAssoItemId || data.helloassoItemId)
+  );
+  stats.cleanupPendingUsers = await deleteMatchingDocuments(
+    collections.pendingUsers,
+    data => clean(data.source).toLowerCase() === "helloasso"
+  );
+  stats.cleanupOrders = await deleteMatchingDocuments(collections.orders);
+  stats.cleanupPayments = await deleteMatchingDocuments(collections.payments);
+  stats.cleanupDonations = await deleteMatchingDocuments(collections.donations);
 
-  console.log(`Nettoyage terminé : ${stats.cleanupDeleted} document(s) supprimé(s)`);
+  console.log("Nettoyage terminé", {
+    adherents: stats.cleanupAdherents,
+    inscriptions: stats.cleanupRegistrations,
+    pendingUsers: stats.cleanupPendingUsers,
+    orders: stats.cleanupOrders,
+    payments: stats.cleanupPayments,
+    donations: stats.cleanupDonations,
+    donationAnnotationsPreserved: donationAnnotations.size
+  });
+
   return donationAnnotations;
 }
 
@@ -401,7 +399,6 @@ function buildRegistration(order, item, person) {
     helloAssoOrderId: person.helloAssoOrderId,
     helloAssoItemId: person.helloAssoItemId,
     donneesHelloAsso: item,
-    dedupeKey: donationKey({ helloAssoItemId: itemId, helloAssoOrderId: orderId }),
     updatedAt: FieldValue.serverTimestamp()
   };
 }
@@ -448,7 +445,6 @@ function buildDonation(order, item, index) {
     date: order.date || order.creationDate || new Date().toISOString(),
     saison: season,
     donneesHelloAsso: item,
-    dedupeKey: donationKey({ helloAssoItemId: itemId, helloAssoOrderId: orderId }),
     updatedAt: FieldValue.serverTimestamp()
   };
 }
@@ -567,14 +563,11 @@ async function processOrders(orders, donationAnnotations = new Map()) {
 
   for (const donation of donations) {
     const donationId = firestoreId(`HA-DON-${donation.helloAssoItemId}`);
-    const annotations = donationAnnotations.get(donationKey(donation)) || {};
-    await db.collection(collections.donations).doc(donationId).set({
-      ...donation,
-      ...annotations
-    }, { merge: true });
-    if (annotations.recuDemande || annotations.recuRemis || annotations.commentaireTresorier) {
-      stats.donationAnnotationsRestored += 1;
-    }
+    const annotation = donationAnnotations.get(donationKey(donation)) || {};
+    await db.collection(collections.donations).doc(donationId).set(
+      { ...donation, ...annotation },
+      { merge: true }
+    );
     stats.donationsWritten += 1;
   }
 }
@@ -601,11 +594,14 @@ async function main() {
       stats
     }, { merge: true });
 
-    const donationAnnotations = await cleanupCompleteImport();
     const accessToken = await getAccessToken();
     const lastSyncAt = await getLastSuccessfulSync();
     const orders = await fetchOrders(accessToken, lastSyncAt);
     stats.ordersRead = orders.length;
+
+    const donationAnnotations = mode === "complete"
+      ? await prepareCompleteCleanup()
+      : new Map();
 
     await processOrders(orders, donationAnnotations);
 
