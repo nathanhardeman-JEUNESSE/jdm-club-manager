@@ -1,4 +1,5 @@
 import { watchSession } from "./session.js";
+import { jsPDF } from "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm";
 import {
     listGroupesFirestore,
     listAdherents,
@@ -299,6 +300,19 @@ function seancesDuMois(groupe, dateISO) {
     return construireSeances(groupe, debut).filter(s => s.dateISO >= formatISO(debut) && s.dateISO <= formatISO(fin));
 }
 
+function textePdf(value) {
+    return String(value ?? "")
+        .replace(/[–—]/g, "-")
+        .replace(/œ/g, "oe")
+        .replace(/Œ/g, "OE");
+}
+
+function nomFichierPdf(value) {
+    return normaliser(value)
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || "groupe";
+}
+
 function imprimerMois() {
     const groupe = groupes.find(g => String(g.id) === String(selectGroupe.value));
     const seance = seances[indexSeance];
@@ -306,100 +320,169 @@ function imprimerMois() {
 
     const membres = membresDuGroupe(groupe);
     const moisSeances = seancesDuMois(groupe, seance.dateISO);
-    const moisLabel = new Date(`${seance.dateISO}T12:00:00`).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
-    const saison = membres.find(m => m.saison)?.saison || inscriptions.find(i => i.saison)?.saison || "";
-    const coachs = Array.isArray(groupe.coachs) ? groupe.coachs.join(", ") : (groupe.coach || "");
+    const moisDate = new Date(`${seance.dateISO}T12:00:00`);
+    const moisLabel = moisDate.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+    const saison = membres.find(m => m.saison)?.saison || inscriptions.find(i => i.saison)?.saison || "Non renseignée";
+    const coachs = Array.isArray(groupe.coachs) ? groupe.coachs.join(", ") : (groupe.coach || groupe.entraineur || "Non renseigné");
+    const creneaux = Object.entries(groupe.horaires || {}).map(([jour, horaire]) => `${jour} ${horaire}`).join(" - ") || "Non renseigné";
 
-    const lignes = membres.map(membre => {
-        const numero = String(membre.numeroAdherent || membre.id || "");
-        const cases = moisSeances.map(s => {
-            const appel = appels.find(a => String(a.numeroAdherent || a.adherentId) === numero && String(a.groupeId) === String(groupe.id) && a.date === s.dateISO);
-            return `<td class="${appel?.statut === "absent" ? "absent" : ""}">${appel ? (appel.statut === "present" ? "P" : "A") : "—"}</td>`;
-        }).join("");
-        return `<tr><td class="name">${escapeHtml(membre.nom)} ${escapeHtml(membre.prenom)}</td>${cases}</tr>`;
-    }).join("");
-
-    const popup = window.open("", "_blank", "noopener,noreferrer");
-    if (!popup) {
-        afficherMessage("Autorisez les fenêtres contextuelles pour générer le PDF.", "error");
+    if (!membres.length || !moisSeances.length) {
+        afficherMessage("Aucune donnée disponible pour générer la feuille mensuelle.", "error");
         return;
     }
 
-    popup.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Présences ${escapeHtml(groupe.nom)} - ${escapeHtml(moisLabel)}</title><style>
-        @page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#1f2937;margin:0}h1{font-size:20px;margin:0 0 4px}.meta{display:flex;gap:24px;font-size:11px;margin-bottom:10px}.meta span{white-space:nowrap}table{width:100%;border-collapse:collapse;font-size:10px}th,td{border:1px solid #94a3b8;padding:5px;text-align:center}th{background:#e2e8f0}.name{text-align:left;white-space:nowrap;font-weight:700}.absent{background:#f3dfc5}.legend{margin-top:8px;font-size:10px}.footer{display:flex;justify-content:space-between;margin-top:8px;font-size:9px;color:#64748b}
-    </style></head><body>
-        <h1>Feuille de présence — ${escapeHtml(groupe.nom)}</h1>
-        <div class="meta"><span><strong>Mois :</strong> ${escapeHtml(moisLabel)}</span><span><strong>Saison :</strong> ${escapeHtml(saison)}</span><span><strong>Coach :</strong> ${escapeHtml(coachs || "Non renseigné")}</span><span><strong>Créneau :</strong> ${escapeHtml(Object.entries(groupe.horaires || {}).map(([j,h]) => `${j} ${h}`).join(" · "))}</span></div>
-        <table><thead><tr><th>Gymnaste</th>${moisSeances.map(s => `<th>${s.dateISO.slice(8,10)}<br>${escapeHtml(s.jourNom.slice(0,3))}</th>`).join("")}</tr></thead><tbody>${lignes}</tbody></table>
-        <div class="legend">P = présent · A = absent · — = appel non enregistré</div>
-        <div class="footer"><span>La Jeunesse du Marais</span><span>Généré le ${new Date().toLocaleDateString("fr-FR")}</span></div>
-        <script>window.onload=()=>{window.print()}<\/script>
-    </body></html>`);
-    popup.document.close();
-}
-
-function lireCache(cle) {
     try {
-        const valeur = JSON.parse(localStorage.getItem(cle) || "[]");
-        return Array.isArray(valeur) ? valeur : [];
+        const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4", compress: true });
+        const largeurPage = pdf.internal.pageSize.getWidth();
+        const hauteurPage = pdf.internal.pageSize.getHeight();
+        const marge = 10;
+        const largeurTable = largeurPage - (marge * 2);
+        const largeurNom = Math.min(78, Math.max(54, largeurTable * 0.29));
+        const largeurDate = (largeurTable - largeurNom) / moisSeances.length;
+
+        pdf.setFillColor(37, 59, 78);
+        pdf.roundedRect(marge, 9, largeurTable, 25, 3, 3, "F");
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(15);
+        pdf.text(textePdf(`Feuille de présence - ${groupe.nom}`), marge + 5, 18);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8.5);
+        pdf.text(textePdf(`${moisLabel}  |  Saison ${saison}  |  Coach : ${coachs}`), marge + 5, 24);
+        pdf.text(textePdf(`Créneau : ${creneaux}`), marge + 5, 29);
+
+        const yTable = 39;
+        const hauteurEntete = 12;
+        const hauteurPied = 20;
+        const hauteurDisponible = hauteurPage - yTable - hauteurPied - marge;
+        const hauteurLigne = Math.max(4.6, Math.min(7.2, (hauteurDisponible - hauteurEntete - 10) / (membres.length + 2)));
+        const tailleNom = hauteurLigne < 5.3 ? 6.3 : 7.5;
+        const tailleCase = hauteurLigne < 5.3 ? 6.2 : 7.4;
+
+        pdf.setDrawColor(148, 163, 184);
+        pdf.setLineWidth(0.2);
+        pdf.setFillColor(226, 232, 240);
+        pdf.rect(marge, yTable, largeurNom, hauteurEntete, "FD");
+        pdf.setTextColor(30, 41, 59);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(8);
+        pdf.text("GYMNASTE", marge + 3, yTable + 7.5);
+
+        moisSeances.forEach((s, index) => {
+            const x = marge + largeurNom + (index * largeurDate);
+            pdf.setFillColor(226, 232, 240);
+            pdf.rect(x, yTable, largeurDate, hauteurEntete, "FD");
+            pdf.setFontSize(Math.min(7.5, Math.max(5.6, largeurDate * 0.48)));
+            pdf.text(`${s.dateISO.slice(8, 10)}`, x + (largeurDate / 2), yTable + 5, { align: "center" });
+            pdf.setFont("helvetica", "normal");
+            pdf.text(textePdf(s.jourNom.slice(0, 3)), x + (largeurDate / 2), yTable + 9, { align: "center" });
+            pdf.setFont("helvetica", "bold");
+        });
+
+        membres.forEach((membre, ligneIndex) => {
+            const y = yTable + hauteurEntete + (ligneIndex * hauteurLigne);
+            const fondPair = ligneIndex % 2 === 0;
+            pdf.setFillColor(fondPair ? 248 : 241, fondPair ? 250 : 245, fondPair ? 252 : 249);
+            pdf.rect(marge, y, largeurNom, hauteurLigne, "FD");
+
+            pdf.setTextColor(30, 41, 59);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(tailleNom);
+            const nomComplet = textePdf(`${membre.nom || ""} ${membre.prenom || ""}`.trim());
+            const nomCoupe = pdf.splitTextToSize(nomComplet, largeurNom - 5)[0] || "";
+            pdf.text(nomCoupe, marge + 3, y + (hauteurLigne * 0.67));
+
+            const numero = String(membre.numeroAdherent || membre.id || "");
+            moisSeances.forEach((s, index) => {
+                const x = marge + largeurNom + (index * largeurDate);
+                const appel = appels.find(a =>
+                    String(a.numeroAdherent || a.adherentId || "") === numero &&
+                    String(a.groupeId || "") === String(groupe.id) &&
+                    a.date === s.dateISO
+                );
+                const statut = appel?.statut || "";
+                if (statut === "absent") pdf.setFillColor(244, 226, 205);
+                else if (statut === "present") pdf.setFillColor(224, 238, 230);
+                else pdf.setFillColor(fondPair ? 248 : 241, fondPair ? 250 : 245, fondPair ? 252 : 249);
+                pdf.rect(x, y, largeurDate, hauteurLigne, "FD");
+                pdf.setFont("helvetica", "bold");
+                pdf.setFontSize(tailleCase);
+                pdf.setTextColor(statut === "absent" ? 126 : 42, statut === "absent" ? 79 : 92, statut === "absent" ? 39 : 69);
+                pdf.text(statut === "present" ? "P" : statut === "absent" ? "A" : "-", x + (largeurDate / 2), y + (hauteurLigne * 0.68), { align: "center" });
+            });
+        });
+
+        const yTotaux = yTable + hauteurEntete + (membres.length * hauteurLigne);
+        [
+            { libelle: "Total présents", statut: "present", fond: [224, 238, 230] },
+            { libelle: "Total absents", statut: "absent", fond: [244, 226, 205] }
+        ].forEach((ligne, offset) => {
+            const y = yTotaux + (offset * hauteurLigne);
+            pdf.setFillColor(...ligne.fond);
+            pdf.rect(marge, y, largeurNom, hauteurLigne, "FD");
+            pdf.setTextColor(30, 41, 59);
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(tailleNom);
+            pdf.text(ligne.libelle, marge + 3, y + (hauteurLigne * 0.67));
+
+            moisSeances.forEach((s, index) => {
+                const x = marge + largeurNom + (index * largeurDate);
+                const total = membres.filter(membre => {
+                    const numero = String(membre.numeroAdherent || membre.id || "");
+                    return appels.some(a =>
+                        String(a.numeroAdherent || a.adherentId || "") === numero &&
+                        String(a.groupeId || "") === String(groupe.id) &&
+                        a.date === s.dateISO &&
+                        a.statut === ligne.statut
+                    );
+                }).length;
+                pdf.setFillColor(...ligne.fond);
+                pdf.rect(x, y, largeurDate, hauteurLigne, "FD");
+                pdf.text(String(total), x + (largeurDate / 2), y + (hauteurLigne * 0.67), { align: "center" });
+            });
+        });
+
+        pdf.setTextColor(71, 85, 105);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7.5);
+        pdf.text("P = présent  |  A = absent  |  - = appel non enregistré", marge, hauteurPage - 8);
+        pdf.text(textePdf(`La Jeunesse du Marais - Généré le ${new Date().toLocaleDateString("fr-FR")}`), largeurPage - marge, hauteurPage - 8, { align: "right" });
+
+        const nomMois = `${moisDate.getFullYear()}-${String(moisDate.getMonth() + 1).padStart(2, "0")}`;
+        pdf.save(`presences-${nomFichierPdf(groupe.nom)}-${nomMois}.pdf`);
+        afficherMessage("PDF mensuel généré.", "success");
     } catch (error) {
-        console.warn(`Cache local illisible : ${cle}`, error);
-        return [];
+        console.error(error);
+        afficherMessage("Impossible de générer le PDF. Rechargez la page puis réessayez.", "error");
     }
 }
-
-function resultatOuCache(resultat, cle) {
-    if (resultat.status === "fulfilled") {
-        const valeur = Array.isArray(resultat.value) ? resultat.value : [];
-        localStorage.setItem(cle, JSON.stringify(valeur));
-        return valeur;
-    }
-
-    console.error(`Chargement Firestore impossible : ${cle}`, resultat.reason);
-    return lireCache(cle);
-}
-
 async function initialiser() {
     zoneAppel.innerHTML = `<p>Chargement des groupes et des gymnastes…</p>`;
-    afficherMessage("");
+    try {
+        const [g, a, i, ab, ap] = await Promise.all([
+            listGroupesFirestore(), listAdherents(), listInscriptions(), listAbsencesFirestore(), listAppelsFirestore()
+        ]);
+        groupes = (g.length ? g : JSON.parse(localStorage.getItem("groupesJDM") || "[]")).filter(groupeAutorise);
+        adherents = a.length ? a : JSON.parse(localStorage.getItem("adherentsJDM") || "[]");
+        inscriptions = i.length ? i : JSON.parse(localStorage.getItem("inscriptionsJDM") || "[]");
+        absences = ab;
+        appels = ap;
 
-    const resultats = await Promise.allSettled([
-        listGroupesFirestore(),
-        listAdherents(),
-        listInscriptions(),
-        listAbsencesFirestore(),
-        listAppelsFirestore()
-    ]);
+        localStorage.setItem("groupesJDM", JSON.stringify(groupes));
+        localStorage.setItem("adherentsJDM", JSON.stringify(adherents));
+        localStorage.setItem("inscriptionsJDM", JSON.stringify(inscriptions));
+        localStorage.setItem("absencesJDM", JSON.stringify(absences));
+        localStorage.setItem("appelsJDM", JSON.stringify(appels));
 
-    const [groupesResultat, adherentsResultat, inscriptionsResultat, absencesResultat, appelsResultat] = resultats;
-
-    const tousLesGroupes = resultatOuCache(groupesResultat, "groupesJDM");
-    adherents = resultatOuCache(adherentsResultat, "adherentsJDM");
-    inscriptions = resultatOuCache(inscriptionsResultat, "inscriptionsJDM");
-    absences = resultatOuCache(absencesResultat, "absencesJDM");
-    appels = resultatOuCache(appelsResultat, "appelsJDM");
-    groupes = tousLesGroupes.filter(groupeAutorise);
-
-    selectGroupe.innerHTML = `<option value="">Choisir un groupe</option>${groupes.map(groupe => `<option value="${escapeHtml(groupe.id)}">${escapeHtml(groupe.nom)}</option>`).join("")}`;
-
-    const echecs = resultats
-        .map((resultat, index) => ({ resultat, index }))
-        .filter(({ resultat }) => resultat.status === "rejected")
-        .map(({ index }) => ["groupes", "adhérents", "inscriptions", "absences", "appels"][index]);
-
-    if (groupesResultat.status === "rejected" && !tousLesGroupes.length) {
-        afficherMessage("Les groupes n'ont pas pu être chargés. Vérifiez les droits Firestore de la collection groupes.", "error");
-        zoneAppel.innerHTML = `<h2>Groupes indisponibles</h2><p>La page reste ouverte, mais aucun groupe n'est disponible pour commencer l'appel.</p>`;
-        return;
+        selectGroupe.innerHTML = `<option value="">Choisir un groupe</option>${groupes.map(groupe => `<option value="${escapeHtml(groupe.id)}">${escapeHtml(groupe.nom)}</option>`).join("")}`;
+        zoneAppel.innerHTML = groupes.length
+            ? `<div class="attendance-empty-icon">✓</div><h2>Prêt pour l'appel</h2><p>Choisissez un groupe pour afficher les gymnastes de la séance.</p>`
+            : `<h2>Aucun groupe disponible</h2><p>Aucun groupe n'est associé à votre profil ou à vos droits.</p>`;
+    } catch (error) {
+        console.error(error);
+        afficherMessage("Les données de l'appel n'ont pas pu être chargées.", "error");
+        zoneAppel.innerHTML = `<h2>Chargement impossible</h2><p>Vérifiez la connexion à Firestore.</p>`;
     }
-
-    if (echecs.length) {
-        afficherMessage(`Certaines données sont temporairement indisponibles : ${echecs.join(", ")}. Les données locales disponibles ont été utilisées.`, "warning");
-    }
-
-    zoneAppel.innerHTML = groupes.length
-        ? `<div class="attendance-empty-icon">✓</div><h2>Prêt pour l'appel</h2><p>Choisissez un groupe pour afficher les gymnastes de la séance.</p>`
-        : `<h2>Aucun groupe disponible</h2><p>Aucun groupe n'est associé à votre profil. Vérifiez que votre nom est bien renseigné parmi les coachs du groupe.</p>`;
 }
 
 selectGroupe.addEventListener("change", chargerGroupe);

@@ -323,3 +323,46 @@
 @media print {
     .attendance-page { display: none !important; }
 }
+
+
+/* Lisibilité renforcée des lignes gymnastes */
+.attendance-row {
+    background: linear-gradient(135deg, #f7f9fc, #edf2f7);
+    border-color: rgba(71, 85, 105, 0.28);
+    box-shadow: 0 7px 18px rgba(15, 23, 42, 0.13);
+}
+
+.attendance-row.is-absent {
+    background: linear-gradient(135deg, #f7e8d8, #f2d8bd);
+    border-color: rgba(161, 98, 36, 0.42);
+}
+
+.attendance-member-name strong {
+    color: #172033 !important;
+    font-size: 1rem;
+    font-weight: 850;
+    text-shadow: none;
+}
+
+.attendance-member-name small {
+    color: #52657c !important;
+    font-weight: 650;
+}
+
+.attendance-row.is-absent .attendance-member-name strong {
+    color: #593717 !important;
+}
+
+.attendance-row.is-absent .attendance-member-name small {
+    color: #805329 !important;
+}
+
+.attendance-member-status {
+    background: #8fa0b5;
+    box-shadow: 0 0 0 4px rgba(143, 160, 181, 0.20);
+}
+
+.attendance-member-status.has-warning {
+    background: #b87535;
+    box-shadow: 0 0 0 4px rgba(184, 117, 53, 0.20);
+}
