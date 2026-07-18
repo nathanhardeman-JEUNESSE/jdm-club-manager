@@ -38,8 +38,9 @@ function injecterBarre() {
                     <small id="jdm-profile-menu-role"></small>
                 </div>
 
-                <a href="mon-profil.html">Profil & documents</a>
+                <a href="mon-profil.html">Mon profil</a>
                 <a href="espace-membre.html">Mon espace</a>
+                <a href="documents-membre.html">Mes documents</a>
 
                 <button type="button" id="jdm-profile-logout">
                     Déconnexion
@@ -118,7 +119,7 @@ async function actualiserBadge(profile) {
             notification.lue !== true
         ).length;
 
-        badge.textContent = nonLues > 99 ? "99+" : String(nonLues);
+        badge.textContent = nonLues > 9 ? "9+" : String(nonLues);
         badge.hidden = nonLues === 0;
     } catch (error) {
         console.warn("Badge notifications indisponible", error);
