@@ -359,10 +359,7 @@ async function imprimerMois() {
         const largeurNom = Math.min(78, Math.max(54, largeurTable * 0.29));
         const largeurDate = (largeurTable - largeurNom) / moisSeances.length;
 
-        const LOGO_URL = new URL(
-            "../assets/images/logo-jdm-noir.png",
-            import.meta.url
-        ).href;
+        const logoUrl = new URL("../images/logo-jdm-noir.png", import.meta.url).href;
         const logoData = await chargerImagePdf(logoUrl);
         const dimensionsLogo = pdf.getImageProperties(logoData);
         const largeurLogo = Math.min(190, largeurPage - 42);
