@@ -649,3 +649,52 @@ export async function updateHelloAssoDonation(
         { merge: true }
     );
 }
+
+/* =========================================================
+   APPELS & PRESENCES
+   ========================================================= */
+
+export async function listAppelsFirestore() {
+    const snap = await getDocs(collection(db, "appels"));
+    return snap.docs.map(item => ({ id: item.id, ...item.data() }));
+}
+
+export async function saveAppelsSeanceFirestore({ groupe, seance, pointages, auteur }) {
+    if (!groupe?.id || !seance?.dateISO || !Array.isArray(pointages)) {
+        throw new Error("Données d'appel incomplètes.");
+    }
+
+    const batch = writeBatch(db);
+
+    pointages.forEach(pointage => {
+        const numero = String(pointage.numeroAdherent || pointage.adherentId || "").trim();
+        if (!numero) return;
+
+        const id = identifiantDocument(`${groupe.id}_${seance.dateISO}_${numero}`);
+        const ref = doc(db, "appels", id);
+
+        batch.set(ref, {
+            id,
+            numeroAdherent: numero,
+            adherentId: String(pointage.adherentId || numero),
+            nom: pointage.nom || "",
+            prenom: pointage.prenom || "",
+            groupeId: String(groupe.id),
+            groupeNom: groupe.nom || "",
+            date: seance.dateISO,
+            jour: seance.jourCle || "",
+            jourNom: seance.jourNom || "",
+            horaire: seance.horaire || "",
+            statut: pointage.statut === "absent" ? "absent" : "present",
+            absenceSignalee: pointage.absenceSignalee === true,
+            auteurUid: auteur?.uid || "",
+            auteurNom: auteur?.nom || "",
+            auteurEmail: auteur?.email || "",
+            clubId: JDM_CONFIG.clubId,
+            updatedAt: serverTimestamp(),
+            createdAt: pointage.createdAt || serverTimestamp()
+        }, { merge: true });
+    });
+
+    await batch.commit();
+}

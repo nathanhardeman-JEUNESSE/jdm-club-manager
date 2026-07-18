@@ -7,50 +7,68 @@
 
     <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/admin-appel.css">
 </head>
-
 <body>
-
-<main class="page">
-
-    <header class="page-header">
-        <a href="administration.html" class="back-button">←</a>
-        <h1>Appel</h1>
+<main class="page attendance-page">
+    <header class="page-header attendance-page-header">
+        <a href="administration.html" class="back-button" aria-label="Retour">←</a>
+        <div>
+            <h1>Appel</h1>
+            <p>Pointage rapide de la séance et archivage mensuel.</p>
+        </div>
     </header>
 
-    <section class="card">
-        <h2>📋 Feuille d'appel</h2>
-        <p>
-            Sélectionnez une semaine, un groupe et une séance pour faire l'appel.
-        </p>
+    <section class="attendance-toolbar card" aria-label="Sélection de la séance">
+        <label class="attendance-field">
+            <span>Groupe</span>
+            <select class="form-input" id="groupe-appel">
+                <option value="">Choisir un groupe</option>
+            </select>
+        </label>
+
+        <div class="attendance-session-nav">
+            <button class="attendance-nav-button" id="seance-precedente" type="button" aria-label="Séance précédente">←</button>
+            <div class="attendance-session-title">
+                <strong id="titre-seance">Sélectionnez un groupe</strong>
+                <span id="details-seance">La séance la plus proche sera proposée automatiquement.</span>
+            </div>
+            <button class="attendance-nav-button" id="seance-suivante" type="button" aria-label="Séance suivante">→</button>
+        </div>
     </section>
 
-    <section class="week-selector">
-        <button class="week-button" id="semaine-precedente">←</button>
+    <section id="message-appel" class="attendance-message" role="status" aria-live="polite"></section>
 
-        <div class="week-title" id="titre-semaine">
-            Semaine
+    <section id="zone-appel" class="attendance-empty card">
+        <div class="attendance-empty-icon">✓</div>
+        <h2>Prêt pour l'appel</h2>
+        <p>Choisissez un groupe pour afficher les gymnastes de la séance.</p>
+    </section>
+
+    <section id="actions-appel" class="attendance-actions card" hidden>
+        <div class="attendance-totals" aria-label="Totaux de la séance">
+            <div><span>Effectif</span><strong id="total-gymnastes">0</strong></div>
+            <div><span>Présents</span><strong id="total-presents">0</strong></div>
+            <div><span>Absents</span><strong id="total-absents">0</strong></div>
         </div>
 
-        <button class="week-button" id="semaine-suivante">→</button>
+        <button id="enregistrer-appel" class="button-primary attendance-save-button" type="button">
+            Enregistrer l'appel
+        </button>
     </section>
 
-    <section class="card">
-        <select class="form-input" id="groupe-appel">
-            <option value="">Choisir un groupe</option>
-        </select>
-
-        <select class="form-input" id="seance-appel">
-            <option value="">Choisir une séance</option>
-        </select>
+    <section id="archive-appel" class="attendance-archive card" hidden>
+        <div>
+            <h2>Feuille mensuelle</h2>
+            <p>Générez une feuille de présence imprimable sur une seule page pour le groupe sélectionné.</p>
+        </div>
+        <button id="imprimer-mois" class="button-secondary" type="button">
+            Générer la feuille du mois
+        </button>
     </section>
-
-    <section id="zone-appel"></section>
-
 </main>
 
-<script type="module" src="../scripts/auth-guard.js" data-roles="admin,super_admin" data-page="admin-appel"></script>
-<script src="../scripts/admin-appel.js"></script>
-
+<script type="module" src="../scripts/auth-guard.js" data-roles="admin,super_admin,coach" data-page="admin-appel"></script>
+<script type="module" src="../scripts/admin-appel.js"></script>
 </body>
 </html>

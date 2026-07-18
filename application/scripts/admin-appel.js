@@ -1,236 +1,380 @@
-const groupes = JSON.parse(localStorage.getItem("groupesJDM")) || [];
-const adherents = JSON.parse(localStorage.getItem("adherentsJDM")) || [];
-const absences = JSON.parse(localStorage.getItem("absencesJDM")) || [];
-let appels = JSON.parse(localStorage.getItem("appelsJDM")) || [];
+import { watchSession } from "./session.js";
+import {
+    listGroupesFirestore,
+    listAdherents,
+    listInscriptions,
+    listAbsencesFirestore,
+    listAppelsFirestore,
+    saveAppelsSeanceFirestore
+} from "../firebase/firebase-db.js";
 
-const titreSemaine = document.getElementById("titre-semaine");
-const boutonPrecedent = document.getElementById("semaine-precedente");
-const boutonSuivant = document.getElementById("semaine-suivante");
 const selectGroupe = document.getElementById("groupe-appel");
-const selectSeance = document.getElementById("seance-appel");
+const boutonPrecedent = document.getElementById("seance-precedente");
+const boutonSuivant = document.getElementById("seance-suivante");
+const titreSeance = document.getElementById("titre-seance");
+const detailsSeance = document.getElementById("details-seance");
 const zoneAppel = document.getElementById("zone-appel");
+const zoneMessage = document.getElementById("message-appel");
+const zoneActions = document.getElementById("actions-appel");
+const zoneArchive = document.getElementById("archive-appel");
+const boutonEnregistrer = document.getElementById("enregistrer-appel");
+const boutonImprimer = document.getElementById("imprimer-mois");
+const totalGymnastes = document.getElementById("total-gymnastes");
+const totalPresents = document.getElementById("total-presents");
+const totalAbsents = document.getElementById("total-absents");
 
-let dateReference = new Date();
+const JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
+const JOURS_LABEL = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 
-const jours = [
-    { cle: "lundi", nom: "Lundi" },
-    { cle: "mardi", nom: "Mardi" },
-    { cle: "mercredi", nom: "Mercredi" },
-    { cle: "jeudi", nom: "Jeudi" },
-    { cle: "vendredi", nom: "Vendredi" },
-    { cle: "samedi", nom: "Samedi" },
-    { cle: "dimanche", nom: "Dimanche" }
-];
+let profilConnecte = null;
+let groupes = [];
+let adherents = [];
+let inscriptions = [];
+let absences = [];
+let appels = [];
+let seances = [];
+let indexSeance = 0;
+let pointages = new Map();
 
-function debutSemaine(date) {
-    const copie = new Date(date);
-    const jour = copie.getDay();
-    const difference = jour === 0 ? -6 : 1 - jour;
-
-    copie.setDate(copie.getDate() + difference);
-    copie.setHours(0, 0, 0, 0);
-
-    return copie;
+function normaliser(value) {
+    return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
-function dateJour(index) {
-    const debut = debutSemaine(dateReference);
-    const date = new Date(debut);
-    date.setDate(debut.getDate() + index);
-    return date;
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
 
-function formatDateISO(date) {
-    const annee = date.getFullYear();
-    const mois = String(date.getMonth() + 1).padStart(2, "0");
-    const jour = String(date.getDate()).padStart(2, "0");
-    return `${annee}-${mois}-${jour}`;
+function formatISO(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function formatDateFR(date) {
-    return date.toLocaleDateString("fr-FR", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric"
+function formatLong(dateISO) {
+    const [y, m, d] = dateISO.split("-").map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString("fr-FR", {
+        weekday: "long", day: "numeric", month: "long", year: "numeric"
     });
 }
 
-function mettreAJourTitreSemaine() {
-    const debut = debutSemaine(dateReference);
-    const fin = new Date(debut);
-    fin.setDate(debut.getDate() + 6);
+function groupeAutorise(groupe) {
+    const role = normaliser(profilConnecte?.role);
+    if (["admin", "super_admin"].includes(role)) return true;
 
-    titreSemaine.textContent = `Semaine du ${formatDateFR(debut)} au ${formatDateFR(fin)}`;
+    const identites = [
+        profilConnecte?.email,
+        `${profilConnecte?.prenom || ""} ${profilConnecte?.nom || ""}`,
+        `${profilConnecte?.nom || ""} ${profilConnecte?.prenom || ""}`
+    ].map(normaliser).filter(Boolean);
+
+    const coachs = Array.isArray(groupe.coachs) ? groupe.coachs : [groupe.coach, groupe.entraineur].filter(Boolean);
+    return coachs.some(coach => identites.some(id => normaliser(typeof coach === "string" ? coach : `${coach?.prenom || ""} ${coach?.nom || ""} ${coach?.email || ""}`).includes(id)));
 }
 
-function remplirGroupes() {
-    selectGroupe.innerHTML = `<option value="">Choisir un groupe</option>`;
-
-    groupes.forEach(groupe => {
-        selectGroupe.innerHTML += `
-            <option value="${groupe.id}">${groupe.nom}</option>
-        `;
-    });
+function groupeDeInscription(inscription) {
+    return inscription?.groupe || inscription?.groupeNom || inscription?.nomGroupe || inscription?.donneesHelloAsso?.name || "";
 }
 
-function remplirSeances() {
-    const groupe = groupes.find(g => String(g.id) === String(selectGroupe.value));
-
-    selectSeance.innerHTML = `<option value="">Choisir une séance</option>`;
-    zoneAppel.innerHTML = "";
-
-    if (!groupe || !groupe.horaires) return;
-
-    jours.forEach((jour, index) => {
-        const horaire = groupe.horaires[jour.cle];
-
-        if (!horaire) return;
-
-        const date = dateJour(index);
-        const dateISO = formatDateISO(date);
-
-        selectSeance.innerHTML += `
-            <option value="${jour.cle}|${dateISO}|${horaire}|${jour.nom}">
-            ${jour.nom} ${formatDateFR(date)} — ${horaire}${groupeAvecAbsence(groupe.nom, dateISO) ? " 🔴 Absence signalée" : ""}
-            </option>
-        `;
-    });
-}
-function groupeAvecAbsence(groupeNom, dateISO) {
-    return absences.some(absence =>
-        absence.groupeNom === groupeNom &&
-        absence.date === dateISO
-    );
-}
-function adherentsDuGroupe(nomGroupe) {
-    return adherents.filter(adherent => adherent.groupe === nomGroupe);
+function numerosDuGroupe(groupe) {
+    const noms = new Set([normaliser(groupe.nom), normaliser(groupe.id)]);
+    return new Set(inscriptions
+        .filter(i => noms.has(normaliser(groupeDeInscription(i))))
+        .map(i => String(i.numeroAdherent || ""))
+        .filter(Boolean));
 }
 
-function absenceDeclaree(numeroAdherent, groupeNom, dateISO) {
-    return absences.find(absence =>
-        absence.numeroAdherent === numeroAdherent &&
-        absence.groupeNom === groupeNom &&
-        absence.date === dateISO
-    );
+function membresDuGroupe(groupe) {
+    const numeros = numerosDuGroupe(groupe);
+    return adherents.filter(a => {
+        const numero = String(a.numeroAdherent || a.id || "");
+        return normaliser(a.groupe || a.groupeNom) === normaliser(groupe.nom) || numeros.has(numero);
+    }).sort((a, b) => `${a.nom || ""} ${a.prenom || ""}`.localeCompare(`${b.nom || ""} ${b.prenom || ""}`, "fr"));
 }
 
-function trouverAppel(numeroAdherent, groupeId, dateISO, jourCle) {
-    return appels.find(appel =>
-        appel.numeroAdherent === numeroAdherent &&
-        String(appel.groupeId) === String(groupeId) &&
-        appel.date === dateISO &&
-        appel.jour === jourCle
-    );
-}
+function construireSeances(groupe, centre = new Date()) {
+    const resultat = [];
+    const debut = new Date(centre);
+    debut.setDate(debut.getDate() - 60);
+    debut.setHours(0, 0, 0, 0);
+    const fin = new Date(centre);
+    fin.setDate(fin.getDate() + 120);
 
-function afficherAppel() {
-    const groupe = groupes.find(g => String(g.id) === String(selectGroupe.value));
-    const valeurSeance = selectSeance.value;
-
-    if (!groupe || !valeurSeance) {
-        zoneAppel.innerHTML = "";
-        return;
+    for (const date = new Date(debut); date <= fin; date.setDate(date.getDate() + 1)) {
+        const jourCle = JOURS[date.getDay()];
+        const horaire = groupe?.horaires?.[jourCle];
+        if (!horaire) continue;
+        resultat.push({
+            dateISO: formatISO(date),
+            jourCle,
+            jourNom: JOURS_LABEL[date.getDay()],
+            horaire: String(horaire)
+        });
     }
+    return resultat;
+}
 
-    const [jourCle, dateISO, horaire, jourNom] = valeurSeance.split("|");
-    const membres = adherentsDuGroupe(groupe.nom);
+function indexSeanceProche() {
+    const aujourdHui = formatISO(new Date());
+    const futur = seances.findIndex(s => s.dateISO >= aujourdHui);
+    if (futur < 0) return Math.max(seances.length - 1, 0);
+    if (futur === 0) return 0;
+    const d1 = Math.abs(new Date(`${seances[futur].dateISO}T12:00:00`) - new Date());
+    const d0 = Math.abs(new Date(`${seances[futur - 1].dateISO}T12:00:00`) - new Date());
+    return d0 < d1 ? futur - 1 : futur;
+}
 
-    if (membres.length === 0) {
-        zoneAppel.innerHTML = `
-            <section class="card">
-                <h2>Aucun adhérent</h2>
-                <p>Aucun adhérent n'est rattaché à ce groupe.</p>
-            </section>
-        `;
-        return;
-    }
+function absencePour(adherent, groupe, dateISO) {
+    const numero = String(adherent.numeroAdherent || adherent.id || "");
+    return absences.find(a =>
+        String(a.numeroAdherent || "") === numero &&
+        normaliser(a.groupeNom || a.groupe) === normaliser(groupe.nom) &&
+        a.date === dateISO
+    );
+}
 
-    zoneAppel.innerHTML = `
-        <section class="card">
-            <h2>${groupe.nom}</h2>
-            <p><strong>Séance :</strong> ${jourNom} ${dateISO} — ${horaire}</p>
-        </section>
-    `;
+function appelPour(adherent, groupe, dateISO) {
+    const numero = String(adherent.numeroAdherent || adherent.id || "");
+    return appels.find(a =>
+        String(a.numeroAdherent || a.adherentId || "") === numero &&
+        String(a.groupeId || "") === String(groupe.id) &&
+        a.date === dateISO
+    );
+}
+
+function dossierARegulariser(adherent) {
+    const dossierIncomplet = adherent.dossierComplet === false || adherent.statutDossier === "incomplet";
+    const licenceNonReglee = adherent.cotisationAJour === false || ["a_regler", "impaye", "non_regle"].includes(normaliser(adherent.statutCotisationTresorier));
+    return { dossierIncomplet, licenceNonReglee, alerte: dossierIncomplet || licenceNonReglee };
+}
+
+function texteAlerte(adherent) {
+    const etat = dossierARegulariser(adherent);
+    const motifs = [];
+    if (etat.dossierIncomplet) motifs.push("dossier incomplet");
+    if (etat.licenceNonReglee) motifs.push("licence à régulariser");
+    return motifs.join(" · ") || "Dossier à jour";
+}
+
+function afficherMessage(message = "", type = "") {
+    zoneMessage.textContent = message;
+    zoneMessage.className = `attendance-message ${type}`.trim();
+}
+
+function mettreAJourTotaux() {
+    const valeurs = [...pointages.values()];
+    totalGymnastes.textContent = valeurs.length;
+    totalPresents.textContent = valeurs.filter(v => v.statut === "present").length;
+    totalAbsents.textContent = valeurs.filter(v => v.statut === "absent").length;
+}
+
+function modifierStatut(numero, statut) {
+    const valeur = pointages.get(numero);
+    if (!valeur) return;
+    valeur.statut = statut;
+    pointages.set(numero, valeur);
+    document.querySelector(`[data-attendance-row="${CSS.escape(numero)}"]`)?.classList.toggle("is-absent", statut === "absent");
+    mettreAJourTotaux();
+}
+
+function afficherSeance() {
+    const groupe = groupes.find(g => String(g.id) === String(selectGroupe.value));
+    const seance = seances[indexSeance];
+    if (!groupe || !seance) return;
+
+    titreSeance.textContent = formatLong(seance.dateISO);
+    detailsSeance.textContent = `${seance.jourNom} · ${seance.horaire}${Array.isArray(groupe.coachs) && groupe.coachs.length ? ` · Coach : ${groupe.coachs.join(", ")}` : ""}`;
+    boutonPrecedent.disabled = indexSeance <= 0;
+    boutonSuivant.disabled = indexSeance >= seances.length - 1;
+
+    const membres = membresDuGroupe(groupe);
+    pointages = new Map();
 
     membres.forEach(adherent => {
-        const absence = absenceDeclaree(adherent.numeroAdherent, groupe.nom, dateISO);
-        const appelExistant = trouverAppel(adherent.numeroAdherent, groupe.id, dateISO, jourCle);
-
-        let statut = "present";
-
-        if (absence) statut = "absent";
-        if (appelExistant) statut = appelExistant.statut;
-
-        zoneAppel.innerHTML += `
-            <section class="card">
-                <h2>${adherent.prenom} ${adherent.nom}</h2>
-
-                ${absence ? `
-    <div class="absence-admin-info">
-        <p class="absence-admin-title">🙋 ABSENCE DÉCLARÉE</p>
-        <p><strong>Motif :</strong> ${absence.motif || "Non renseigné"}</p>
-        ${absence.message ? `<p><strong>Message :</strong> ${absence.message}</p>` : ""}
-    </div>
-` : ""}
-
-                <label class="checkbox-row">
-                    <input type="radio" name="appel-${adherent.numeroAdherent}" value="present"
-                           ${statut === "present" ? "checked" : ""}
-                           onchange="enregistrerAppel('${adherent.numeroAdherent}', '${groupe.id}', '${groupe.nom}', '${jourCle}', '${jourNom}', '${dateISO}', '${horaire}', 'present')">
-                    Présent
-                </label>
-
-                <label class="checkbox-row">
-                    <input type="radio" name="appel-${adherent.numeroAdherent}" value="absent"
-                           ${statut === "absent" ? "checked" : ""}
-                           onchange="enregistrerAppel('${adherent.numeroAdherent}', '${groupe.id}', '${groupe.nom}', '${jourCle}', '${jourNom}', '${dateISO}', '${horaire}', 'absent')">
-                    Absent
-                </label>
-            </section>
-        `;
-    });
-}
-
-function enregistrerAppel(numeroAdherent, groupeId, groupeNom, jourCle, jourNom, dateISO, horaire, statut) {
-    appels = appels.filter(appel =>
-        !(
-            appel.numeroAdherent === numeroAdherent &&
-            String(appel.groupeId) === String(groupeId) &&
-            appel.date === dateISO &&
-            appel.jour === jourCle
-        )
-    );
-
-    appels.push({
-        id: Date.now(),
-        numeroAdherent,
-        groupeId,
-        groupeNom,
-        jour: jourCle,
-        jourNom,
-        date: dateISO,
-        horaire,
-        statut,
-        dateSaisie: new Date().toISOString()
+        const numero = String(adherent.numeroAdherent || adherent.id || "");
+        const absence = absencePour(adherent, groupe, seance.dateISO);
+        const existant = appelPour(adherent, groupe, seance.dateISO);
+        pointages.set(numero, {
+            numeroAdherent: numero,
+            adherentId: adherent.id || numero,
+            nom: adherent.nom || "",
+            prenom: adherent.prenom || "",
+            statut: existant?.statut || (absence ? "absent" : "present"),
+            absenceSignalee: Boolean(absence)
+        });
     });
 
-    localStorage.setItem("appelsJDM", JSON.stringify(appels));
+    if (!membres.length) {
+        zoneAppel.className = "attendance-empty card";
+        zoneAppel.innerHTML = `<h2>Aucun gymnaste</h2><p>Aucun adhérent actif n'est rattaché à ce groupe.</p>`;
+        zoneActions.hidden = true;
+        zoneArchive.hidden = false;
+        return;
+    }
+
+    zoneAppel.className = "attendance-list";
+    zoneAppel.innerHTML = `
+        <div class="attendance-list-header"><span>Gymnaste</span><span>Présent</span><span>Absent</span></div>
+        ${membres.map(adherent => {
+            const numero = String(adherent.numeroAdherent || adherent.id || "");
+            const valeur = pointages.get(numero);
+            const alerte = dossierARegulariser(adherent);
+            const detail = valeur.absenceSignalee ? "Absence signalée par la famille" : texteAlerte(adherent);
+            return `<article class="attendance-row ${valeur.statut === "absent" ? "is-absent" : ""}" data-attendance-row="${escapeHtml(numero)}">
+                <div class="attendance-member">
+                    <span class="attendance-member-status ${alerte.alerte ? "has-warning" : ""}" title="${escapeHtml(texteAlerte(adherent))}"></span>
+                    <div class="attendance-member-name">
+                        <strong>${escapeHtml(adherent.nom)} ${escapeHtml(adherent.prenom)}</strong>
+                        <small>${escapeHtml(detail)}</small>
+                    </div>
+                </div>
+                <label class="attendance-choice">
+                    <input type="radio" name="appel-${escapeHtml(numero)}" value="present" ${valeur.statut === "present" ? "checked" : ""}>
+                    <span>Présent</span>
+                </label>
+                <label class="attendance-choice absent">
+                    <input type="radio" name="appel-${escapeHtml(numero)}" value="absent" ${valeur.statut === "absent" ? "checked" : ""}>
+                    <span>Absent</span>
+                </label>
+            </article>`;
+        }).join("")}
+    `;
+
+    zoneAppel.querySelectorAll("input[type=radio]").forEach(input => {
+        input.addEventListener("change", event => {
+            const numero = event.target.name.replace(/^appel-/, "");
+            modifierStatut(numero, event.target.value);
+        });
+    });
+
+    zoneActions.hidden = false;
+    zoneArchive.hidden = false;
+    mettreAJourTotaux();
+    afficherMessage(appels.some(a => String(a.groupeId) === String(groupe.id) && a.date === seance.dateISO) ? "Appel déjà enregistré : vous pouvez le corriger puis enregistrer à nouveau." : "");
 }
 
-selectGroupe.addEventListener("change", remplirSeances);
-selectSeance.addEventListener("change", afficherAppel);
+function chargerGroupe() {
+    const groupe = groupes.find(g => String(g.id) === String(selectGroupe.value));
+    if (!groupe) return;
+    seances = construireSeances(groupe);
+    indexSeance = indexSeanceProche();
+    afficherSeance();
+}
 
-boutonPrecedent.addEventListener("click", () => {
-    dateReference.setDate(dateReference.getDate() - 7);
-    mettreAJourTitreSemaine();
-    remplirSeances();
+async function enregistrer() {
+    const groupe = groupes.find(g => String(g.id) === String(selectGroupe.value));
+    const seance = seances[indexSeance];
+    if (!groupe || !seance || !pointages.size) return;
+
+    boutonEnregistrer.disabled = true;
+    afficherMessage("Enregistrement en cours…");
+    try {
+        await saveAppelsSeanceFirestore({
+            groupe,
+            seance,
+            pointages: [...pointages.values()],
+            auteur: {
+                uid: profilConnecte?.uid,
+                nom: `${profilConnecte?.prenom || ""} ${profilConnecte?.nom || ""}`.trim(),
+                email: profilConnecte?.email
+            }
+        });
+        appels = await listAppelsFirestore();
+        localStorage.setItem("appelsJDM", JSON.stringify(appels));
+        afficherMessage("Appel enregistré.", "success");
+    } catch (error) {
+        console.error(error);
+        afficherMessage("Impossible d'enregistrer l'appel. Vérifiez la connexion et les droits Firestore.", "error");
+    } finally {
+        boutonEnregistrer.disabled = false;
+    }
+}
+
+function seancesDuMois(groupe, dateISO) {
+    const [annee, mois] = dateISO.split("-").map(Number);
+    const debut = new Date(annee, mois - 1, 1);
+    const fin = new Date(annee, mois, 0);
+    return construireSeances(groupe, debut).filter(s => s.dateISO >= formatISO(debut) && s.dateISO <= formatISO(fin));
+}
+
+function imprimerMois() {
+    const groupe = groupes.find(g => String(g.id) === String(selectGroupe.value));
+    const seance = seances[indexSeance];
+    if (!groupe || !seance) return;
+
+    const membres = membresDuGroupe(groupe);
+    const moisSeances = seancesDuMois(groupe, seance.dateISO);
+    const moisLabel = new Date(`${seance.dateISO}T12:00:00`).toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+    const saison = membres.find(m => m.saison)?.saison || inscriptions.find(i => i.saison)?.saison || "";
+    const coachs = Array.isArray(groupe.coachs) ? groupe.coachs.join(", ") : (groupe.coach || "");
+
+    const lignes = membres.map(membre => {
+        const numero = String(membre.numeroAdherent || membre.id || "");
+        const cases = moisSeances.map(s => {
+            const appel = appels.find(a => String(a.numeroAdherent || a.adherentId) === numero && String(a.groupeId) === String(groupe.id) && a.date === s.dateISO);
+            return `<td class="${appel?.statut === "absent" ? "absent" : ""}">${appel ? (appel.statut === "present" ? "P" : "A") : "—"}</td>`;
+        }).join("");
+        return `<tr><td class="name">${escapeHtml(membre.nom)} ${escapeHtml(membre.prenom)}</td>${cases}</tr>`;
+    }).join("");
+
+    const popup = window.open("", "_blank", "noopener,noreferrer");
+    if (!popup) {
+        afficherMessage("Autorisez les fenêtres contextuelles pour générer le PDF.", "error");
+        return;
+    }
+
+    popup.document.write(`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Présences ${escapeHtml(groupe.nom)} - ${escapeHtml(moisLabel)}</title><style>
+        @page{size:A4 landscape;margin:10mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#1f2937;margin:0}h1{font-size:20px;margin:0 0 4px}.meta{display:flex;gap:24px;font-size:11px;margin-bottom:10px}.meta span{white-space:nowrap}table{width:100%;border-collapse:collapse;font-size:10px}th,td{border:1px solid #94a3b8;padding:5px;text-align:center}th{background:#e2e8f0}.name{text-align:left;white-space:nowrap;font-weight:700}.absent{background:#f3dfc5}.legend{margin-top:8px;font-size:10px}.footer{display:flex;justify-content:space-between;margin-top:8px;font-size:9px;color:#64748b}
+    </style></head><body>
+        <h1>Feuille de présence — ${escapeHtml(groupe.nom)}</h1>
+        <div class="meta"><span><strong>Mois :</strong> ${escapeHtml(moisLabel)}</span><span><strong>Saison :</strong> ${escapeHtml(saison)}</span><span><strong>Coach :</strong> ${escapeHtml(coachs || "Non renseigné")}</span><span><strong>Créneau :</strong> ${escapeHtml(Object.entries(groupe.horaires || {}).map(([j,h]) => `${j} ${h}`).join(" · "))}</span></div>
+        <table><thead><tr><th>Gymnaste</th>${moisSeances.map(s => `<th>${s.dateISO.slice(8,10)}<br>${escapeHtml(s.jourNom.slice(0,3))}</th>`).join("")}</tr></thead><tbody>${lignes}</tbody></table>
+        <div class="legend">P = présent · A = absent · — = appel non enregistré</div>
+        <div class="footer"><span>La Jeunesse du Marais</span><span>Généré le ${new Date().toLocaleDateString("fr-FR")}</span></div>
+        <script>window.onload=()=>{window.print()}<\/script>
+    </body></html>`);
+    popup.document.close();
+}
+
+async function initialiser() {
+    zoneAppel.innerHTML = `<p>Chargement des groupes et des gymnastes…</p>`;
+    try {
+        const [g, a, i, ab, ap] = await Promise.all([
+            listGroupesFirestore(), listAdherents(), listInscriptions(), listAbsencesFirestore(), listAppelsFirestore()
+        ]);
+        groupes = (g.length ? g : JSON.parse(localStorage.getItem("groupesJDM") || "[]")).filter(groupeAutorise);
+        adherents = a.length ? a : JSON.parse(localStorage.getItem("adherentsJDM") || "[]");
+        inscriptions = i.length ? i : JSON.parse(localStorage.getItem("inscriptionsJDM") || "[]");
+        absences = ab;
+        appels = ap;
+
+        localStorage.setItem("groupesJDM", JSON.stringify(groupes));
+        localStorage.setItem("adherentsJDM", JSON.stringify(adherents));
+        localStorage.setItem("inscriptionsJDM", JSON.stringify(inscriptions));
+        localStorage.setItem("absencesJDM", JSON.stringify(absences));
+        localStorage.setItem("appelsJDM", JSON.stringify(appels));
+
+        selectGroupe.innerHTML = `<option value="">Choisir un groupe</option>${groupes.map(groupe => `<option value="${escapeHtml(groupe.id)}">${escapeHtml(groupe.nom)}</option>`).join("")}`;
+        zoneAppel.innerHTML = groupes.length
+            ? `<div class="attendance-empty-icon">✓</div><h2>Prêt pour l'appel</h2><p>Choisissez un groupe pour afficher les gymnastes de la séance.</p>`
+            : `<h2>Aucun groupe disponible</h2><p>Aucun groupe n'est associé à votre profil ou à vos droits.</p>`;
+    } catch (error) {
+        console.error(error);
+        afficherMessage("Les données de l'appel n'ont pas pu être chargées.", "error");
+        zoneAppel.innerHTML = `<h2>Chargement impossible</h2><p>Vérifiez la connexion à Firestore.</p>`;
+    }
+}
+
+selectGroupe.addEventListener("change", chargerGroupe);
+boutonPrecedent.addEventListener("click", () => { if (indexSeance > 0) { indexSeance--; afficherSeance(); } });
+boutonSuivant.addEventListener("click", () => { if (indexSeance < seances.length - 1) { indexSeance++; afficherSeance(); } });
+boutonEnregistrer.addEventListener("click", enregistrer);
+boutonImprimer.addEventListener("click", imprimerMois);
+
+watchSession((user, profile) => {
+    if (!user || !profile || profilConnecte) return;
+    profilConnecte = { uid: user.uid, email: user.email, ...profile };
+    initialiser();
 });
-
-boutonSuivant.addEventListener("click", () => {
-    dateReference.setDate(dateReference.getDate() + 7);
-    mettreAJourTitreSemaine();
-    remplirSeances();
-});
-
-mettreAJourTitreSemaine();
-remplirGroupes();
