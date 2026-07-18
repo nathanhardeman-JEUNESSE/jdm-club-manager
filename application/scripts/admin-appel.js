@@ -338,33 +338,68 @@ function imprimerMois() {
     popup.document.close();
 }
 
+function lireCache(cle) {
+    try {
+        const valeur = JSON.parse(localStorage.getItem(cle) || "[]");
+        return Array.isArray(valeur) ? valeur : [];
+    } catch (error) {
+        console.warn(`Cache local illisible : ${cle}`, error);
+        return [];
+    }
+}
+
+function resultatOuCache(resultat, cle) {
+    if (resultat.status === "fulfilled") {
+        const valeur = Array.isArray(resultat.value) ? resultat.value : [];
+        localStorage.setItem(cle, JSON.stringify(valeur));
+        return valeur;
+    }
+
+    console.error(`Chargement Firestore impossible : ${cle}`, resultat.reason);
+    return lireCache(cle);
+}
+
 async function initialiser() {
     zoneAppel.innerHTML = `<p>Chargement des groupes et des gymnastes…</p>`;
-    try {
-        const [g, a, i, ab, ap] = await Promise.all([
-            listGroupesFirestore(), listAdherents(), listInscriptions(), listAbsencesFirestore(), listAppelsFirestore()
-        ]);
-        groupes = (g.length ? g : JSON.parse(localStorage.getItem("groupesJDM") || "[]")).filter(groupeAutorise);
-        adherents = a.length ? a : JSON.parse(localStorage.getItem("adherentsJDM") || "[]");
-        inscriptions = i.length ? i : JSON.parse(localStorage.getItem("inscriptionsJDM") || "[]");
-        absences = ab;
-        appels = ap;
+    afficherMessage("");
 
-        localStorage.setItem("groupesJDM", JSON.stringify(groupes));
-        localStorage.setItem("adherentsJDM", JSON.stringify(adherents));
-        localStorage.setItem("inscriptionsJDM", JSON.stringify(inscriptions));
-        localStorage.setItem("absencesJDM", JSON.stringify(absences));
-        localStorage.setItem("appelsJDM", JSON.stringify(appels));
+    const resultats = await Promise.allSettled([
+        listGroupesFirestore(),
+        listAdherents(),
+        listInscriptions(),
+        listAbsencesFirestore(),
+        listAppelsFirestore()
+    ]);
 
-        selectGroupe.innerHTML = `<option value="">Choisir un groupe</option>${groupes.map(groupe => `<option value="${escapeHtml(groupe.id)}">${escapeHtml(groupe.nom)}</option>`).join("")}`;
-        zoneAppel.innerHTML = groupes.length
-            ? `<div class="attendance-empty-icon">✓</div><h2>Prêt pour l'appel</h2><p>Choisissez un groupe pour afficher les gymnastes de la séance.</p>`
-            : `<h2>Aucun groupe disponible</h2><p>Aucun groupe n'est associé à votre profil ou à vos droits.</p>`;
-    } catch (error) {
-        console.error(error);
-        afficherMessage("Les données de l'appel n'ont pas pu être chargées.", "error");
-        zoneAppel.innerHTML = `<h2>Chargement impossible</h2><p>Vérifiez la connexion à Firestore.</p>`;
+    const [groupesResultat, adherentsResultat, inscriptionsResultat, absencesResultat, appelsResultat] = resultats;
+
+    const tousLesGroupes = resultatOuCache(groupesResultat, "groupesJDM");
+    adherents = resultatOuCache(adherentsResultat, "adherentsJDM");
+    inscriptions = resultatOuCache(inscriptionsResultat, "inscriptionsJDM");
+    absences = resultatOuCache(absencesResultat, "absencesJDM");
+    appels = resultatOuCache(appelsResultat, "appelsJDM");
+    groupes = tousLesGroupes.filter(groupeAutorise);
+
+    selectGroupe.innerHTML = `<option value="">Choisir un groupe</option>${groupes.map(groupe => `<option value="${escapeHtml(groupe.id)}">${escapeHtml(groupe.nom)}</option>`).join("")}`;
+
+    const echecs = resultats
+        .map((resultat, index) => ({ resultat, index }))
+        .filter(({ resultat }) => resultat.status === "rejected")
+        .map(({ index }) => ["groupes", "adhérents", "inscriptions", "absences", "appels"][index]);
+
+    if (groupesResultat.status === "rejected" && !tousLesGroupes.length) {
+        afficherMessage("Les groupes n'ont pas pu être chargés. Vérifiez les droits Firestore de la collection groupes.", "error");
+        zoneAppel.innerHTML = `<h2>Groupes indisponibles</h2><p>La page reste ouverte, mais aucun groupe n'est disponible pour commencer l'appel.</p>`;
+        return;
     }
+
+    if (echecs.length) {
+        afficherMessage(`Certaines données sont temporairement indisponibles : ${echecs.join(", ")}. Les données locales disponibles ont été utilisées.`, "warning");
+    }
+
+    zoneAppel.innerHTML = groupes.length
+        ? `<div class="attendance-empty-icon">✓</div><h2>Prêt pour l'appel</h2><p>Choisissez un groupe pour afficher les gymnastes de la séance.</p>`
+        : `<h2>Aucun groupe disponible</h2><p>Aucun groupe n'est associé à votre profil. Vérifiez que votre nom est bien renseigné parmi les coachs du groupe.</p>`;
 }
 
 selectGroupe.addEventListener("change", chargerGroupe);
