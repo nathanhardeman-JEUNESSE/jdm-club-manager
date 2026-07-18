@@ -1,0 +1,20 @@
+.notification-settings-card {
+    background: linear-gradient(135deg, #e30613 0%, #681f29 52%, #161616 100%);
+}
+.notification-setting-option {
+    display:flex; align-items:flex-start; gap:12px; margin-top:12px; padding:13px;
+    border-radius:12px; background:rgba(0,0,0,.22); border:1px solid rgba(255,255,255,.12); cursor:pointer;
+}
+.notification-setting-option input { margin-top:4px; transform:scale(1.2); }
+.notification-setting-option span { display:flex; flex-direction:column; gap:4px; }
+.notification-setting-option small,.notification-setting-help { color:var(--light-grey); line-height:1.4; }
+.notification-quiet-hours { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:16px; }
+.notification-quiet-hours label { display:flex; flex-direction:column; gap:7px; font-weight:700; }
+.notification-quiet-hours input {
+    width:100%; box-sizing:border-box; padding:10px; border-radius:9px;
+    border:1px solid rgba(255,255,255,.2); background:#fff; color:#161616;
+}
+.profile-message { min-height:24px; margin:12px 0; }
+.profile-message-success { color:#7cf09a; font-weight:700; }
+.profile-message-error { color:#ff9ca3; font-weight:700; }
+@media (max-width:600px) { .notification-quiet-hours { grid-template-columns:1fr; } }

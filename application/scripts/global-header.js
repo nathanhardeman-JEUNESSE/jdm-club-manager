@@ -38,9 +38,8 @@ function injecterBarre() {
                     <small id="jdm-profile-menu-role"></small>
                 </div>
 
-                <a href="mon-profil.html">Mon profil</a>
+                <a href="mon-profil.html">Profil & documents</a>
                 <a href="espace-membre.html">Mon espace</a>
-                <a href="documents-membre.html">Mes documents</a>
 
                 <button type="button" id="jdm-profile-logout">
                     Déconnexion

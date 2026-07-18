@@ -1,12 +1,14 @@
 import {
     listNotificationsFirestore,
-    updateNotificationFirestore
+    updateNotificationFirestore,
+    updateNotificationPreferences
 } from "../firebase/firebase-db.js";
 
 import { watchSession } from "./session.js";
 
 let notifications = [];
 let profileActuel = null;
+let userActuel = null;
 
 const zoneNotifications =
     document.getElementById("liste-notifications-parent");
@@ -19,6 +21,49 @@ const boutonToutLu =
 
 const boutonSupprimerLues =
     document.getElementById("supprimer-notifications-lues");
+
+const preferencesForm = document.getElementById("notification-preferences-form");
+const silenceStart = document.getElementById("notification-silence-start");
+const silenceEnd = document.getElementById("notification-silence-end");
+const preferencesMessage = document.getElementById("notification-preferences-message");
+
+
+function chargerPreferences() {
+    const preferences = profileActuel?.preferencesNotifications || {};
+    const mode = preferences.mode || "sonore";
+    const radio = document.querySelector(`input[name="notification-mode"][value="${mode}"]`);
+    if (radio) radio.checked = true;
+    if (silenceStart) silenceStart.value = preferences.debutSilence || "22:00";
+    if (silenceEnd) silenceEnd.value = preferences.finSilence || "07:00";
+}
+
+async function enregistrerPreferences(event) {
+    event.preventDefault();
+    if (!userActuel?.uid) return;
+
+    const mode = document.querySelector('input[name="notification-mode"]:checked')?.value || "sonore";
+    const preferences = {
+        mode,
+        debutSilence: silenceStart?.value || "22:00",
+        finSilence: silenceEnd?.value || "07:00"
+    };
+
+    try {
+        if (preferencesMessage) preferencesMessage.textContent = "Enregistrement...";
+        await updateNotificationPreferences(userActuel.uid, preferences);
+        profileActuel = { ...profileActuel, preferencesNotifications: preferences };
+        if (preferencesMessage) {
+            preferencesMessage.textContent = "Réglages enregistrés ✅";
+            preferencesMessage.className = "profile-message profile-message-success";
+        }
+    } catch (error) {
+        console.error("Impossible d'enregistrer les préférences", error);
+        if (preferencesMessage) {
+            preferencesMessage.textContent = "Impossible d'enregistrer les réglages.";
+            preferencesMessage.className = "profile-message profile-message-error";
+        }
+    }
+}
 
 function notificationVisibleParent(notification) {
     if (notification.archivee === true) return false;
@@ -262,9 +307,13 @@ boutonSupprimerLues?.addEventListener(
     supprimerNotificationsLues
 );
 
+preferencesForm?.addEventListener("submit", enregistrerPreferences);
+
 watchSession((user, profile) => {
     if (!user || !profile) return;
 
+    userActuel = user;
     profileActuel = profile;
+    chargerPreferences();
     chargerNotifications();
 });

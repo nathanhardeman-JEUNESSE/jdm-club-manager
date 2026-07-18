@@ -399,6 +399,19 @@ export async function listInscriptions() {
    NOTIFICATIONS
    ========================================================= */
 
+export async function updateNotificationPreferences(uid, preferences) {
+    if (!uid) throw new Error("UID utilisateur manquant.");
+
+    await setDoc(doc(db, "users", String(uid)), {
+        preferencesNotifications: {
+            mode: preferences?.mode || "sonore",
+            debutSilence: preferences?.debutSilence || "22:00",
+            finSilence: preferences?.finSilence || "07:00"
+        },
+        updatedAt: serverTimestamp()
+    }, { merge: true });
+}
+
 export async function listNotificationsFirestore() {
     const snap = await getDocs(collection(db, "notifications"));
 

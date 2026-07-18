@@ -1,149 +1,85 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mon espace - JDM Club Manager</title>
-
     <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="../styles/components.css">
     <link rel="stylesheet" href="../styles/global-header.css">
     <link rel="stylesheet" href="../styles/espace-membre-v2.css">
 </head>
-
 <body>
-
-<main class="page">
-
+<main class="page member-page">
     <header class="page-header">
         <a href="accueil.html" class="back-button">←</a>
         <h1>Mon espace</h1>
     </header>
 
-    <section class="card">
+    <section class="card member-welcome-card">
         <h2>👤 Bienvenue</h2>
-
-        <section id="profil-membre-connecte">
-            <p>Chargement de votre profil...</p>
-        </section>
+        <section id="profil-membre-connecte"><p>Chargement de votre profil...</p></section>
     </section>
 
-    <a href="planning-membre.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">📅</div>
+    <div class="member-navigation-grid">
+        <a href="planning-membre.html" class="navigation-link">
+            <section class="navigation-card member-tile member-tile-planning">
+                <div class="navigation-icon">📅</div>
+                <div class="navigation-content">
+                    <h2>Mon planning</h2>
+                    <p>Entraînements, événements et annulations.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
 
+        <a href="resultats.html" class="navigation-link" data-member-module="resultats" hidden>
+            <section class="navigation-card member-tile member-tile-results">
+                <div class="navigation-icon">🏆</div>
+                <div class="navigation-content">
+                    <h2>Mes résultats</h2>
+                    <p>Résultats sportifs publiés par le club.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+
+        <a href="mon-profil.html" class="navigation-link">
+            <section class="navigation-card member-tile member-tile-profile">
+                <div class="navigation-icon">🪪</div>
+                <div class="navigation-content">
+                    <h2>Profil & documents</h2>
+                    <p>Coordonnées, carte membre, attestations et documents utiles.</p>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+
+        <a href="notifications.html" class="navigation-link">
+            <section class="navigation-card member-tile member-tile-notifications">
+                <div class="navigation-icon">🔔</div>
+                <div class="navigation-content">
+                    <h2>Notifications <span id="badge-notifications"></span></h2>
+                    <p>Messages du club et alertes importantes.</p>
+                    <small id="notification-mode-summary" class="member-tile-status">Réglage : chargement...</small>
+                </div>
+                <div class="navigation-arrow">➜</div>
+            </section>
+        </a>
+
+        <section class="navigation-card member-tile member-tile-logout" id="deconnexion-button" role="button" tabindex="0">
+            <div class="navigation-icon">🚪</div>
             <div class="navigation-content">
-                <h2>Mon planning</h2>
-                <p>
-                    Consulter les entraînements, événements
-                    et annulations.
-                </p>
+                <h2>Déconnexion</h2>
+                <p>Quitter mon espace sécurisé.</p>
             </div>
-
             <div class="navigation-arrow">➜</div>
         </section>
-    </a>
-
-    <a
-        href="resultats.html"
-        class="navigation-link"
-        data-member-module="resultats"
-    >
-        <section class="navigation-card">
-            <div class="navigation-icon">🏆</div>
-
-            <div class="navigation-content">
-                <h2>Mes résultats</h2>
-                <p>
-                    Retrouver les résultats sportifs publiés
-                    par le club.
-                </p>
-            </div>
-
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
-
-    <section class="navigation-card">
-        <div class="navigation-icon">📄</div>
-
-        <div class="navigation-content">
-            <h2>Mes documents</h2>
-            <p>
-                Licences, attestations, documents utiles
-                et archives.
-            </p>
-
-            <section id="documents-membre"></section>
-        </div>
-
-        <div class="navigation-arrow">➜</div>
-    </section>
-
-    <a href="notifications.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">🔔</div>
-
-            <div class="navigation-content">
-                <h2>
-                    Notifications
-                    <span id="badge-notifications"></span>
-                </h2>
-
-                <p>
-                    Messages du club, informations de groupe
-                    et alertes importantes.
-                </p>
-            </div>
-
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
-
-    <a href="mon-profil.html" class="navigation-link">
-        <section class="navigation-card">
-            <div class="navigation-icon">⚙️</div>
-
-            <div class="navigation-content">
-                <h2>Mon profil</h2>
-
-                <p>
-                    Corriger les coordonnées et informations
-                    personnelles de la famille.
-                </p>
-            </div>
-
-            <div class="navigation-arrow">➜</div>
-        </section>
-    </a>
-
-    <section
-        class="navigation-card"
-        id="deconnexion-button"
-        style="cursor:pointer;"
-    >
-        <div class="navigation-icon">🚪</div>
-
-        <div class="navigation-content">
-            <h2>Déconnexion</h2>
-            <p>Quitter mon espace sécurisé.</p>
-        </div>
-
-        <div class="navigation-arrow">➜</div>
-    </section>
-
+    </div>
 </main>
-
-<script
-    type="module"
-    src="../scripts/auth-guard.js"
-    data-page="espace-membre">
-</script>
-
+<script type="module" src="../scripts/auth-guard.js" data-page="espace-membre"></script>
 <script type="module" src="../scripts/ui-guard.js"></script>
 <script type="module" src="../scripts/espace-membre.js"></script>
 <script type="module" src="../scripts/global-header.js"></script>
-
 </body>
 </html>

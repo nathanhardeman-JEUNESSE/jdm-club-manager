@@ -11,8 +11,8 @@ import {
 } from "../firebase/firebase-db.js";
 
 const zoneProfilMembre = document.getElementById("profil-membre-connecte");
-const zoneDocumentsMembre = document.getElementById("documents-membre");
 const badge = document.getElementById("badge-notifications");
+const notificationModeSummary = document.getElementById("notification-mode-summary");
 
 let adherentsCompte = [];
 let inscriptions = [];
@@ -41,7 +41,10 @@ function groupesPour(adherent) {
     const depuisInscriptions = inscriptionsPour(
         adherent?.numeroAdherent
     ).map(item =>
+        item.groupeFinal ||
         item.groupe ||
+        item.donneesHelloAsso?.Tarif ||
+        item.donneesHelloAsso?.tarif ||
         item.donneesHelloAsso?.name ||
         ""
     );
@@ -155,62 +158,8 @@ function afficherProfil() {
             );
 
             afficherProfil();
-            afficherDocuments();
             appliquerModulesConditionnels();
         });
-}
-
-function afficherDocuments() {
-    if (!zoneDocumentsMembre || !adherentSelectionne) return;
-
-    const numero = adherentSelectionne.numeroAdherent || "";
-    const liens = [];
-
-    if (numero) {
-        liens.push(`
-            <a href="fiche-adherent-complete.html?id=${encodeURIComponent(numero)}">
-                Fiche adhérent complète
-            </a>
-        `);
-
-        liens.push(`
-            <a href="carte-adherent.html?id=${encodeURIComponent(numero)}">
-                Carte adhérent
-            </a>
-        `);
-    }
-
-    const certificat =
-        adherentSelectionne.certificatMedical ||
-        adherentSelectionne.profil?.certificatMedical;
-
-    const photo =
-        adherentSelectionne.photoLicence ||
-        adherentSelectionne.profil?.photoLicence;
-
-    if (certificat) {
-        liens.push(`
-            <a href="${certificat}"
-               target="_blank"
-               rel="noopener noreferrer">
-                Certificat médical
-            </a>
-        `);
-    }
-
-    if (photo) {
-        liens.push(`
-            <a href="${photo}"
-               target="_blank"
-               rel="noopener noreferrer">
-                Photo licence
-            </a>
-        `);
-    }
-
-    zoneDocumentsMembre.innerHTML = liens.length
-        ? `<ul>${liens.map(lien => `<li>${lien}</li>`).join("")}</ul>`
-        : `<p><small>Aucun document disponible pour le moment.</small></p>`;
 }
 
 function appliquerModulesConditionnels() {
@@ -219,6 +168,7 @@ function appliquerModulesConditionnels() {
     document.querySelectorAll(
         '[data-member-module="resultats"], #resultats-card, .resultats-card'
     ).forEach(element => {
+        element.hidden = !competition;
         element.style.display = competition ? "" : "none";
     });
 
@@ -234,6 +184,19 @@ function appliquerModulesConditionnels() {
             }
         }
     ));
+}
+
+function afficherModeNotifications(profile) {
+    if (!notificationModeSummary) return;
+
+    const mode = profile?.preferencesNotifications?.mode || "sonore";
+    const libelles = {
+        sonore: "Son activé",
+        silencieux: "Mode silencieux",
+        importantes: "Alertes importantes uniquement"
+    };
+
+    notificationModeSummary.textContent = `Réglage : ${libelles[mode] || libelles.sonore}`;
 }
 
 async function actualiserBadge(profile) {
@@ -327,10 +290,6 @@ watchSession(async (user, profile) => {
                 `;
             }
 
-            if (zoneDocumentsMembre) {
-                zoneDocumentsMembre.innerHTML = "";
-            }
-
             return;
         }
 
@@ -346,9 +305,9 @@ watchSession(async (user, profile) => {
             adherentsCompte[0];
 
         afficherProfil();
-        afficherDocuments();
         appliquerModulesConditionnels();
         actualiserBadge(profile);
+        afficherModeNotifications(profile);
     } catch (error) {
         console.error(
             "Impossible de charger l'espace membre",
@@ -366,5 +325,11 @@ watchSession(async (user, profile) => {
     }
 });
 
-document.getElementById("deconnexion-button")
-    ?.addEventListener("click", logoutAndRedirect);
+const boutonDeconnexion = document.getElementById("deconnexion-button");
+boutonDeconnexion?.addEventListener("click", logoutAndRedirect);
+boutonDeconnexion?.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        logoutAndRedirect();
+    }
+});

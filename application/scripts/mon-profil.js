@@ -15,6 +15,8 @@ const formulaire = document.getElementById(
 );
 
 const message = document.getElementById("profile-message");
+const personalDocumentsZone = document.getElementById("profile-personal-documents");
+const clubDocumentsZone = document.getElementById("profile-club-documents");
 
 const champs = {
     nom: document.getElementById("profile-nom"),
@@ -47,6 +49,59 @@ const groupesZone = document.getElementById(
 
 let adherentsCompte = [];
 let adherentSelectionne = null;
+
+
+function documentLink(href, label, external = false) {
+    const attrs = external ? ' target="_blank" rel="noopener noreferrer"' : "";
+    return `<a class="profile-document-link" href="${href}"${attrs}>${label}<span>➜</span></a>`;
+}
+
+function afficherDocumentsPersonnels() {
+    if (!personalDocumentsZone || !adherentSelectionne) return;
+
+    const numero = adherentSelectionne.numeroAdherent || adherentSelectionne.id || "";
+    const documents = [];
+
+    if (numero) {
+        documents.push(documentLink(
+            `fiche-adherent-complete.html?id=${encodeURIComponent(numero)}`,
+            "Fiche adhérent complète"
+        ));
+        documents.push(documentLink(
+            `carte-adherent.html?id=${encodeURIComponent(numero)}`,
+            "Carte adhérent"
+        ));
+    }
+
+    const certificat = adherentSelectionne.certificatMedical || adherentSelectionne.profil?.certificatMedical;
+    const photo = adherentSelectionne.photoLicence || adherentSelectionne.profil?.photoLicence;
+
+    if (certificat) documents.push(documentLink(certificat, "Certificat médical", true));
+    if (photo) documents.push(documentLink(photo, "Photo licence", true));
+
+    personalDocumentsZone.innerHTML = documents.length
+        ? documents.join("")
+        : "<p><small>Aucun document personnel disponible pour le moment.</small></p>";
+}
+
+function afficherDocumentsClub() {
+    if (!clubDocumentsZone) return;
+
+    let documents = [];
+    try {
+        const contenuSite = JSON.parse(localStorage.getItem("contenuSiteJDM")) || {};
+        documents = Array.isArray(contenuSite.documents) ? contenuSite.documents : [];
+    } catch (error) {
+        console.warn("Documents du club illisibles", error);
+    }
+
+    clubDocumentsZone.innerHTML = documents.length
+        ? documents.map(documentClub => documentClub.lien
+            ? documentLink(documentClub.lien, documentClub.titre || "Document", true)
+            : `<div class="profile-document-note"><strong>${documentClub.titre || "Document"}</strong><small>${documentClub.description || ""}</small></div>`
+        ).join("")
+        : "<p><small>Aucun document public supplémentaire pour le moment.</small></p>";
+}
 
 function identite(adherent) {
     return [
@@ -168,6 +223,7 @@ function afficherSelecteur() {
             );
 
             remplirFormulaire();
+            afficherDocumentsPersonnels();
         });
 }
 
@@ -257,6 +313,8 @@ formulaire?.addEventListener("submit", async event => {
 
         afficherSelecteur();
         remplirFormulaire();
+        afficherDocumentsPersonnels();
+        afficherDocumentsClub();
     } catch (error) {
         console.error(
             "Impossible d'enregistrer le profil",
@@ -313,6 +371,8 @@ watchSession(async (user, profile) => {
 
         afficherSelecteur();
         remplirFormulaire();
+        afficherDocumentsPersonnels();
+        afficherDocumentsClub();
     } catch (error) {
         console.error(
             "Impossible de charger le profil membre",

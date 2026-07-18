@@ -1,37 +1,42 @@
 /* Espace membre V2 */
-.member-switcher-label {
-    display: block;
-    margin-bottom: 6px;
-    font-weight: 700;
+.member-page { padding-bottom: 40px; }
+.member-welcome-card {
+    background: linear-gradient(135deg, #0057ff 0%, #12315f 52%, #161616 100%);
+    border: 1px solid rgba(255,255,255,.12);
 }
-
+.member-switcher-label { display:block; margin-bottom:6px; font-weight:700; }
 .member-switcher {
-    width: 100%;
-    max-width: 460px;
-    margin-bottom: 18px;
-    padding: 11px 12px;
-    border-radius: 9px;
-    border: 1px solid rgba(255,255,255,0.2);
-    background: #fff;
-    color: #20252a;
+    width:100%; max-width:460px; margin-bottom:18px; padding:11px 12px;
+    border-radius:9px; border:1px solid rgba(255,255,255,.2); background:#fff; color:#20252a;
 }
-
-.member-dashboard-summary h2 {
-    margin-top: 0;
-}
-
-.member-groups {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 7px;
-    margin-top: 12px;
-}
-
+.member-dashboard-summary h2 { margin-top:0; }
+.member-groups { display:flex; flex-wrap:wrap; align-items:center; gap:7px; margin-top:12px; }
 .member-group-chip {
-    display: inline-flex;
-    padding: 5px 9px;
-    border-radius: 999px;
-    background: rgba(255,255,255,0.09);
-    font-size: 0.9rem;
+    display:inline-flex; padding:5px 9px; border-radius:999px;
+    background:rgba(255,255,255,.14); font-size:.9rem;
+}
+.member-navigation-grid { display:grid; gap:16px; margin-top:18px; }
+.member-navigation-grid .navigation-card { margin-top:0; min-height:112px; box-sizing:border-box; }
+.member-tile {
+    position:relative; overflow:hidden; border:1px solid rgba(255,255,255,.1);
+    background:linear-gradient(135deg, #0057ff 0%, #252a31 68%, #161616 100%);
+}
+.member-tile::after {
+    content:""; position:absolute; width:130px; height:130px; right:-55px; bottom:-70px;
+    border-radius:50%; background:rgba(255,255,255,.08); pointer-events:none;
+}
+.member-tile .navigation-icon,
+.member-tile .navigation-content,
+.member-tile .navigation-arrow { position:relative; z-index:1; }
+.member-tile .navigation-arrow { color:#fff; }
+.member-tile-planning { background:linear-gradient(135deg, #0068ff 0%, #153f75 48%, #161616 100%); }
+.member-tile-results { background:linear-gradient(135deg, #efaa00 0%, #745415 48%, #161616 100%); }
+.member-tile-profile { background:linear-gradient(135deg, #7c3aed 0%, #3d2862 48%, #161616 100%); }
+.member-tile-notifications { background:linear-gradient(135deg, #e30613 0%, #671f28 48%, #161616 100%); }
+.member-tile-logout { background:linear-gradient(135deg, #505862 0%, #282c31 48%, #111 100%); }
+.member-tile-status { display:block; margin-top:9px; color:rgba(255,255,255,.82); }
+.navigation-link[hidden] { display:none !important; }
+@media (min-width:760px) {
+    .member-navigation-grid { grid-template-columns:repeat(2, minmax(0,1fr)); }
+    .member-navigation-grid .navigation-link:last-of-type { grid-column:auto; }
 }

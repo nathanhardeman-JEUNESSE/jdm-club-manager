@@ -4,38 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notifications - JDM Club Manager</title>
-
     <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/global-header.css">
+    <link rel="stylesheet" href="../styles/notifications.css">
 </head>
 <body>
-
 <main class="page">
-
     <header class="page-header">
         <a href="espace-membre.html" class="back-button">←</a>
         <h1>Notifications</h1>
     </header>
 
-    <section class="card">
-        <h2>🔔 Mes notifications</h2>
-        <p id="resume-notifications">Chargement...</p>
-
-        <button class="primary-button order-button" id="tout-marquer-lu">
-            Tout marquer comme lu
-        </button>
-
-        <button class="secondary-button" id="supprimer-notifications-lues">
-            Supprimer les notifications lues
-        </button>
+    <section class="card notification-settings-card">
+        <h2>🔔 Réglages</h2>
+        <p>Choisissez comment l'application doit vous prévenir.</p>
+        <form id="notification-preferences-form">
+            <label class="notification-setting-option">
+                <input type="radio" name="notification-mode" value="sonore">
+                <span><strong>🔊 Son activé</strong><small>Alertes visuelles et sonores dans l'application.</small></span>
+            </label>
+            <label class="notification-setting-option">
+                <input type="radio" name="notification-mode" value="silencieux">
+                <span><strong>🔕 Mode silencieux</strong><small>Les notifications restent visibles, sans son.</small></span>
+            </label>
+            <label class="notification-setting-option">
+                <input type="radio" name="notification-mode" value="importantes">
+                <span><strong>🚨 Importantes uniquement</strong><small>Son réservé aux urgences, annulations et compétitions.</small></span>
+            </label>
+            <div class="notification-quiet-hours">
+                <label>Silence à partir de <input id="notification-silence-start" type="time" value="22:00"></label>
+                <label>Jusqu'à <input id="notification-silence-end" type="time" value="07:00"></label>
+            </div>
+            <p class="notification-setting-help">La plage silencieuse s'applique aux sons. Les messages restent consultables.</p>
+            <div id="notification-preferences-message" class="profile-message"></div>
+            <button type="submit" class="primary-button order-button">Enregistrer mes réglages</button>
+        </form>
     </section>
 
+    <section class="card">
+        <h2>📬 Mes notifications</h2>
+        <p id="resume-notifications">Chargement...</p>
+        <button class="primary-button order-button" id="tout-marquer-lu">Tout marquer comme lu</button>
+        <button class="secondary-button" id="supprimer-notifications-lues">Supprimer les notifications lues</button>
+    </section>
     <section id="liste-notifications-parent"></section>
-
 </main>
-
 <script type="module" src="../scripts/auth-guard.js" data-roles="membre,coach,admin,super_admin" data-page="notifications"></script>
-<script src="../scripts/notifications.js"></script>
-
+<script type="module" src="../scripts/global-header.js"></script>
+<script type="module" src="../scripts/notifications.js"></script>
 </body>
 </html>

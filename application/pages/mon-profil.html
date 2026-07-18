@@ -1,159 +1,68 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon profil - JDM Club Manager</title>
-
+    <title>Profil & documents - JDM Club Manager</title>
     <link rel="stylesheet" href="../styles/theme.css">
     <link rel="stylesheet" href="../styles/components.css">
     <link rel="stylesheet" href="../styles/global-header.css">
     <link rel="stylesheet" href="../styles/mon-profil.css">
 </head>
-
 <body>
-
 <main class="page">
-
     <header class="page-header">
         <a href="espace-membre.html" class="back-button">←</a>
-        <h1>Mon profil</h1>
+        <h1>Profil & documents</h1>
     </header>
 
-    <section class="card">
-        <h2>Informations personnelles</h2>
-
-        <p>
-            Sélectionnez le membre de la famille puis corrigez
-            les informations nécessaires.
-        </p>
-
+    <section class="card profile-hero-card">
+        <h2>🪪 Informations personnelles</h2>
+        <p>Sélectionnez le membre de la famille puis corrigez les informations nécessaires.</p>
         <div id="profil-family-selector-zone"></div>
-
         <form id="member-profile-form" class="member-profile-form">
             <div class="profile-grid">
-
-                <label>
-                    Nom
-                    <input id="profile-nom" name="nom" type="text">
-                </label>
-
-                <label>
-                    Prénom
-                    <input id="profile-prenom" name="prenom" type="text">
-                </label>
-
-                <label>
-                    Date de naissance
-                    <input
-                        id="profile-date-naissance"
-                        name="dateNaissance"
-                        type="text"
-                        placeholder="JJ/MM/AAAA">
-                </label>
-
-                <label>
-                    Email principal
-                    <input id="profile-email" name="email" type="email">
-                </label>
-
-                <label>
-                    Email parent / responsable 1
-                    <input
-                        id="profile-email-parent1"
-                        name="emailParent1"
-                        type="email">
-                </label>
-
-                <label>
-                    Email parent / responsable 2
-                    <input
-                        id="profile-email-parent2"
-                        name="emailParent2"
-                        type="email">
-                </label>
-
-                <label>
-                    Responsable légal 1
-                    <input
-                        id="profile-parent1"
-                        name="parent1"
-                        type="text">
-                </label>
-
-                <label>
-                    Responsable légal 2
-                    <input
-                        id="profile-parent2"
-                        name="parent2"
-                        type="text">
-                </label>
-
-                <label>
-                    Téléphone
-                    <input
-                        id="profile-telephone"
-                        name="telephone"
-                        type="tel">
-                </label>
-
-                <label>
-                    Téléphone d'urgence
-                    <input
-                        id="profile-telephone-urgence"
-                        name="telephoneUrgence"
-                        type="tel">
-                </label>
-
+                <label>Nom<input id="profile-nom" name="nom" type="text"></label>
+                <label>Prénom<input id="profile-prenom" name="prenom" type="text"></label>
+                <label>Date de naissance<input id="profile-date-naissance" name="dateNaissance" type="text" placeholder="JJ/MM/AAAA"></label>
+                <label>Email principal<input id="profile-email" name="email" type="email"></label>
+                <label>Email parent / responsable 1<input id="profile-email-parent1" name="emailParent1" type="email"></label>
+                <label>Email parent / responsable 2<input id="profile-email-parent2" name="emailParent2" type="email"></label>
+                <label>Responsable légal 1<input id="profile-parent1" name="parent1" type="text"></label>
+                <label>Responsable légal 2<input id="profile-parent2" name="parent2" type="text"></label>
+                <label>Téléphone<input id="profile-telephone" name="telephone" type="tel"></label>
+                <label>Téléphone d'urgence<input id="profile-telephone-urgence" name="telephoneUrgence" type="tel"></label>
             </div>
-
             <div class="profile-readonly-box">
-                <p>
-                    <strong>N° membre :</strong>
-                    <span id="profile-numero-membre">—</span>
-                </p>
-
-                <p>
-                    <strong>Groupe(s) :</strong>
-                    <span id="profile-groupes">—</span>
-                </p>
+                <p><strong>N° membre :</strong> <span id="profile-numero-membre">—</span></p>
+                <p><strong>Groupe(s) :</strong> <span id="profile-groupes">—</span></p>
             </div>
-
             <div id="profile-message" class="profile-message"></div>
-
-            <button
-                type="submit"
-                class="primary-button order-button">
-                Enregistrer les modifications
-            </button>
+            <button type="submit" class="primary-button order-button">Enregistrer les modifications</button>
         </form>
     </section>
 
-    <section class="card">
-        <h2>RGPD</h2>
-
-        <p>
-            Les corrections enregistrées ici deviennent prioritaires
-            sur les données importées depuis HelloAsso.
-        </p>
-
-        <p>
-            Le groupe, la cotisation, les droits d'accès et le numéro
-            de membre ne peuvent pas être modifiés depuis cet espace.
-        </p>
+    <section class="card profile-documents-card">
+        <h2>📄 Mes documents</h2>
+        <p>Documents personnels du membre sélectionné.</p>
+        <div id="profile-personal-documents" class="profile-document-list"></div>
     </section>
 
+    <section class="card profile-club-documents-card">
+        <h2>📚 Documents utiles du club</h2>
+        <p>Inscriptions, règlements et documents mis à disposition par le club.</p>
+        <a href="https://www.helloasso.com/associations/la-jeunesse-du-marais-lomme/adhesions/adhesion-2026-2027-gym-la-jeunesse-du-marais-1" class="primary-button order-button" target="_blank" rel="noopener noreferrer">Inscription HelloAsso</a>
+        <div id="profile-club-documents" class="profile-document-list"></div>
+    </section>
+
+    <section class="card profile-rgpd-card">
+        <h2>🔒 RGPD</h2>
+        <p>Les corrections enregistrées ici deviennent prioritaires sur les données importées depuis HelloAsso.</p>
+        <p>Le groupe, la cotisation, les droits d'accès et le numéro de membre ne peuvent pas être modifiés ici.</p>
+    </section>
 </main>
-
-<script
-    type="module"
-    src="../scripts/auth-guard.js"
-    data-page="espace-membre">
-</script>
-
+<script type="module" src="../scripts/auth-guard.js" data-page="espace-membre"></script>
 <script type="module" src="../scripts/global-header.js"></script>
 <script type="module" src="../scripts/mon-profil.js"></script>
-
 </body>
 </html>
