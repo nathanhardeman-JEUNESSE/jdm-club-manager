@@ -7,6 +7,7 @@ const badgeAbsences = document.getElementById("badge-absences-admin");
 const badgeCommandes = document.getElementById("badge-commandes-admin");
 const badgeCotisations = document.getElementById("badge-cotisations-admin");
 const aidesLicenceAdmin = JSON.parse(localStorage.getItem("aidesLicenceLommeJDM")) || [];
+const logoUrl = new URL("../assets/images/logo-jdm-noir.png", import.meta.url).href;
 
 function afficherBadge(element, nombre) {
     if (!element) return;
