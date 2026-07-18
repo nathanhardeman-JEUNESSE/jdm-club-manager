@@ -313,7 +313,26 @@ function nomFichierPdf(value) {
         .replace(/^-+|-+$/g, "") || "groupe";
 }
 
-function imprimerMois() {
+async function chargerImagePdf(url) {
+    const response = await fetch(url, { cache: "force-cache" });
+    if (!response.ok) throw new Error(`Impossible de charger le logo (${response.status}).`);
+    const blob = await response.blob();
+    return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error("Lecture du logo impossible."));
+        reader.readAsDataURL(blob);
+    });
+}
+
+function avecOpacite(pdf, opacity, dessiner) {
+    const gState = new pdf.GState({ opacity });
+    pdf.setGState(gState);
+    dessiner();
+    pdf.setGState(new pdf.GState({ opacity: 1 }));
+}
+
+async function imprimerMois() {
     const groupe = groupes.find(g => String(g.id) === String(selectGroupe.value));
     const seance = seances[indexSeance];
     if (!groupe || !seance) return;
@@ -339,6 +358,18 @@ function imprimerMois() {
         const largeurTable = largeurPage - (marge * 2);
         const largeurNom = Math.min(78, Math.max(54, largeurTable * 0.29));
         const largeurDate = (largeurTable - largeurNom) / moisSeances.length;
+
+        const logoUrl = new URL("../assets/images/logo-jdm-noir.png", import.meta.url).href;
+        const logoData = await chargerImagePdf(logoUrl);
+        const dimensionsLogo = pdf.getImageProperties(logoData);
+        const largeurLogo = Math.min(190, largeurPage - 42);
+        const hauteurLogo = largeurLogo * (dimensionsLogo.height / dimensionsLogo.width);
+        const xLogo = (largeurPage - largeurLogo) / 2;
+        const yLogo = (hauteurPage - hauteurLogo) / 2 + 5;
+
+        avecOpacite(pdf, 0.055, () => {
+            pdf.addImage(logoData, "PNG", xLogo, yLogo, largeurLogo, hauteurLogo, undefined, "FAST");
+        });
 
         pdf.setFillColor(37, 59, 78);
         pdf.roundedRect(marge, 9, largeurTable, 25, 3, 3, "F");
@@ -383,7 +414,7 @@ function imprimerMois() {
             const y = yTable + hauteurEntete + (ligneIndex * hauteurLigne);
             const fondPair = ligneIndex % 2 === 0;
             pdf.setFillColor(fondPair ? 248 : 241, fondPair ? 250 : 245, fondPair ? 252 : 249);
-            pdf.rect(marge, y, largeurNom, hauteurLigne, "FD");
+            avecOpacite(pdf, 0.72, () => pdf.rect(marge, y, largeurNom, hauteurLigne, "FD"));
 
             pdf.setTextColor(30, 41, 59);
             pdf.setFont("helvetica", "bold");
@@ -401,10 +432,10 @@ function imprimerMois() {
                     a.date === s.dateISO
                 );
                 const statut = appel?.statut || "";
-                if (statut === "absent") pdf.setFillColor(244, 226, 205);
-                else if (statut === "present") pdf.setFillColor(224, 238, 230);
+                if (statut === "absent") pdf.setFillColor(224, 147, 78);
+                else if (statut === "present") pdf.setFillColor(66, 139, 105);
                 else pdf.setFillColor(fondPair ? 248 : 241, fondPair ? 250 : 245, fondPair ? 252 : 249);
-                pdf.rect(x, y, largeurDate, hauteurLigne, "FD");
+                avecOpacite(pdf, statut ? 0.14 : 0.58, () => pdf.rect(x, y, largeurDate, hauteurLigne, "FD"));
                 pdf.setFont("helvetica", "bold");
                 pdf.setFontSize(tailleCase);
                 pdf.setTextColor(statut === "absent" ? 126 : 42, statut === "absent" ? 79 : 92, statut === "absent" ? 39 : 69);
@@ -419,7 +450,7 @@ function imprimerMois() {
         ].forEach((ligne, offset) => {
             const y = yTotaux + (offset * hauteurLigne);
             pdf.setFillColor(...ligne.fond);
-            pdf.rect(marge, y, largeurNom, hauteurLigne, "FD");
+            avecOpacite(pdf, 0.5, () => pdf.rect(marge, y, largeurNom, hauteurLigne, "FD"));
             pdf.setTextColor(30, 41, 59);
             pdf.setFont("helvetica", "bold");
             pdf.setFontSize(tailleNom);
@@ -437,7 +468,7 @@ function imprimerMois() {
                     );
                 }).length;
                 pdf.setFillColor(...ligne.fond);
-                pdf.rect(x, y, largeurDate, hauteurLigne, "FD");
+                avecOpacite(pdf, 0.5, () => pdf.rect(x, y, largeurDate, hauteurLigne, "FD"));
                 pdf.text(String(total), x + (largeurDate / 2), y + (hauteurLigne * 0.67), { align: "center" });
             });
         });
@@ -446,7 +477,9 @@ function imprimerMois() {
         pdf.setFont("helvetica", "normal");
         pdf.setFontSize(7.5);
         pdf.text("P = présent  |  A = absent  |  - = appel non enregistré", marge, hauteurPage - 8);
-        pdf.text(textePdf(`La Jeunesse du Marais - Généré le ${new Date().toLocaleDateString("fr-FR")}`), largeurPage - marge, hauteurPage - 8, { align: "right" });
+        const maintenant = new Date();
+        const horodatage = `${maintenant.toLocaleDateString("fr-FR")} à ${maintenant.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`;
+        pdf.text(textePdf(`La Jeunesse du Marais - JDM Club Manager - Généré le ${horodatage}`), largeurPage - marge, hauteurPage - 8, { align: "right" });
 
         const nomMois = `${moisDate.getFullYear()}-${String(moisDate.getMonth() + 1).padStart(2, "0")}`;
         pdf.save(`presences-${nomFichierPdf(groupe.nom)}-${nomMois}.pdf`);
