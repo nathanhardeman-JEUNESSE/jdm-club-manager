@@ -1,3 +1,5 @@
+import { watchSession, hasPageAccess } from "./session.js";
+
 const contenuSite = JSON.parse(localStorage.getItem("contenuSiteJDM")) || {
     accueil: {
         actualite: "Les inscriptions pour la saison sont ouvertes."
@@ -32,3 +34,23 @@ if (lienInstagram) {
 if (lienTiktok) {
     lienTiktok.href = contenuSite.club?.tiktok || "#";
 }
+
+const tuileAdministration = document.getElementById("tuile-administration");
+
+watchSession((user, profile) => {
+    if (!tuileAdministration) return;
+
+    const autorise = Boolean(
+        user &&
+        profile &&
+        profile.actif !== false &&
+        hasPageAccess(profile, "administration", "lecture")
+    );
+
+    if (autorise) {
+        tuileAdministration.hidden = false;
+        return;
+    }
+
+    tuileAdministration.remove();
+});
