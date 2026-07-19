@@ -2844,3 +2844,56 @@ body {
         padding-top: calc(76px + env(safe-area-inset-top, 0px)) !important;
     }
 }
+
+/* =========================================================
+   BARRE GLOBALE — 3 BOUTONS IDENTIQUES SUR TOUTES LES PAGES
+   ========================================================= */
+
+.jdm-global-topbar {
+    background: transparent !important;
+}
+
+.jdm-global-topbar .jdm-topbar-button,
+.jdm-global-topbar .jdm-topbar-home,
+.jdm-global-topbar .jdm-topbar-notifications,
+.jdm-global-topbar .jdm-topbar-profile {
+    width: 58px !important;
+    height: 58px !important;
+    min-width: 58px !important;
+    min-height: 58px !important;
+
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    border-radius: 18px !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+
+    background: rgba(20, 29, 42, 0.72) !important;
+    box-shadow:
+        0 10px 24px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+
+    padding: 0 !important;
+    overflow: visible !important;
+}
+
+.jdm-global-topbar .jdm-topbar-button:hover,
+.jdm-global-topbar .jdm-topbar-home:hover,
+.jdm-global-topbar .jdm-topbar-notifications:hover,
+.jdm-global-topbar .jdm-topbar-profile:hover {
+    transform: translateY(-2px);
+    background: rgba(29, 42, 59, 0.88) !important;
+}
+
+.jdm-global-topbar .jdm-topbar-button img,
+.jdm-global-topbar .jdm-topbar-button svg,
+.jdm-global-topbar .jdm-topbar-button span,
+.jdm-global-topbar .jdm-topbar-home img,
+.jdm-global-topbar .jdm-topbar-notifications img,
+.jdm-global-topbar .jdm-topbar-profile img {
+    border-radius: 0 !important;
+}
