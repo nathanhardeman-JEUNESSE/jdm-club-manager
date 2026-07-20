@@ -146,18 +146,30 @@ function appelPour(adherent, groupe, dateISO) {
     );
 }
 
-function dossierARegulariser(adherent) {
-    const dossierIncomplet = adherent.dossierComplet === false || adherent.statutDossier === "incomplet";
-    const licenceNonReglee = adherent.cotisationAJour === false || ["a_regler", "impaye", "non_regle"].includes(normaliser(adherent.statutCotisationTresorier));
-    return { dossierIncomplet, licenceNonReglee, alerte: dossierIncomplet || licenceNonReglee };
+function statutAdministratif(adherent) {
+    const statutDossier = normaliser(adherent.statutDossier);
+    const statutCotisation = normaliser(adherent.statutCotisationTresorier);
+
+    const dossierOk =
+        adherent.dossierComplet === true ||
+        ["complet", "valide", "ok", "a_jour"].includes(statutDossier);
+
+    const cotisationOk =
+        adherent.cotisationAJour === true ||
+        ["regle", "payee", "paye", "ok", "a_jour"].includes(statutCotisation);
+
+    return { dossierOk, cotisationOk };
 }
 
-function texteAlerte(adherent) {
-    const etat = dossierARegulariser(adherent);
-    const motifs = [];
-    if (etat.dossierIncomplet) motifs.push("dossier incomplet");
-    if (etat.licenceNonReglee) motifs.push("licence à régulariser");
-    return motifs.join(" · ") || "Dossier à jour";
+function badgesAdministratifs(adherent) {
+    const { dossierOk, cotisationOk } = statutAdministratif(adherent);
+
+    return `
+        <span style="display:inline-flex;gap:12px;align-items:center;margin-top:3px;font-size:0.72rem;font-weight:800;letter-spacing:0.03em;">
+            <span style="color:${dossierOk ? "#18864b" : "#d62828"};">DOSSIER</span>
+            <span style="color:${cotisationOk ? "#18864b" : "#d62828"};">COTISATION</span>
+        </span>
+    `;
 }
 
 function afficherMessage(message = "", type = "") {
@@ -222,14 +234,15 @@ function afficherSeance() {
         ${membres.map(adherent => {
             const numero = String(adherent.numeroAdherent || adherent.id || "");
             const valeur = pointages.get(numero);
-            const alerte = dossierARegulariser(adherent);
-            const detail = valeur.absenceSignalee ? "Absence signalée par la famille" : texteAlerte(adherent);
+            const statutAdmin = statutAdministratif(adherent);
+            const titreStatut = `Dossier ${statutAdmin.dossierOk ? "à jour" : "à régulariser"} · Cotisation ${statutAdmin.cotisationOk ? "à jour" : "à régulariser"}`;
             return `<article class="attendance-row ${valeur.statut === "absent" ? "is-absent" : ""}" data-attendance-row="${escapeHtml(numero)}">
                 <div class="attendance-member">
-                    <span class="attendance-member-status ${alerte.alerte ? "has-warning" : ""}" title="${escapeHtml(texteAlerte(adherent))}"></span>
+                    <span class="attendance-member-status ${(!statutAdmin.dossierOk || !statutAdmin.cotisationOk) ? "has-warning" : ""}" title="${escapeHtml(titreStatut)}"></span>
                     <div class="attendance-member-name">
                         <strong>${escapeHtml(adherent.nom)} ${escapeHtml(adherent.prenom)}</strong>
-                        <small>${escapeHtml(detail)}</small>
+                        ${valeur.absenceSignalee ? `<small>Absence signalée par la famille</small>` : ""}
+                        ${badgesAdministratifs(adherent)}
                     </div>
                 </div>
                 <label class="attendance-choice">
