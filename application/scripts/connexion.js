@@ -7,7 +7,8 @@ import {
 
 import {
     ensureUserProfile,
-    updateUserPresence
+    updateUserPresence,
+    JDM_RGPD_VERSION
 } from "../firebase/firebase-db.js";
 
 import { routeForRole } from "./session.js";
@@ -54,7 +55,13 @@ async function entrerDansApplication(user) {
     throw new Error("Compte désactivé.");
     }
     await updateUserPresence(user.uid, true);
-    window.location.href = routeForRole(profile.role);
+
+    const consentementValide = profile.consentementRGPD === true
+        && profile.versionConditions === JDM_RGPD_VERSION;
+
+    window.location.href = consentementValide
+        ? routeForRole(profile.role)
+        : "premiere-connexion.html";
 }
 
 if (boutonConnexion) {

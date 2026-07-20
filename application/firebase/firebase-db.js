@@ -29,6 +29,34 @@ function listeNumerosAdherents(...sources) {
     )];
 }
 
+function accesMembreParDefaut() {
+    const acces = {};
+
+    [
+        "accueil",
+        "espace-membre",
+        "planning-membre",
+        "mon-club",
+        "actualites",
+        "contact",
+        "notifications",
+        "boutique",
+        "boutique-accessoires",
+        "boutique-ephemere",
+        "confirmation-commande",
+        "fiche-adherent-complete",
+        "carte-adherent"
+    ].forEach(page => {
+        acces[page] = { lecture: true, ecriture: false };
+    });
+
+    ["absence", "panier", "commande", "paiement"].forEach(page => {
+        acces[page] = { lecture: true, ecriture: true };
+    });
+
+    return acces;
+}
+
 export async function getUserProfile(uid) {
     const ref = doc(db, "users", uid);
     const snap = await getDoc(ref);
@@ -102,50 +130,101 @@ export async function ensureUserProfile(user) {
         };
     }
 
-    if (!pending) {
-        const error = new Error("Aucun accès préparé n'a été trouvé pour cette adresse email.");
-        error.code = "jdm/no-pending-access";
-        throw error;
-    }
-
-    if (pending.actif === false) {
+    if (pending && pending.actif === false) {
         const error = new Error("Cet accès a été désactivé par le club.");
         error.code = "jdm/account-disabled";
         throw error;
     }
 
-    const numerosAdherents = listeNumerosAdherents(
-        pending.numerosAdherents,
-        pending.numeroAdherent
-    );
+    let profile;
 
-    const profile = {
-        email,
-        role: pending.role || JDM_CONFIG.roles.MEMBRE,
-        roles: Array.isArray(pending.roles)
-            ? pending.roles
-            : [pending.role || JDM_CONFIG.roles.MEMBRE],
-        actif: true,
-        clubId: JDM_CONFIG.clubId,
-        accesPages: pending.accesPages || {},
-        numeroAdherent: pending.numeroAdherent || numerosAdherents[0] || "",
-        numerosAdherents,
-        nom: pending.nom || "",
-        prenom: pending.prenom || "",
-        source: pending.source || "invitation",
-        compteCreeAt: serverTimestamp(),
-        derniereConnexionAt: serverTimestamp(),
-        derniereActiviteAt: serverTimestamp(),
-        consentementRGPD: false,
-        consentementDate: null,
-        versionConditions: null,
-        signatureNom: null,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-    };
+    if (pending) {
+        const numerosAdherents = listeNumerosAdherents(
+            pending.numerosAdherents,
+            pending.numeroAdherent
+        );
+
+        profile = {
+            email,
+            role: pending.role || JDM_CONFIG.roles.MEMBRE,
+            roles: Array.isArray(pending.roles)
+                ? pending.roles
+                : [pending.role || JDM_CONFIG.roles.MEMBRE],
+            actif: true,
+            clubId: JDM_CONFIG.clubId,
+            accesPages: pending.accesPages || {},
+            numeroAdherent: pending.numeroAdherent || numerosAdherents[0] || "",
+            numerosAdherents,
+            adherentIds: Array.isArray(pending.adherentIds) ? pending.adherentIds : [],
+            nom: pending.nom || "",
+            prenom: pending.prenom || "",
+            source: pending.source || "invitation",
+            compteCreeAt: serverTimestamp(),
+            derniereConnexionAt: serverTimestamp(),
+            derniereActiviteAt: serverTimestamp(),
+            consentementRGPD: false,
+            consentementDate: null,
+            versionConditions: null,
+            signatureNom: null,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        };
+    } else {
+        const adherentsCorrespondants = await findAdherentsByEmail(email);
+
+        if (!adherentsCorrespondants.length) {
+            const error = new Error(
+                "Aucune adhésion ni aucun accès préparé n'a été trouvé pour cette adresse email."
+            );
+            error.code = "jdm/no-member-access";
+            throw error;
+        }
+
+        const adherentIds = adherentsCorrespondants
+            .map(adherent => String(adherent.id || "").trim())
+            .filter(Boolean)
+            .slice(0, 6);
+
+        const adherentsRetenus = adherentsCorrespondants
+            .filter(adherent => adherentIds.includes(String(adherent.id)))
+            .slice(0, 6);
+
+        const numerosAdherents = listeNumerosAdherents(
+            adherentsRetenus.map(adherent => adherent.numeroAdherent || adherent.id)
+        );
+
+        const adherentPrincipal = adherentsRetenus[0];
+
+        profile = {
+            email,
+            role: JDM_CONFIG.roles.MEMBRE,
+            roles: [JDM_CONFIG.roles.MEMBRE],
+            actif: true,
+            clubId: JDM_CONFIG.clubId,
+            accesPages: accesMembreParDefaut(),
+            numeroAdherent: numerosAdherents[0] || "",
+            numerosAdherents,
+            adherentIds,
+            nom: adherentPrincipal?.nom || "",
+            prenom: adherentPrincipal?.prenom || "",
+            source: "adherent",
+            compteCreeAt: serverTimestamp(),
+            derniereConnexionAt: serverTimestamp(),
+            derniereActiviteAt: serverTimestamp(),
+            consentementRGPD: false,
+            consentementDate: null,
+            versionConditions: null,
+            signatureNom: null,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+        };
+    }
 
     await createOrUpdateUser(user.uid, profile);
-    await deletePendingUser(email);
+
+    if (pending) {
+        await deletePendingUser(email);
+    }
 
     return { uid: user.uid, ...profile };
 }
@@ -275,20 +354,41 @@ export async function findAdherentByEmail(email) {
 
 
 export async function findAdherentsByEmail(email) {
-    const cible = emailId(email);
+    const emailBrut = String(email || "").trim();
+    const cible = emailId(emailBrut);
     if (!cible) return [];
 
-    const snap = await getDocs(collection(db, "adherents"));
+    const valeurs = [...new Set([emailBrut, cible].filter(Boolean))];
+    const champs = [
+        "email",
+        "emailAdherent",
+        "emailParent1",
+        "emailParent2",
+        "emailPayeur"
+    ];
 
-    return snap.docs
-        .map(item => ({ id: item.id, ...item.data() }))
-        .filter(adherent => [
-            adherent.email,
-            adherent.emailAdherent,
-            adherent.emailParent1,
-            adherent.emailParent2,
-            adherent.emailPayeur
-        ].map(emailId).includes(cible));
+    const resultats = await Promise.all(
+        champs.flatMap(champ =>
+            valeurs.map(valeur =>
+                getDocs(
+                    query(
+                        collection(db, "adherents"),
+                        where(champ, "==", valeur)
+                    )
+                )
+            )
+        )
+    );
+
+    const adherents = new Map();
+
+    resultats.forEach(snap => {
+        snap.docs.forEach(item => {
+            adherents.set(item.id, { id: item.id, ...item.data() });
+        });
+    });
+
+    return [...adherents.values()];
 }
 
 export async function getAdherentsByNumbers(numeros) {
