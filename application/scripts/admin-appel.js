@@ -1,4 +1,5 @@
 import { watchSession } from "./session.js";
+import { derniereInscriptionPour, verifierDossier } from "./adherent-data.js";
 import { jsPDF } from "https://cdn.jsdelivr.net/npm/jspdf@2.5.1/+esm";
 import {
     listGroupesFirestore,
@@ -37,6 +38,9 @@ let appels = [];
 let seances = [];
 let indexSeance = 0;
 let pointages = new Map();
+
+const aidesLicence = JSON.parse(localStorage.getItem("aidesLicenceLommeJDM") || "[]");
+const validationsDossiers = JSON.parse(localStorage.getItem("validationsDossiersJDM") || "[]");
 
 function normaliser(value) {
     return String(value || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -146,19 +150,39 @@ function appelPour(adherent, groupe, dateISO) {
     );
 }
 
-function statutAdministratif(adherent) {
-    const statutDossier = normaliser(adherent.statutDossier);
-    const statutCotisation = normaliser(adherent.statutCotisationTresorier);
+function aidePour(numeroAdherent) {
+    return aidesLicence.find(aide =>
+        String(aide.numeroAdherent || "") === String(numeroAdherent || "")
+    ) || null;
+}
 
-    const dossierOk =
-        adherent.dossierComplet === true ||
-        ["complet", "valide", "ok", "a_jour"].includes(statutDossier);
+function validationPour(numeroAdherent) {
+    return validationsDossiers.find(validation =>
+        String(validation.numeroAdherent || "") === String(numeroAdherent || "")
+    ) || null;
+}
+
+function statutAdministratif(adherent) {
+    const numero = String(adherent.numeroAdherent || adherent.id || "");
+    const inscription = derniereInscriptionPour(inscriptions, numero);
+
+    // Même calcul que dans l'onglet Adhérents : une validation manuelle
+    // ou un dossier réellement complet doit immédiatement passer au vert.
+    const dossier = verifierDossier(adherent, inscription, {
+        aide: aidePour(numero),
+        validation: validationPour(numero)
+    });
+
+    const statutCotisation = normaliser(
+        adherent.statutCotisationTresorier || inscription?.statutCotisationTresorier
+    );
 
     const cotisationOk =
         adherent.cotisationAJour === true ||
+        inscription?.cotisationAJour === true ||
         ["regle", "payee", "paye", "ok", "a_jour"].includes(statutCotisation);
 
-    return { dossierOk, cotisationOk };
+    return { dossierOk: dossier.complet === true, cotisationOk };
 }
 
 function badgesAdministratifs(adherent) {
