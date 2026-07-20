@@ -46,11 +46,6 @@ observerConnexion(async (user) => {
             return;
         }
 
-        if (profile.role === "admin") {
-            lien.style.display = "";
-            return;
-        }
-
-        lien.style.display = hasPageAccess(profile, item.key) ? "" : "none";
+        lien.style.display = hasPageAccess(profile, item.key, "lecture") ? "" : "none";
     });
 });

@@ -277,7 +277,11 @@ export async function updatePendingUser(uid, data) {
 }
 
 export async function updateUserRole(uid, role) {
-    await updateDoc(doc(db, "users", uid), { role, updatedAt: serverTimestamp() });
+    await updateDoc(doc(db, "users", uid), {
+        role,
+        roles: [role],
+        updatedAt: serverTimestamp()
+    });
 }
 
 export async function updateUserActif(uid, actif) {
