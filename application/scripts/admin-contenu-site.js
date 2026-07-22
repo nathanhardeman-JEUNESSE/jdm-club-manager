@@ -8,10 +8,30 @@ import {
     setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-import { db } from "./firebase.js";
+import { auth, db, firebaseConfig } from "./firebase.js";
 
 const CONTENU_REF = doc(db, "siteContent", "main");
 const EQUIPE_COLLECTION = "siteTeam";
+
+function messageErreurFirestore(erreur, action = "opération") {
+    const code = erreur?.code || "erreur-inconnue";
+    const message = erreur?.message || String(erreur || "Erreur inconnue");
+    const utilisateur = auth.currentUser;
+    return [
+        `Échec de l’${action}.`,
+        `Code Firebase : ${code}`,
+        `Message : ${message}`,
+        `Projet : ${firebaseConfig?.projectId || "inconnu"}`,
+        `Compte : ${utilisateur?.email || "non connecté"}`,
+        `UID : ${utilisateur?.uid || "absent"}`
+    ].join("\n");
+}
+
+function afficherErreurFirestore(erreur, action) {
+    const detail = messageErreurFirestore(erreur, action);
+    console.error(detail, erreur);
+    alert(detail);
+}
 
 let contenuSite = {};
 let bureau = [];
@@ -189,8 +209,12 @@ function construireContenu() {
 async function enregistrerContenu(afficherConfirmation = true) {
     contenuSite = construireContenu();
     await setDoc(CONTENU_REF, contenuSite, { merge: true });
+    const verification = await getDoc(CONTENU_REF);
+    if (!verification.exists()) {
+        throw new Error("L’écriture a été envoyée mais le document siteContent/main est introuvable lors de la vérification.");
+    }
     localStorage.setItem("contenuSiteJDM", JSON.stringify({ ...contenuSite, updatedAt: Date.now() }));
-    if (afficherConfirmation) alert("Contenu du site enregistré ✅");
+    if (afficherConfirmation) alert("Contenu du site enregistré et vérifié dans Firestore ✅");
 }
 
 async function enregistrerPersonne(carte, bouton) {
@@ -202,10 +226,16 @@ async function enregistrerPersonne(carte, bouton) {
 
     bouton.disabled = true;
     bouton.textContent = "Enregistrement…";
-    await setDoc(doc(db, EQUIPE_COLLECTION, personne.id), {
+    const personneRef = doc(db, EQUIPE_COLLECTION, personne.id);
+    await setDoc(personneRef, {
         ...personne,
         updatedAt: serverTimestamp()
-    });
+    }, { merge: true });
+
+    const verification = await getDoc(personneRef);
+    if (!verification.exists()) {
+        throw new Error(`La fiche ${personne.id} n’a pas été retrouvée dans Firestore après l’enregistrement.`);
+    }
 
     const liste = personne.type === "bureau" ? bureau : coachs;
     liste[Number(carte.dataset.index)] = personne;
@@ -225,10 +255,9 @@ document.addEventListener("click", async event => {
         try {
             await enregistrerPersonne(boutonEnregistrer.closest(".club-admin-personne"), boutonEnregistrer);
         } catch (erreur) {
-            console.error(erreur);
             boutonEnregistrer.disabled = false;
             boutonEnregistrer.textContent = "Enregistrer";
-            alert("Impossible d'enregistrer. Vérifie les règles Firestore et ta connexion.");
+            afficherErreurFirestore(erreur, "enregistrement de la personne");
         }
         return;
     }
@@ -243,8 +272,7 @@ document.addEventListener("click", async event => {
         liste.splice(Number(carte.dataset.index), 1);
         rendreListes();
     } catch (erreur) {
-        console.error(erreur);
-        alert("Impossible de supprimer cette personne.");
+        afficherErreurFirestore(erreur, "suppression de la personne");
     }
 });
 
@@ -268,12 +296,10 @@ document.getElementById("enregistrer-contenu-site")?.addEventListener("click", a
     try {
         await enregistrerContenu(true);
     } catch (erreur) {
-        console.error(erreur);
-        alert("Impossible d'enregistrer le contenu du site.");
+        afficherErreurFirestore(erreur, "enregistrement du contenu du site");
     }
 });
 
 chargerDonnees().catch(erreur => {
-    console.error("Impossible de charger le contenu du site", erreur);
-    alert("Impossible de charger les données partagées du site.");
+    afficherErreurFirestore(erreur, "chargement des données partagées du site");
 });
