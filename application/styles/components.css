@@ -2901,7 +2901,7 @@ body {
 /* Mon club - statistiques et trombinoscope */
 .club-hero { text-align: center; }
 .club-statistiques { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
-.club-stat-card { background: var(--surface, #fff); border-radius: 16px; padding: 18px 10px; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+.club-stat-card { background: var(--card); color: var(--white); border: 1px solid rgba(255,255,255,.12); border-radius: 16px; padding: 18px 10px; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
 .club-stat-card strong { display: block; font-size: 1.65rem; line-height: 1.1; }
 .club-stat-card span { display: block; margin-top: 6px; font-size: .82rem; opacity: .72; }
 .club-trombinoscope { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
