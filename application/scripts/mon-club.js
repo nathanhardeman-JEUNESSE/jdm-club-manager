@@ -4,8 +4,8 @@ import {
     onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-import { db } from "./firebase.js";
-import { listAdherents, listUsers } from "./firebase-db.js";
+import { db } from "../firebase/firebase.js";
+import { listAdherents, listUsers } from "../firebase/firebase-db.js";
 
 let contenuSite = {};
 let club = {};
