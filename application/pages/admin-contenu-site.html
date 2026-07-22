@@ -42,6 +42,29 @@
     </section>
 
     <section class="card">
+        <h2>📊 Chiffres du club</h2>
+        <input class="form-input" id="contenu-club-saison" placeholder="Saison (ex. 2026-2027)">
+        <input class="form-input" id="contenu-club-benevoles" type="number" min="0" placeholder="Nombre de bénévoles">
+        <p class="form-help">Le nombre d’adhérents et d’entraîneurs est calculé automatiquement.</p>
+    </section>
+
+    <section class="card">
+        <div class="club-admin-title">
+            <h2>👥 Bureau</h2>
+            <button type="button" class="secondary-button" id="ajouter-bureau">+ Ajouter</button>
+        </div>
+        <div id="liste-bureau" class="club-admin-list"></div>
+    </section>
+
+    <section class="card">
+        <div class="club-admin-title">
+            <h2>🤸 Entraîneurs</h2>
+            <button type="button" class="secondary-button" id="ajouter-coach">+ Ajouter</button>
+        </div>
+        <div id="liste-coachs" class="club-admin-list"></div>
+    </section>
+
+    <section class="card">
         <h2>📞 Contact</h2>
         <textarea class="form-input" id="contenu-contact-introduction" placeholder="Texte d'introduction de la page contact"></textarea>
         <input class="form-input" id="contenu-contact-adresse" placeholder="Adresse">

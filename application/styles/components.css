@@ -2897,3 +2897,34 @@ body {
 .jdm-global-topbar .jdm-topbar-profile img {
     border-radius: 0 !important;
 }
+
+/* Mon club - statistiques et trombinoscope */
+.club-hero { text-align: center; }
+.club-statistiques { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.club-stat-card { background: var(--surface, #fff); border-radius: 16px; padding: 18px 10px; text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+.club-stat-card strong { display: block; font-size: 1.65rem; line-height: 1.1; }
+.club-stat-card span { display: block; margin-top: 6px; font-size: .82rem; opacity: .72; }
+.club-trombinoscope { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.club-personne { text-align: center; border: 1px solid rgba(127,127,127,.2); border-radius: 16px; padding: 14px 10px; }
+.club-personne-photo { width: 88px; height: 88px; margin: 0 auto 10px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: rgba(127,127,127,.14); font-weight: 800; }
+.club-personne-photo img { width: 100%; height: 100%; object-fit: cover; }
+.club-personne h3 { margin: 0; font-size: 1rem; }
+.club-personne-fonction { margin: 4px 0 8px; font-size: .83rem; font-weight: 700; opacity: .75; }
+.club-personne ul { margin: 0; padding-left: 18px; text-align: left; font-size: .78rem; }
+.club-admin-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.club-admin-list { display: grid; gap: 14px; margin-top: 12px; }
+.club-admin-personne { display: grid; grid-template-columns: 90px 1fr; gap: 12px; padding: 12px; border: 1px solid rgba(127,127,127,.2); border-radius: 14px; }
+.club-admin-photo-preview { width: 90px; height: 90px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: rgba(127,127,127,.14); font-size: .75rem; }
+.club-admin-photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+.club-admin-fields { min-width: 0; }
+.club-admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.club-visible { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+.form-help { font-size: .82rem; opacity: .7; }
+@media (min-width: 720px) {
+    .club-statistiques { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .club-trombinoscope { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+    .club-admin-personne { grid-template-columns: 1fr; }
+    .club-admin-photo-preview { margin: auto; }
+}
