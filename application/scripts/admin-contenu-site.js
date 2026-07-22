@@ -49,7 +49,10 @@ function carteEdition(personne, type, index) {
                 <label class="club-visible"><input class="personne-visible" type="checkbox" ${personne.visible !== false ? "checked" : ""}> Visible</label>
             </div>
             <input class="form-input personne-photo" type="file" accept="image/*">
-            <button type="button" class="danger-button supprimer-personne">Supprimer</button>
+            <div class="club-admin-grid">
+                <button type="button" class="primary-button enregistrer-personne">Enregistrer</button>
+                <button type="button" class="danger-button supprimer-personne">Supprimer</button>
+            </div>
         </div>
     </article>`;
 }
@@ -115,7 +118,17 @@ function chargerFormulaire() {
     rendreListes();
 }
 
-function enregistrerContenu() {
+function notifierMonClub() {
+    try {
+        const canal = new BroadcastChannel("jdm-contenu-site");
+        canal.postMessage({ type: "contenu-site-maj", date: Date.now() });
+        canal.close();
+    } catch (erreur) {
+        // BroadcastChannel n'est pas disponible sur tous les navigateurs.
+    }
+}
+
+function enregistrerContenu(afficherConfirmation = true) {
     synchroniserListes();
     const ancienClub = contenuSite.club || {};
     contenuSite = {
@@ -131,15 +144,36 @@ function enregistrerContenu() {
         documents: [1,2,3].map(i => ({ titre: valeur(`document-${i}-titre`), description: valeur(`document-${i}-description`), lien: valeur(`document-${i}-lien`) })).filter(d => d.titre || d.description || d.lien)
     };
     localStorage.setItem("contenuSiteJDM", JSON.stringify(contenuSite));
-    alert("Contenu du site enregistré ✅");
+    notifierMonClub();
+    if (afficherConfirmation) alert("Contenu du site enregistré ✅");
+    return true;
 }
 
 document.getElementById("ajouter-bureau")?.addEventListener("click", () => { synchroniserListes(); bureau.push(nouvellePersonne()); rendreListes(); });
 document.getElementById("ajouter-coach")?.addEventListener("click", () => { synchroniserListes(); coachs.push(nouvellePersonne()); rendreListes(); });
 document.addEventListener("click", event => {
-    const bouton = event.target.closest(".supprimer-personne"); if (!bouton) return;
-    const carte = bouton.closest(".club-admin-personne"); synchroniserListes();
-    const liste = carte.dataset.type === "bureau" ? bureau : coachs; liste.splice(Number(carte.dataset.index), 1); rendreListes();
+    const boutonEnregistrer = event.target.closest(".enregistrer-personne");
+    if (boutonEnregistrer) {
+        const carte = boutonEnregistrer.closest(".club-admin-personne");
+        synchroniserListes();
+        enregistrerContenu(false);
+        boutonEnregistrer.textContent = "Enregistré ✓";
+        boutonEnregistrer.disabled = true;
+        window.setTimeout(() => {
+            boutonEnregistrer.textContent = "Enregistrer";
+            boutonEnregistrer.disabled = false;
+        }, 1400);
+        return;
+    }
+
+    const boutonSupprimer = event.target.closest(".supprimer-personne");
+    if (!boutonSupprimer) return;
+    const carte = boutonSupprimer.closest(".club-admin-personne");
+    synchroniserListes();
+    const liste = carte.dataset.type === "bureau" ? bureau : coachs;
+    liste.splice(Number(carte.dataset.index), 1);
+    rendreListes();
+    enregistrerContenu(false);
 });
 document.addEventListener("change", async event => {
     if (!event.target.matches(".personne-photo")) return;

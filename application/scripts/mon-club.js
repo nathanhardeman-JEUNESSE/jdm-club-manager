@@ -1,7 +1,17 @@
 import { listAdherents, listUsers } from "../firebase/firebase-db.js";
 
-const contenuSite = JSON.parse(localStorage.getItem("contenuSiteJDM")) || {};
-const club = contenuSite.club || {};
+let contenuSite = {};
+let club = {};
+
+function lireContenu() {
+    try {
+        contenuSite = JSON.parse(localStorage.getItem("contenuSiteJDM")) || {};
+    } catch (erreur) {
+        console.error("Contenu du site illisible", erreur);
+        contenuSite = {};
+    }
+    club = contenuSite.club || {};
+}
 
 function texte(id, valeur, defaut = "") {
     const element = document.getElementById(id);
@@ -59,10 +69,28 @@ function afficherEquipe(id, sectionId, personnes) {
     conteneur.innerHTML = visibles.map(cartePersonne).join("");
 }
 
-async function chargerStatistiques() {
+function afficherContenu() {
+    lireContenu();
+    texte("club-titre", club.titre, "La Jeunesse du Marais");
+    texte("club-presentation", club.presentation, "Association sportive dédiée à la pratique de la gymnastique.");
+    texte("club-histoire", club.histoire);
+    texte("club-valeurs", club.valeurs);
+    texte("club-disciplines", club.disciplines);
+    texte("club-installations", club.installations);
+    texte("club-adresse", club.adresse);
+    texte("club-telephone", club.telephone);
+    texte("club-email", club.email);
+    texte("club-horaires", club.horaires);
     texte("stat-benevoles", club.nombreBenevoles || "0");
     texte("stat-saison", club.saison || "—");
+    lien("lien-facebook", club.facebook);
+    lien("lien-instagram", club.instagram);
+    lien("lien-tiktok", club.tiktok);
+    afficherEquipe("trombinoscope-bureau", "section-bureau", club.bureau);
+    afficherEquipe("trombinoscope-coachs", "section-coachs", club.coachs);
+}
 
+async function chargerStatistiques() {
     try {
         const [adherents, utilisateurs] = await Promise.all([listAdherents(), listUsers()]);
         texte("stat-adherents", adherents.length);
@@ -78,19 +106,22 @@ async function chargerStatistiques() {
     }
 }
 
-texte("club-titre", club.titre, "La Jeunesse du Marais");
-texte("club-presentation", club.presentation, "Association sportive dédiée à la pratique de la gymnastique.");
-texte("club-histoire", club.histoire);
-texte("club-valeurs", club.valeurs);
-texte("club-disciplines", club.disciplines);
-texte("club-installations", club.installations);
-texte("club-adresse", club.adresse);
-texte("club-telephone", club.telephone);
-texte("club-email", club.email);
-texte("club-horaires", club.horaires);
-lien("lien-facebook", club.facebook);
-lien("lien-instagram", club.instagram);
-lien("lien-tiktok", club.tiktok);
-afficherEquipe("trombinoscope-bureau", "section-bureau", club.bureau);
-afficherEquipe("trombinoscope-coachs", "section-coachs", club.coachs);
-chargerStatistiques();
+function actualiserMonClub() {
+    afficherContenu();
+    chargerStatistiques();
+}
+
+window.addEventListener("storage", event => {
+    if (event.key === "contenuSiteJDM") actualiserMonClub();
+});
+
+try {
+    const canal = new BroadcastChannel("jdm-contenu-site");
+    canal.addEventListener("message", event => {
+        if (event.data?.type === "contenu-site-maj") actualiserMonClub();
+    });
+} catch (erreur) {
+    // La page reste actualisée au prochain chargement si BroadcastChannel est indisponible.
+}
+
+actualiserMonClub();
