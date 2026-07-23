@@ -1,3 +1,4 @@
+import "./auto-refresh.js";
 import { watchSession, logoutAndRedirect } from "./session.js";
 import { listNotificationsFirestore } from "../firebase/firebase-db.js";
 

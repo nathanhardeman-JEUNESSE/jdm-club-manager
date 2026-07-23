@@ -1,18 +1,136 @@
 import {
     doc,
-    getDoc,
+    getDoc as firestoreGetDoc,
     setDoc,
     updateDoc,
     deleteDoc,
     collection,
-    getDocs,
+    getDocs as firestoreGetDocs,
     query,
     where,
     writeBatch,
-    serverTimestamp
+    serverTimestamp,
+    onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import { db, JDM_CONFIG } from "./firebase.js";
+
+
+/* =========================================================
+   ACTUALISATION TEMPS REEL
+   Chaque lecture Firestore active automatiquement un écouteur sur la
+   même référence. La première réponse est ignorée ; toute modification
+   suivante recharge la page afin que les scripts existants réaffichent
+   les données sans intervention de l'utilisateur.
+   ========================================================= */
+
+const jdmRealtimeWatchers = new WeakMap();
+let jdmReloadTimer = null;
+let jdmReloadPending = false;
+
+function programmerActualisationJDM() {
+    if (jdmReloadTimer) clearTimeout(jdmReloadTimer);
+
+    const actualiser = () => {
+        jdmReloadPending = false;
+        window.location.reload();
+    };
+
+    if (document.visibilityState === "hidden") {
+        jdmReloadPending = true;
+        return;
+    }
+
+    jdmReloadTimer = setTimeout(actualiser, 700);
+}
+
+if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible" && jdmReloadPending) {
+            programmerActualisationJDM();
+        }
+    });
+}
+
+function normaliserDonneesTempsReel(valeur) {
+    if (Array.isArray(valeur)) return valeur.map(normaliserDonneesTempsReel);
+    if (!valeur || typeof valeur !== "object") return valeur;
+
+    if (typeof valeur.toMillis === "function") return valeur.toMillis();
+
+    const resultat = {};
+    const champsTechniques = new Set([
+        "updatedAt",
+        "lastSeenAt",
+        "derniereActiviteAt",
+        "derniereConnexionAt",
+        "lastLoginAt"
+    ]);
+
+    Object.keys(valeur).sort().forEach(cle => {
+        if (!champsTechniques.has(cle)) {
+            resultat[cle] = normaliserDonneesTempsReel(valeur[cle]);
+        }
+    });
+
+    return resultat;
+}
+
+function empreinteSnapshot(snapshot) {
+    if (snapshot && Array.isArray(snapshot.docs)) {
+        return JSON.stringify(snapshot.docs.map(item => ({
+            id: item.id,
+            data: normaliserDonneesTempsReel(item.data())
+        })));
+    }
+
+    return JSON.stringify({
+        exists: snapshot?.exists?.() === true,
+        data: snapshot?.exists?.() ? normaliserDonneesTempsReel(snapshot.data()) : null
+    });
+}
+
+function activerEcouteTempsReel(reference) {
+    if (!reference || typeof window === "undefined") return;
+    if (jdmRealtimeWatchers.has(reference)) return;
+
+    let empreintePrecedente = null;
+
+    const unsubscribe = onSnapshot(
+        reference,
+        snapshot => {
+            const nouvelleEmpreinte = empreinteSnapshot(snapshot);
+
+            if (empreintePrecedente === null) {
+                empreintePrecedente = nouvelleEmpreinte;
+                return;
+            }
+
+            if (snapshot?.metadata?.hasPendingWrites) return;
+            if (nouvelleEmpreinte === empreintePrecedente) return;
+
+            empreintePrecedente = nouvelleEmpreinte;
+            programmerActualisationJDM();
+        },
+        error => {
+            // Une page peut ne pas avoir accès à toutes les données.
+            // L'échec d'un écouteur ne doit jamais bloquer l'application.
+            console.debug("Écoute temps réel indisponible", error?.code || error);
+        }
+    );
+
+    jdmRealtimeWatchers.set(reference, unsubscribe);
+}
+
+async function getDoc(reference) {
+    activerEcouteTempsReel(reference);
+    return firestoreGetDoc(reference);
+}
+
+async function getDocs(reference) {
+    activerEcouteTempsReel(reference);
+    return firestoreGetDocs(reference);
+}
 
 export const JDM_RGPD_VERSION = "JDM-RGPD-2026-01";
 

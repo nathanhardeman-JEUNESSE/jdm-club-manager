@@ -4,6 +4,7 @@ import {
     doc,
     getDoc,
     getDocs,
+    onSnapshot,
     serverTimestamp,
     setDoc
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
@@ -12,6 +13,26 @@ import { db } from "../firebase/firebase.js";
 
 const CONTENU_REF = doc(db, "siteContent", "main");
 const EQUIPE_COLLECTION = "siteTeam";
+
+let jdmContenuInitialise = false;
+let jdmEquipeInitialisee = false;
+
+onSnapshot(CONTENU_REF, snapshot => {
+    if (!jdmContenuInitialise) {
+        jdmContenuInitialise = true;
+        return;
+    }
+    if (!snapshot.metadata.hasPendingWrites) window.location.reload();
+});
+
+onSnapshot(collection(db, EQUIPE_COLLECTION), snapshot => {
+    if (!jdmEquipeInitialisee) {
+        jdmEquipeInitialisee = true;
+        return;
+    }
+    if (!snapshot.metadata.hasPendingWrites) window.location.reload();
+});
+
 
 let contenuSite = {};
 let bureau = [];

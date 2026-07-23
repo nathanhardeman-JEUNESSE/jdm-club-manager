@@ -1,4 +1,5 @@
 let deferredInstallPrompt = null;
+let serviceWorkerRefreshing = false;
 
 const androidButton = document.getElementById("installAndroidButton");
 const iphoneButton = document.getElementById("installIphoneButton");
@@ -8,8 +9,32 @@ const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
 const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
 
 if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-        navigator.serviceWorker.register("sw.js");
+    window.addEventListener("load", async () => {
+        try {
+            const registration = await navigator.serviceWorker.register("/sw.js", {
+                updateViaCache: "none"
+            });
+
+            await registration.update();
+
+            window.setInterval(() => {
+                registration.update().catch(() => {});
+            }, 5 * 60 * 1000);
+
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === "visible") {
+                    registration.update().catch(() => {});
+                }
+            });
+        } catch (error) {
+            console.error("Impossible d'enregistrer le Service Worker :", error);
+        }
+    });
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (serviceWorkerRefreshing) return;
+        serviceWorkerRefreshing = true;
+        window.location.reload();
     });
 }
 
@@ -35,7 +60,9 @@ if (androidButton) {
 
 if (iphoneButton) {
     iphoneButton.addEventListener("click", () => {
-        iosInstructions.hidden = !iosInstructions.hidden;
+        if (iosInstructions) {
+            iosInstructions.hidden = !iosInstructions.hidden;
+        }
     });
 
     if (!isIos || isStandalone) {
