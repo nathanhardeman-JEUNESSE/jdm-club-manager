@@ -902,83 +902,57 @@
 /* ================================================= */
 
 /* ================================================= */
-/* AFFICHAGE UNIFIÉ - MOBILE / TABLETTE / PC          */
+/* RÉGLAGES ÉCRAN - TÉLÉPHONE                        */
+/* 0 à 600px : affichage prioritaire                 */
+/* Correction : planning visible sans couper dimanche */
 /* ================================================= */
-
-.page {
-    width: min(100% - 24px, 760px);
-    max-width: 760px;
-    margin: 0 auto;
-    padding: 16px 0 32px;
-    box-sizing: border-box;
-}
-
-.hero,
-.card,
-.news-card,
-.navigation-card,
-.product-card,
-.product-detail,
-.schedule-card {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-}
-
-.hero {
-    height: 220px;
-}
-
-.week-grid {
-    width: 100%;
-    min-width: 0;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 4px;
-}
-
-.week-grid > div {
-    min-width: 0;
-}
-
-.slot {
-    box-sizing: border-box;
-    min-width: 0;
-}
-
-.admin-toolbar,
-.quantity-row,
-.option-row {
-    flex-wrap: wrap;
-}
-
-.bottom-nav {
-    padding-bottom: env(safe-area-inset-bottom);
-}
 
 @media screen and (max-width: 600px) {
     .page {
-        width: min(100% - 20px, 760px);
-        padding-top: 12px;
+        width: 100%;
+        max-width: none;
+        margin: 0 auto;
+        padding: 12px;
+        box-sizing: border-box;
+    }
+
+    .hero,
+    .card,
+    .news-card,
+    .navigation-card,
+    .product-card,
+    .product-detail,
+    .schedule-card {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
     }
 
     .hero {
         height: 210px;
+        background-position: center 58%;
     }
 
     .hero-overlay {
-        padding: 18px 16px 16px;
+        justify-content: flex-start;
+        padding: 18px 16px 16px 16px;
     }
 
     .hero-logo {
         width: 110px;
+        margin-bottom: 6px;
     }
 
     .hero h1 {
         font-size: 36px;
+        line-height: 1.05;
+        margin-top: 4px;
     }
 
     .hero p {
         font-size: 15px;
+        line-height: 1.25;
+        margin-top: 6px;
     }
 
     .navigation-card,
@@ -988,14 +962,122 @@
         border-radius: 14px;
     }
 
+    .navigation-content h2,
+    .news-content h2 {
+        font-size: 22px;
+    }
+
+    .navigation-content p,
+    .news-content p {
+        font-size: 15px;
+    }
+
+    .admin-toolbar,
+    .quantity-row,
+    .option-row {
+        flex-wrap: wrap;
+    }
+
+    .schedule-card {
+        overflow: visible;
+    }
+
+    .week-grid {
+        width: 100%;
+        min-width: 0;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 4px;
+    }
+
     .week-grid > div {
+        min-width: 0;
         font-size: 12px;
     }
 
     .slot {
         min-height: 48px;
-        padding: 4px 2px;
         font-size: 11px;
+        padding: 4px 2px;
+        box-sizing: border-box;
+    }
+
+    .bottom-nav {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* ================================================= */
+/* RÉGLAGES ÉCRAN - TABLETTE                         */
+/* 601 à 1024px                                      */
+/* ================================================= */
+
+@media screen and (min-width: 601px) and (max-width: 1024px) {
+    .page {
+        width: min(100% - 48px, 720px);
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 24px;
+        box-sizing: border-box;
+    }
+
+    .hero {
+        height: 240px;
+    }
+
+    .hero-logo {
+        width: 135px;
+    }
+
+    .card,
+    .news-card,
+    .navigation-card,
+    .product-card,
+    .product-detail,
+    .schedule-card {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
+    .week-grid {
+        min-width: 0;
+    }
+}
+
+/* ================================================= */
+/* RÉGLAGES ÉCRAN - PC                               */
+/* 1025px et plus                                    */
+/* ================================================= */
+
+@media screen and (min-width: 1025px) {
+    .page {
+        width: min(100% - 64px, 1100px);
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 32px;
+        box-sizing: border-box;
+    }
+
+    .hero {
+        height: 320px;
+    }
+
+    .hero-logo {
+        width: 170px;
+    }
+
+    .news-card,
+    .navigation-card,
+    .product-card,
+    .product-detail,
+    .schedule-card {
+        max-width: 760px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .week-grid {
+        min-width: 0;
     }
 }
 
@@ -2046,8 +2128,10 @@
     animation:
         jdmCardReveal var(--jdm-card-animation-duration) ease forwards,
         jdmCardGlow var(--jdm-card-animation-duration) ease forwards;
-        position: relative;
-overflow: hidden;
+    position: relative;
+    overflow: hidden;
+}
+
 .jdm-card-reveal.jdm-card-visible::before {
     content: "";
     position: absolute;
@@ -2091,7 +2175,6 @@ overflow: hidden;
         transform: translateX(110%);
         opacity: 0;
     }
-}
 }
 
 @keyframes jdmCardReveal {
@@ -2846,3 +2929,125 @@ body {
     .club-admin-personne { grid-template-columns: 1fr; }
     .club-admin-photo-preview { margin: auto; }
 }
+
+/* =========================================================
+   JDM - AFFICHAGE UNIFORME TOUS SUPPORTS
+   Même rendu téléphone, tablette et PC
+   ========================================================= */
+
+html {
+    box-sizing: border-box;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
+.page {
+    width: min(100% - 24px, 760px) !important;
+    max-width: 760px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 12px 0 32px !important;
+}
+
+.navigation-link {
+    width: 100%;
+}
+
+.navigation-card {
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 128px;
+    margin: 16px 0 0 !important;
+    padding: 24px 28px !important;
+    gap: 24px !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 24px !important;
+    background: linear-gradient(135deg, rgba(43, 78, 91, 0.96) 0%, rgba(29, 39, 52, 0.98) 54%, rgba(25, 29, 38, 1) 100%) !important;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+.navigation-link:nth-of-type(4n + 2) .navigation-card {
+    background: linear-gradient(135deg, rgba(60, 68, 105, 0.94) 0%, rgba(34, 39, 57, 0.98) 56%, rgba(24, 27, 36, 1) 100%) !important;
+}
+
+.navigation-link:nth-of-type(4n + 3) .navigation-card {
+    background: linear-gradient(135deg, rgba(58, 83, 67, 0.94) 0%, rgba(34, 45, 39, 0.98) 56%, rgba(24, 30, 27, 1) 100%) !important;
+}
+
+.navigation-link:nth-of-type(4n) .navigation-card {
+    background: linear-gradient(135deg, rgba(77, 63, 87, 0.94) 0%, rgba(43, 36, 50, 0.98) 56%, rgba(29, 25, 34, 1) 100%) !important;
+}
+
+.navigation-icon {
+    flex: 0 0 56px;
+    width: 56px;
+    text-align: center;
+    font-size: 38px !important;
+}
+
+.navigation-content { min-width: 0; }
+
+.navigation-content h2 {
+    margin: 0 0 10px !important;
+    font-size: clamp(26px, 3vw, 34px) !important;
+    line-height: 1.1;
+}
+
+.navigation-content p {
+    margin: 0 !important;
+    font-size: clamp(16px, 2vw, 21px) !important;
+    line-height: 1.45;
+}
+
+.navigation-arrow {
+    flex: 0 0 auto;
+    font-size: 34px !important;
+    color: rgba(255, 255, 255, 0.86) !important;
+}
+
+@media screen and (max-width: 600px) {
+    .page {
+        width: min(100% - 20px, 760px) !important;
+        padding-top: 10px !important;
+    }
+
+    .navigation-card {
+        min-height: 118px;
+        padding: 22px 20px !important;
+        gap: 18px !important;
+        border-radius: 22px !important;
+    }
+
+    .navigation-icon {
+        flex-basis: 48px;
+        width: 48px;
+        font-size: 34px !important;
+    }
+
+    .navigation-content h2 { font-size: 27px !important; }
+    .navigation-content p { font-size: 17px !important; }
+    .navigation-arrow { font-size: 30px !important; }
+}
+
+@media screen and (max-width: 390px) {
+    .navigation-card {
+        padding: 20px 16px !important;
+        gap: 14px !important;
+    }
+
+    .navigation-icon {
+        flex-basis: 42px;
+        width: 42px;
+        font-size: 30px !important;
+    }
+
+    .navigation-content h2 { font-size: 23px !important; }
+    .navigation-content p { font-size: 15px !important; }
+}
+
