@@ -5,10 +5,12 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import { db } from "../firebase/firebase.js";
+import { listAdherents } from "../firebase/firebase-db.js";
 
 let contenuSite = {};
 let club = {};
 let equipe = [];
+let nombreAdherentsReel = null;
 
 function valeurTexte(valeur, defaut = "") {
     if (valeur === null || valeur === undefined || valeur === "") return defaut;
@@ -203,14 +205,23 @@ function valeurCompteur(valeur, defaut = "—") {
 }
 
 function chargerStatistiques() {
-    // La page Mon Club est publique : le nombre d'adhérents reste une donnée
-    // publique saisie dans le contenu du site. Les coachs et bénévoles sont
-    // calculés automatiquement à partir du trombinoscope visible.
-    const nombreAdherents = club.nombreAdherents ?? club.adherents;
+    const nombreAdherents = nombreAdherentsReel ??
+        club.nombreAdherents ??
+        club.adherents;
 
     texte("stat-adherents", valeurCompteur(nombreAdherents));
     texte("stat-coachs", compterCoachs() || "—");
     texte("stat-benevoles", compterBenevoles());
+}
+
+async function chargerNombreAdherents() {
+    try {
+        const adherents = await listAdherents();
+        nombreAdherentsReel = adherents.length;
+        chargerStatistiques();
+    } catch (erreur) {
+        console.error("Impossible de charger le nombre d'adhérents", erreur);
+    }
 }
 
 function contenuLocal() {
@@ -240,3 +251,5 @@ onSnapshot(collection(db, "siteTeam"), snapshot => {
 }, erreur => {
     console.error("Impossible de synchroniser le trombinoscope", erreur);
 });
+
+chargerNombreAdherents();
