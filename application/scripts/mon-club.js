@@ -5,7 +5,6 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
 import { db } from "../firebase/firebase.js";
-import { listAdherents, listUsers } from "../firebase/firebase-db.js";
 
 let contenuSite = {};
 let club = {};
@@ -84,21 +83,21 @@ function afficherContenu() {
     afficherEquipe("trombinoscope-coachs", "section-coachs", "coachs");
 }
 
-async function chargerStatistiques() {
-    try {
-        const [adherents, utilisateurs] = await Promise.all([listAdherents(), listUsers()]);
-        texte("stat-adherents", adherents.length);
-        const coachsUtilisateurs = utilisateurs.filter(utilisateur => {
-            const roles = Array.isArray(utilisateur.roles) ? utilisateur.roles : [utilisateur.role];
-            return roles.includes("coach");
-        });
-        const coachsTrombi = equipe.filter(personne => personne.type === "coachs" && personne.visible !== false).length;
-        texte("stat-coachs", coachsUtilisateurs.length || coachsTrombi);
-    } catch (erreur) {
-        console.error("Impossible de charger les statistiques du club", erreur);
-        texte("stat-adherents", "—");
-        texte("stat-coachs", equipe.filter(personne => personne.type === "coachs" && personne.visible !== false).length || "—");
-    }
+function chargerStatistiques() {
+    // Cette page est publique : elle ne doit jamais lister les collections
+    // privées "adherents" et "users". Les compteurs publics sont saisis
+    // dans Contenu du site ; le nombre de coachs peut être déduit du trombinoscope.
+    const nombreAdherents = club.nombreAdherents ?? club.adherents ?? "—";
+    const nombreCoachsSaisi = club.nombreCoachs ?? club.coachs;
+    const nombreCoachsTrombi = equipe.filter(
+        personne => personne.type === "coachs" && personne.visible !== false
+    ).length;
+
+    texte("stat-adherents", nombreAdherents);
+    texte(
+        "stat-coachs",
+        nombreCoachsSaisi ?? (nombreCoachsTrombi || "—")
+    );
 }
 
 onSnapshot(doc(db, "siteContent", "main"), snapshot => {

@@ -91,6 +91,13 @@ export function watchSession(callback) {
 }
 
 export async function logoutAndRedirect() {
-    await deconnexion();
-    window.location.href = "accueil.html";
+    try {
+        await deconnexion();
+    } catch (error) {
+        console.error("Erreur pendant la déconnexion", error);
+    } finally {
+        // replace() empêche le bouton Retour de rouvrir immédiatement
+        // la page privée qui vient d'être quittée.
+        window.location.replace("connexion.html");
+    }
 }
