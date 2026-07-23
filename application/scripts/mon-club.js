@@ -10,20 +10,59 @@ let contenuSite = {};
 let club = {};
 let equipe = [];
 
+function valeurTexte(valeur, defaut = "") {
+    if (valeur === null || valeur === undefined || valeur === "") return defaut;
+
+    if (Array.isArray(valeur)) {
+        return valeur
+            .map(item => valeurTexte(item))
+            .filter(Boolean)
+            .join(" · ");
+    }
+
+    if (typeof valeur === "object") {
+        const champsPrioritaires = [
+            "nom",
+            "titre",
+            "libelle",
+            "label",
+            "valeur",
+            "value",
+            "discipline",
+            "fonction",
+            "texte"
+        ];
+
+        for (const champ of champsPrioritaires) {
+            const resultat = valeurTexte(valeur[champ]);
+            if (resultat) return resultat;
+        }
+
+        return Object.values(valeur)
+            .map(item => valeurTexte(item))
+            .filter(Boolean)
+            .join(" · ") || defaut;
+    }
+
+    return String(valeur).trim() || defaut;
+}
+
 function texte(id, valeur, defaut = "") {
     const element = document.getElementById(id);
-    if (element) element.textContent = valeur || defaut;
+    if (element) element.textContent = valeurTexte(valeur, defaut);
 }
 
 function lien(id, valeur) {
     const element = document.getElementById(id);
     if (!element) return;
-    element.href = valeur || "#";
-    element.hidden = !valeur;
+
+    const url = valeurTexte(valeur);
+    element.href = url || "#";
+    element.hidden = !url;
 }
 
 function echapper(valeur) {
-    return String(valeur || "")
+    return valeurTexte(valeur)
         .replaceAll("&", "&amp;")
         .replaceAll("<", "&lt;")
         .replaceAll(">", "&gt;")
@@ -31,20 +70,90 @@ function echapper(valeur) {
         .replaceAll("'", "&#039;");
 }
 
+function normaliser(valeur) {
+    return valeurTexte(valeur)
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function typePersonne(personne = {}) {
+    const type = normaliser(personne.type);
+    if (type === "coach" || type === "coachs" || type === "entraineur" || type === "entraineurs") {
+        return "coachs";
+    }
+    return type;
+}
+
+function clePersonne(personne = {}) {
+    const identifiant = normaliser(
+        personne.uid || personne.userId || personne.email || personne.idAdherent
+    );
+    if (identifiant) return `id:${identifiant}`;
+
+    const prenom = normaliser(personne.prenom);
+    const nom = normaliser(personne.nom);
+    return prenom || nom ? `nom:${prenom}|${nom}` : "";
+}
+
+function personnesUniques(types) {
+    const typesAcceptes = new Set(types);
+    const personnes = new Map();
+
+    equipe.forEach(personne => {
+        if (personne.visible === false || !typesAcceptes.has(typePersonne(personne))) return;
+
+        const cle = clePersonne(personne);
+        if (cle && !personnes.has(cle)) personnes.set(cle, personne);
+    });
+
+    return [...personnes.values()];
+}
+
+function compterBenevoles() {
+    return personnesUniques(["bureau", "coachs"]).length;
+}
+
+function compterCoachs() {
+    return personnesUniques(["coachs"]).length;
+}
+
 function initiales(personne) {
-    return `${String(personne.prenom || "").charAt(0)}${String(personne.nom || "").charAt(0)}`.toUpperCase() || "JDM";
+    const prenom = valeurTexte(personne.prenom);
+    const nom = valeurTexte(personne.nom);
+    return `${prenom.charAt(0)}${nom.charAt(0)}`.toUpperCase() || "JDM";
+}
+
+function listeMissions(valeur) {
+    if (Array.isArray(valeur)) {
+        return valeur.map(item => valeurTexte(item)).filter(Boolean);
+    }
+
+    if (valeur && typeof valeur === "object") {
+        return Object.values(valeur).map(item => valeurTexte(item)).filter(Boolean);
+    }
+
+    return valeurTexte(valeur)
+        .split("\n")
+        .map(item => item.trim())
+        .filter(Boolean);
 }
 
 function cartePersonne(personne) {
-    const missions = String(personne.missions || "").split("\n").map(item => item.trim()).filter(Boolean);
-    const photo = personne.photo
-        ? `<img src="${echapper(personne.photo)}" alt="Photo de ${echapper(`${personne.prenom || ""} ${personne.nom || ""}`.trim())}">`
+    const missions = listeMissions(personne.missions);
+    const nomComplet = `${valeurTexte(personne.prenom)} ${valeurTexte(personne.nom)}`.trim();
+    const fonction = valeurTexte(personne.fonction || personne.discipline);
+    const photoUrl = valeurTexte(personne.photo);
+    const photo = photoUrl
+        ? `<img src="${echapper(photoUrl)}" alt="Photo de ${echapper(nomComplet)}">`
         : `<span>${echapper(initiales(personne))}</span>`;
 
     return `<article class="club-personne">
         <div class="club-personne-photo">${photo}</div>
-        <h3>${echapper(`${personne.prenom || ""} ${personne.nom || ""}`.trim())}</h3>
-        <p class="club-personne-fonction">${echapper(personne.fonction || personne.discipline || "")}</p>
+        <h3>${echapper(nomComplet || "Membre du club")}</h3>
+        ${fonction ? `<p class="club-personne-fonction">${echapper(fonction)}</p>` : ""}
         ${missions.length ? `<ul>${missions.map(mission => `<li>${echapper(mission)}</li>`).join("")}</ul>` : ""}
     </article>`;
 }
@@ -55,7 +164,7 @@ function afficherEquipe(id, sectionId, type) {
     if (!conteneur || !section) return;
 
     const visibles = equipe
-        .filter(personne => personne.type === type && personne.visible !== false)
+        .filter(personne => typePersonne(personne) === type && personne.visible !== false)
         .sort((a, b) => Number(a.ordre || 0) - Number(b.ordre || 0));
 
     section.hidden = visibles.length === 0;
@@ -74,8 +183,8 @@ function afficherContenu() {
     texte("club-telephone", club.telephone);
     texte("club-email", club.email);
     texte("club-horaires", club.horaires);
-    texte("stat-benevoles", club.nombreBenevoles || "0");
-    texte("stat-saison", club.saison || "—");
+    texte("stat-benevoles", compterBenevoles());
+    texte("stat-saison", club.saison, "—");
     lien("lien-facebook", club.facebook);
     lien("lien-instagram", club.instagram);
     lien("lien-tiktok", club.tiktok);
@@ -83,34 +192,43 @@ function afficherContenu() {
     afficherEquipe("trombinoscope-coachs", "section-coachs", "coachs");
 }
 
-function chargerStatistiques() {
-    // Cette page est publique : elle ne doit jamais lister les collections
-    // privées "adherents" et "users". Les compteurs publics sont saisis
-    // dans Contenu du site ; le nombre de coachs peut être déduit du trombinoscope.
-    const nombreAdherents = club.nombreAdherents ?? club.adherents ?? "—";
-    const nombreCoachsSaisi = club.nombreCoachs ?? club.coachs;
-    const nombreCoachsTrombi = equipe.filter(
-        personne => personne.type === "coachs" && personne.visible !== false
-    ).length;
+function valeurCompteur(valeur, defaut = "—") {
+    if (typeof valeur === "number" && Number.isFinite(valeur)) return valeur;
 
-    texte("stat-adherents", nombreAdherents);
-    texte(
-        "stat-coachs",
-        nombreCoachsSaisi ?? (nombreCoachsTrombi || "—")
-    );
+    const texteValeur = valeurTexte(valeur);
+    if (!texteValeur) return defaut;
+
+    const nombre = Number(texteValeur.replace(/\s/g, "").replace(",", "."));
+    return Number.isFinite(nombre) ? nombre : texteValeur;
+}
+
+function chargerStatistiques() {
+    // La page Mon Club est publique : le nombre d'adhérents reste une donnée
+    // publique saisie dans le contenu du site. Les coachs et bénévoles sont
+    // calculés automatiquement à partir du trombinoscope visible.
+    const nombreAdherents = club.nombreAdherents ?? club.adherents;
+
+    texte("stat-adherents", valeurCompteur(nombreAdherents));
+    texte("stat-coachs", compterCoachs() || "—");
+    texte("stat-benevoles", compterBenevoles());
+}
+
+function contenuLocal() {
+    try {
+        return JSON.parse(localStorage.getItem("contenuSiteJDM") || "{}");
+    } catch (erreur) {
+        console.warn("Contenu local Mon Club invalide", erreur);
+        return {};
+    }
 }
 
 onSnapshot(doc(db, "siteContent", "main"), snapshot => {
-    if (snapshot.exists()) {
-        contenuSite = snapshot.data();
-    } else {
-        contenuSite = JSON.parse(localStorage.getItem("contenuSiteJDM") || "{}");
-    }
+    contenuSite = snapshot.exists() ? snapshot.data() : contenuLocal();
     afficherContenu();
     chargerStatistiques();
 }, erreur => {
     console.error("Impossible de synchroniser le contenu Mon Club", erreur);
-    contenuSite = JSON.parse(localStorage.getItem("contenuSiteJDM") || "{}");
+    contenuSite = contenuLocal();
     afficherContenu();
     chargerStatistiques();
 });
